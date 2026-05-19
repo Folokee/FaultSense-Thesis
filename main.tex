@@ -1,0 +1,120 @@
+% ============================================================
+% Main document — PFE Thesis
+% ============================================================
+\documentclass[12pt,a4paper]{report}
+\input{preamble}
+
+\begin{document}
+
+% ── Front matter ────────────────────────────────────────────
+
+% Title page (not numbered)
+\begin{titlepage}
+    \thispagestyle{empty}
+    \centering
+
+    \IfFileExists{figures/page_de_garde/esi_header.png}
+        {\makebox[\textwidth][c]{\includegraphics[width=1.35\textwidth, height=4cm]{figures/page_de_garde/esi_header.png}}}
+        {\fbox{\parbox{0.7\textwidth}{\centering\vspace{1.5cm}Place \texttt{esi\_header.png} in\\\texttt{figures/page\_de\_garde/}\vspace{1.5cm}}}}
+    \vspace{0.2cm}
+
+    {\Large\bfseries Final dissertation\par}
+    \vspace{0.3cm}
+
+    {\large For obtaining the State Engineer Diploma in Computer Science\par}
+    \vspace{0.2cm}
+
+    {\large \textbf{Option:} Computer Systems and Software (SIL)\par}
+    \vspace{1.5cm}
+
+    {\large \textbf{Theme:}\par}
+    \vspace{0.5cm}
+    {\LARGE\bfseries Anomaly Detection and Fault Diagnosis in Photovoltaic Systems Using Artificial Intelligence and Implementation on a Jetson Nano Platform\par}
+    \vspace{1.5cm}
+
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushleft} \large
+            \textbf{Authors:}\\
+            GUERRAICHE Ahmed Amine\\
+            MENASSEL Rayane Ibrahim
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \begin{flushright} \large
+            \textbf{Supervised by:}\\
+            Dr. Ahmed RENNANE (CDER) \\
+            Dr. DAHMANI Rabea (ESI) \\
+            Dr. Ali DALI (CDER)
+        \end{flushright}
+    \end{minipage}
+
+    \vfill
+
+    {\large
+    \textbf{Host Organization:}\\
+    Centre de D\'eveloppement des \'Energies Renouvelables (CDER)\\
+    \par}
+    \vspace{0.5cm}
+
+    {\large \textbf{Promotion:} 2025/2026\par}
+
+\end{titlepage}
+
+\pagenumbering{roman}
+
+% Abstract
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+Renewable energy sources, particularly photovoltaic (PV) systems, play an increasingly vital role in addressing global energy demands and environmental sustainability. As PV installations scale rapidly worldwide, ensuring their reliable and efficient operation becomes a critical engineering challenge. Faults arising from component degradation, environmental stressors, or electrical anomalies can significantly reduce energy yield and compromise system safety if left undetected.
+
+This work provides a comprehensive review of fault detection, classification, and prediction methods for PV systems. A structured fault taxonomy is established to characterize the diverse types of failures that affect PV installations. Two major diagnostic families are then examined: model-driven approaches, which rely on physical representations of system behavior, and data-driven approaches, which leverage machine learning and deep learning techniques to extract patterns from operational data.
+
+Key open challenges and emerging research directions are identified to guide the development of more robust, scalable, and intelligent PV monitoring solutions. The findings highlight the complementarity of both paradigms and the potential of their convergence toward autonomous and adaptive fault diagnosis frameworks.
+
+\vspace{1cm}
+\noindent\textbf{Keywords:} photovoltaic systems, fault detection and diagnosis, machine learning, deep learning, predictive maintenance.
+
+% Table of contents
+\tableofcontents
+
+% List of figures
+\listoffigures
+\addcontentsline{toc}{chapter}{List of Figures}
+
+% List of tables
+\listoftables
+\addcontentsline{toc}{chapter}{List of Tables}
+
+% Abbreviations
+\chapter*{List of Abbreviations}
+\addcontentsline{toc}{chapter}{List of Abbreviations}
+\begin{longtable}{ll}
+    PV   & Photovoltaic \\
+    FDD  & Fault Detection and Diagnosis \\
+    ML   & Machine Learning \\
+    DL   & Deep Learning \\
+    AI   & Artificial Intelligence \\
+\end{longtable}
+
+\clearpage
+
+% ── Main matter ─────────────────────────────────────────────
+\pagenumbering{arabic}
+
+\input{chapters/introduction}
+\input{chapters/literature-review}
+\input{chapters/methodology}
+\input{chapters/results}
+\input{chapters/discussion}
+\input{chapters/conclusion}
+
+% ── Bibliography ────────────────────────────────────────────
+\bibliographystyle{apalike}
+\bibliography{references}
+
+% ── Appendices ──────────────────────────────────────────────
+\appendix
+\input{appendices/appendices}
+
+\end{document}
