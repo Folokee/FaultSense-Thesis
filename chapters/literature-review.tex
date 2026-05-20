@@ -1,55 +1,140 @@
 % ============================================================
-% Chapter 2: Literature Review
+% Chapter 3: Related Work
 % ============================================================
-\chapter{Literature Review}
-\label{ch:literature-review}
+\chapter{Related Work}
+\label{ch:related-work}
 
-\section{Overview}
-\label{sec:lit-overview}
+The field of fault detection and diagnosis in photovoltaic systems has attracted growing research interest over the past decade, driven by the rapid expansion of solar installations and the corresponding need for reliable automated monitoring solutions. This chapter reviews the existing literature with the objective of situating the contributions of this work within the current state of the art. The review is organized around three distinct families of diagnostic approaches, differentiated by the type of input data they exploit: thermographic imaging, current-voltage characteristic curve analysis, and operational electrical and meteorological measurements. Before examining these methodological families, it is necessary to characterize the datasets available in the field, as the nature of the training data fundamentally conditions the validity of performance claims and the generalizability of the proposed models. The chapter closes with a critical synthesis of the identified limitations and a statement of the research gaps that motivate the contributions of this thesis.
 
-This chapter reviews the existing body of knowledge relevant to the research
-problem. It provides a critical analysis of prior work, identifies gaps in
-the literature, and positions the current research within the broader
-academic context.
+% ────────────────────────────────────────────────────────────
+\section{Existing Datasets in Photovoltaic Fault Detection and Diagnosis}
+\label{sec:datasets}
+% ────────────────────────────────────────────────────────────
 
-\section{Theoretical Framework}
-\label{sec:theoretical-framework}
+The availability of labeled, high-quality data is the foundational prerequisite for any supervised or semi-supervised learning approach to PV fault diagnosis. A comprehensive survey of open datasets for assessing PV system reliability highlights a striking asymmetry in the current data landscape: fault-labeled datasets are rare, and those that exist are predominantly generated under controlled laboratory conditions or through circuit simulation rather than collected from operational field installations \citep{chen2025datasets}. This section surveys the main publicly available datasets used in the literature reviewed in this chapter and identifies the principal limitations of the current data ecosystem.
 
-Present the theoretical foundations that underpin your research. Define
-key concepts, models, and theories that are central to understanding
-your work.
+Among the fault-labeled datasets based on real field measurements, two stand out for their quality and relevance to the operational scenario addressed in this thesis. The Costa dataset, introduced by \citet{costa2020sensors}, was collected from a 5~kW two-string grid-connected PV installation located in Brazil. Measurements were acquired at a sampling rate of 1~Hz over a 16-day campaign during which four distinct fault conditions were artificially induced in a controlled and reproducible manner: short-circuit faults, module degradation, open-circuit faults, and natural partial shading events. The resulting dataset contains approximately 516,000 labeled samples covering five operating states, with DC voltage, DC current, solar irradiance, and module temperature as the primary measurement channels. Because faults were induced by physically modifying the installation rather than simulated numerically, the dataset captures genuine electrical transients and retains the measurement noise and environmental variability inherent to outdoor operation. This combination of labeling rigor and real-world grounding makes the Costa dataset a valuable reference benchmark for data-driven FDD research.
 
-\section{Related Work}
-\label{sec:related-work}
+The La Réunion dataset, collected from a grid-connected PV installation on the French island of La Réunion, represents a complementary real-world resource. Unlike the Costa dataset, whose faults were deliberately induced by the experimenter, the La Réunion dataset contains faults that occurred naturally during prolonged field operation, resulting in a fault rate of approximately 3\% of total observations and a strong dominance of shading-related fault classes. The dataset comprises approximately three million timestamped records sampled at an interval of roughly seven seconds, and the available fault labels are organized into a hierarchical taxonomy covering several variants of partial shading effects. The high class imbalance and the restriction to a single fault family make this dataset substantially more challenging than Costa for classification purposes and more representative of the conditions encountered in actual PV plant monitoring.
 
-\subsection{Theme 1}
-\label{sec:lit-theme1}
+In the simulated domain, the GPVS-Faults dataset \citep{bakdi2021gpvs}, available through the Mendeley data repository, provides labeled measurements generated from a grid-connected PV system emulated in a laboratory environment at a sampling rate of 100~kHz. The dataset encompasses eight fault scenarios spanning both array-level and inverter-level faults, organized across sixteen experimental files corresponding to two operating modes: maximum power point tracking (MPPT) and imposed power point tracking (IPPT). The high sampling rate and diversity of fault types make this dataset useful for evaluating signal processing approaches, particularly those based on spectral decomposition. However, the absence of meteorological channels and the controlled laboratory conditions mean that the dataset does not capture the environmental variability that characterizes real PV operation.
 
-Discuss the first major theme or category of related work. Synthesize
-findings from multiple sources and highlight patterns, agreements, or
-disagreements in the literature.
+Beyond these three primary datasets, the broader PV monitoring community has produced a number of performance datasets that, while lacking fault labels, represent valuable resources for representation learning and transfer learning purposes. The PVDAQ database, maintained by the National Renewable Energy Laboratory, aggregates operational measurements from 158 PV installations across the United States spanning periods of one to twenty-nine years at resolutions of fifteen minutes or finer \citep{pvdaq2023}. The SKIPP'D dataset provides one-minute power generation records from a 30~kW rooftop installation alongside sky camera images, enabling research at the intersection of visual and electrical monitoring \citep{skipd2023}. The scientific community has also proposed fully simulated datasets with finer fault taxonomies; the dataset introduced by \citet{srisiri_artificial_2025} covers 17 fault classes across more than 12,000 simulated samples, offering greater class diversity at the cost of physical realism. Table~\ref{tab:datasets} summarizes the main characteristics of the datasets discussed in this section.
 
-\subsection{Theme 2}
-\label{sec:lit-theme2}
+\begin{table}[htbp]
+\centering
+\caption{Summary of publicly available datasets for PV fault detection and diagnosis. SC: short-circuit; OC: open-circuit; Deg: degradation; Shad: partial shading.}
+\label{tab:datasets}
+\begin{tabular}{lllllr}
+\toprule
+\textbf{Dataset} & \textbf{Type} & \textbf{Rate} & \textbf{Fault Labels} & \textbf{Fault Classes} & \textbf{Size} \\
+\midrule
+Costa (2020)            & Real, field    & 1 Hz       & Yes & SC, OC, Deg, Shad (4)    & 516k rows  \\
+La Réunion              & Real, field    & 0.14 Hz    & Yes & Shading variants (7)      & 3M rows    \\
+GPVS-Faults (Mendeley)  & Lab simulated  & 100 kHz    & Yes & Array + inverter (8)      & 16 files   \\
+Srisiri et al. (2025)   & Simulated      & ---        & Yes & Multi-type (17)           & 12,835     \\
+PVDAQ (NREL)            & Real, field    & 15 min     & No  & ---                       & 158 sites  \\
+SKIPP'D                 & Real, rooftop  & 1 min      & No  & ---                       & 3 years    \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-Discuss the second major theme. Compare and contrast different
-approaches, methodologies, or findings.
+The picture that emerges from this survey is one of significant data scarcity. The number of publicly available, fault-labeled datasets based on genuine field measurements remains extremely limited, and those that exist cover a narrow range of climatic conditions, PV technologies, and fault types. This scarcity has pushed a substantial fraction of the research community toward simulated data, which introduces a fundamental validity concern: models that achieve high diagnostic accuracy on numerically generated data may fail to generalize when confronted with the sensor imperfections, environmental variability, and installation-specific behavior of real PV systems. This tension between data accessibility and generalization validity constitutes one of the central challenges that this thesis addresses.
 
-\subsection{Theme 3}
-\label{sec:lit-theme3}
+% ────────────────────────────────────────────────────────────
+\section{Thermal Image-Based Fault Detection}
+\label{sec:thermal}
+% ────────────────────────────────────────────────────────────
 
-Discuss the third major theme. Identify limitations in existing
-approaches and areas that warrant further investigation.
+Infrared thermography has been widely adopted as a diagnostic modality in PV fault detection research, primarily for its ability to reveal hotspot anomalies that are invisible to conventional optical inspection. In a healthy PV module, the temperature distribution across the cell surface is approximately uniform under steady irradiance conditions. Faults such as shading, cell cracking, bypass diode failures, and soiling create localized thermal dissipation patterns that manifest as temperature differentials detectable by infrared cameras. The diagnostic pipeline for thermographic approaches typically involves acquiring aerial images of PV arrays using unmanned aerial vehicles (UAVs) equipped with thermal sensors, applying image preprocessing to normalize illumination and correct geometric distortions, and then feeding the processed images into a classification model.
 
-\section{Research Gap}
-\label{sec:research-gap}
+Convolutional neural networks (CNNs) have become the dominant model family for thermographic fault diagnosis, owing to their proven ability to extract spatially local features from image data. \citet{manno2021thermal} proposed a deep learning framework that leverages convolutional feature extraction applied directly to thermographic images of PV modules, achieving classification accuracies exceeding 95\% across several fault categories including hotspots, cell cracks, and diode failures on images collected from a real installation. \citet{gong2024deep} developed a method based on adaptive deep multiscale feature enhancement to handle significant variation in hotspot sizes and thermal contrast levels across different imaging conditions, reporting fast detection times suitable for online monitoring scenarios. More recently, hybrid approaches have combined thermal imaging with other modalities; \citet{ettaleby2022fault} integrated K-means clustering on thermal images with coded wireless OFDM signal processing to improve fault localization precision beyond what pure image analysis can achieve.
 
-Synthesize the gaps identified in the literature and clearly articulate
-the specific gap that your thesis addresses. Explain why addressing this
-gap is important and how your work contributes to filling it.
+Despite these results, thermographic approaches carry two fundamental limitations that restrict their applicability in large-scale operational deployment. The first is the cost and logistics of the acquisition infrastructure. Generating thermographic images at the resolution required for reliable hotspot detection requires calibrated infrared cameras, which are substantially more expensive than standard silicon-based sensors. When combined with UAVs capable of carrying such payloads and the flight operations required to systematically survey a utility-scale installation, the per-inspection cost becomes prohibitive for routine continuous monitoring. The second limitation is the temporal resolution of the diagnostic process. Thermographic surveys are inherently event-driven and infrequent: a fault that develops between inspection campaigns may propagate for weeks or months before detection. These two constraints together mean that thermographic methods, despite their effectiveness within their domain of applicability, are not suitable as the primary monitoring modality for installations requiring near real-time fault awareness at low operational cost.
 
-\section{Chapter Summary}
-\label{sec:lit-summary}
+% ────────────────────────────────────────────────────────────
+\section{Current-Voltage Curve-Based Fault Detection}
+\label{sec:ivcurve}
+% ────────────────────────────────────────────────────────────
 
-Briefly summarize the key takeaways from the literature review and how
-they inform the rest of the thesis.
+The current-voltage (I-V) characteristic curve of a PV module encodes its complete electrical behavior at a given irradiance and temperature. Under healthy operating conditions, this curve follows a well-defined shape governed by the single-diode model: a plateau of quasi-constant current at low voltages, a knee region near the maximum power point, and a steep decline to zero at the open-circuit voltage. Different fault types produce characteristic distortions of this shape that serve as discriminative signatures. Partial shading introduces step-like discontinuities in the curve as successive bypass diodes activate. Increased series resistance tilts the slope of the knee region and reduces the fill factor. Decreased shunt resistance raises the slope of the plateau region near the short-circuit current. These predictable deformations have motivated a family of diagnostic approaches based on I-V curve measurement and analysis.
+
+Machine learning methods applied to extracted I-V features have demonstrated consistently high performance in controlled settings. \citet{chen2017} proposed a kernel extreme learning machine trained on a set of features derived from the I-V curve, including the short-circuit current, the open-circuit voltage, the maximum power point coordinates, and the fill factor, reporting fault diagnosis accuracies above 93\% across multiple fault types on a simulated dataset. \citet{eskandari2020} applied an ensemble learning approach to line-to-line fault detection, using I-V and P-V curve features to distinguish between healthy operation and various fault configurations and achieving classification accuracy exceeding 95\%. Deep learning approaches have extended this paradigm by bypassing manual feature extraction. \citet{liu2021sae} used a stacked autoencoder to learn a latent representation of the I-V curve directly and then applied clustering to group measurements into fault categories without requiring labeled training data. \citet{qu2024dust} proposed transforming I-V curves into graphical image representations and applying CNNs augmented with convolutional block attention modules (CBAM) to perform fault classification under varying soiling and dust conditions, achieving results above 99\% on both simulated and experimental data.
+
+The central limitation of I-V curve-based approaches lies in the measurement procedure itself. Acquiring a full I-V sweep requires varying the load applied to the PV module or string across its full operating range, temporarily interrupting normal power generation. In large-scale installations comprising thousands of modules organized into multiple strings, performing systematic I-V measurements on each module at regular intervals is logistically complex, time-consuming, and operationally intrusive. Furthermore, the measurement accuracy of I-V sweeps is sensitive to rapid changes in irradiance and temperature during the sweep duration, introducing uncertainty that can mask subtle fault signatures. These constraints make I-V curve analysis more suitable as a periodic diagnostic complement than as a primary real-time detection modality.
+
+% ────────────────────────────────────────────────────────────
+\section{Electrical and Meteorological Data-Based Methods}
+\label{sec:elec-meteo}
+% ────────────────────────────────────────────────────────────
+
+The third and most practically relevant family of data-driven PV fault detection methods operates on the operational electrical and meteorological measurements that modern PV installations continuously generate as part of their standard monitoring infrastructure. These measurements, including DC voltage and current at the string level, AC power at the inverter output, solar irradiance, and module and ambient temperatures, are already collected by dataloggers and SCADA systems in most grid-connected PV plants without any additional sensing hardware. This key advantage makes electrical and meteorological data-based approaches the most scalable option for continuous, near real-time fault monitoring.
+
+\subsection{Machine Learning Approaches}
+
+Classical machine learning methods were among the first to be applied to PV fault detection using operational electrical data, and they remain competitive with more recent deep learning approaches on tabular, low-frequency measurement data. \citet{garoudja2017ml} demonstrated that combining statistical process control techniques with supervised classifiers applied to real electrical measurements suffices to distinguish between the most common fault conditions in a grid-connected installation. Support vector machines have been extensively studied for this task; \citet{suliman2024ml} evaluated multiple SVM kernel configurations on electrical fault data and demonstrated that properly tuned SVMs achieve classification accuracies above 95\% on binary and multi-class fault problems. Random forests have also shown strong performance: \citet{amiri2024rf} trained a random forest classifier on features extracted from the DC measurements of a real PV system, reporting diagnostic accuracy exceeding 98\% on a balanced evaluation set and demonstrating the robustness of ensemble methods to field measurement noise.
+
+Gradient boosting algorithms have demonstrated remarkable effectiveness on tabular PV fault data. \citet{noura_explainable_2025} proposed a two-phase fault detection and diagnosis framework based on Extra Trees, achieving detection accuracy of 99.5\% and diagnosis accuracy of 98.7\% while integrating explainability through SHAP and LIME analyzers. \citet{kull_adaptive_2025} combined a Deep Belief Network for feature extraction with LightGBM for classification on a real-world SCADA dataset from a 100~MW solar facility, achieving 98.21\% accuracy on a seven-class problem. The study by \citet{zwirtes_fault_2025} is particularly relevant for generalization: the authors trained multiple ML classifiers on two real PV installations with different module characteristics and found that models trained on one system face significant performance degradation when applied to the other, underscoring the installation-specific nature of fault signatures. Unsupervised and semi-supervised approaches address the label scarcity problem that limits fully supervised methods; \citet{kabir_isolation_2023} applied Isolation Forest to PV operational data and demonstrated its effectiveness for detecting anomalous patterns without requiring labeled fault examples, while \citet{qu2022unsupervised} combined unsupervised weather pattern recognition with blending fitting models to enable label-free fault detection.
+
+\subsection{Deep Learning Approaches}
+
+Deep learning methods enable the automatic extraction of temporal and structural features from raw time-series measurements, reducing dependence on manual feature engineering. \citet{amiri2024dl} proposed a hybrid architecture combining one-dimensional convolutional feature extraction with a bidirectional GRU for fault detection and diagnosis in a real PV system, demonstrating that the combination of spatial and temporal feature extraction outperforms either component alone with near-perfect accuracy on their evaluation dataset. Autoencoder-based architectures have attracted particular interest for the anomaly detection task, where the goal is to learn a compact representation of normal operating behavior and flag deviations as fault events. \citet{seghiour2023autoencoder} trained a deep autoencoder exclusively on normal operation data and demonstrated that reconstruction error is a reliable anomaly score for identifying fault conditions even without labeled fault examples. \citet{titouni_hybrid_2025} extended this principle with a hybrid CNN-Autoencoder architecture evaluated on the GPVS-Faults dataset, achieving 98.84\% test accuracy and outperforming several benchmark architectures. The Adaptive PolyKAN Autoencoder of \citet{attouri_adaptive_2026} combined polynomial kernel networks with an autoencoder for dimensionality reduction, reducing computational overhead by over 88\% while preserving diagnostic accuracy above 96\%.
+
+Attention mechanisms and Transformer architectures have begun to penetrate this domain. \citet{khalil2024transformer} applied a Transformer model to fault classification in PV systems, leveraging multi-head self-attention to capture long-range dependencies in electrical time-series and achieving 95.8\% accuracy across multiple fault types. Graph-based methods represent a newer direction: \citet{yan_som-dbtgnet_2025} introduced SOM-DBTGNet, combining self-organizing maps for anomaly score generation with a dual-branch temporal graph convolution network that explicitly models topological relationships between measurement channels, achieving 90.7\% accuracy across six fault categories. Signal processing hybrid approaches further enrich the electrical modality: \citet{cai2022arc} used variational mode decomposition to decompose string current signals into intrinsic mode functions before applying a PSO-tuned SVM, enabling reliable detection of arc fault signatures invisible in raw time-domain measurements; wavelet transforms have similarly been applied as preprocessing for SCADA-based fault detection, particularly for faults with fast transient dynamics \citep{saiprakash_improved_2024}.
+
+% ────────────────────────────────────────────────────────────
+\section{Synthesis and Comparative Analysis}
+\label{sec:synthesis}
+% ────────────────────────────────────────────────────────────
+
+The preceding review reveals a landscape of considerable methodological diversity, where each input modality and model family presents distinct strengths and limitations. Table~\ref{tab:synthesis} consolidates a representative selection of reviewed works along the dimensions most relevant to practical deployment assessment.
+
+\begin{table}[htbp]
+\centering
+\caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter. R: real data; S: simulated data; N/S: not specified.}
+\label{tab:synthesis}
+\small
+\begin{tabular}{llllcl}
+\toprule
+\textbf{Author(s)} & \textbf{Year} & \textbf{Modality} & \textbf{Method} & \textbf{Data} & \textbf{Edge} \\
+\midrule
+Manno et al.       & 2021 & Thermal     & CNN                  & R    & No \\
+Gong et al.        & 2024 & Thermal     & Multiscale CNN       & R    & No \\
+Chen et al.        & 2017 & I-V curve   & Kernel ELM           & S    & No \\
+Eskandari et al.   & 2020 & I-V curve   & Ensemble learning    & S    & No \\
+Qu et al.          & 2024 & I-V curve   & CNN-CBAM             & R+S  & No \\
+Garoudja et al.    & 2017 & Electrical  & SVM + SPC            & R    & No \\
+Amiri et al.       & 2024 & Electrical  & Random Forest        & R    & No \\
+Noura et al.       & 2025 & Electrical  & Extra Trees + XAI    & S    & No \\
+Kull et al.        & 2025 & Electrical  & DBN + LightGBM       & R    & No \\
+Seghiour et al.    & 2023 & Electrical  & Autoencoder          & S    & No \\
+Amiri et al.       & 2024 & Electrical  & CNN + Bi-GRU         & R    & No \\
+Khalil et al.      & 2024 & Electrical  & Transformer          & S    & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Several patterns emerge from this synthesis. First, reported accuracies are consistently high across all modalities and method families, frequently exceeding 95\% and often approaching 100\%. While these figures reflect genuine technical progress, they must be interpreted with caution given that many studies rely on simulated data, use small or class-balanced evaluation sets, or apply validation protocols that do not adequately guard against temporal data leakage. Second, the electrical and meteorological modality is the most extensively represented in the literature, consistent with the observation that operational electrical measurements are the most readily available data type in real PV installations. Third, and most strikingly, not a single reviewed work incorporates an edge deployment constraint or reports inference performance on embedded hardware. The entire reviewed literature assumes unlimited computational budget and centralized processing infrastructure, an assumption increasingly at odds with the operational requirements of distributed PV monitoring systems.
+
+% ────────────────────────────────────────────────────────────
+\section{Research Gap and Motivation}
+\label{sec:gap}
+% ────────────────────────────────────────────────────────────
+
+The preceding review, combined with the dataset landscape analyzed in Section~\ref{sec:datasets}, identifies five interconnected limitations in the existing literature that motivate the specific contributions of this thesis.
+
+\textbf{The impracticality of specialized sensing modalities.} Thermographic approaches require infrared cameras and UAV logistics that are too costly and operationally disruptive for continuous real-time monitoring at scale. I-V curve methods require interrupting power generation and physically isolating modules, which is unfeasible for routine online monitoring of large arrays. These constraints restrict two of the three main diagnostic modalities to periodic, campaign-based inspections rather than continuous monitoring. The operational constraints of real PV plant management motivate an approach that relies exclusively on the electrical and meteorological measurements already produced by standard inverter and sensor infrastructure, enabling continuous monitoring at no additional hardware cost.
+
+\textbf{The dominance of synthetic training data.} As evidenced by Table~\ref{tab:synthesis} and the dataset survey in Section~\ref{sec:datasets}, a significant fraction of the literature trains and evaluates models on data generated through circuit simulation or laboratory emulation. These settings do not capture the sensor noise, missing values, weather-driven nonlinearities, and installation-specific variability that characterize real field operation. As \citet{zwirtes_fault_2025} demonstrated, models trained on one real system can fail substantially when applied to another installation with different hardware characteristics. The high accuracy figures reported on clean simulated datasets are therefore not representative of real-world performance, and this gap motivates working with genuine field measurements from real PV installations.
+
+\textbf{Limited fault diversity and the challenge of subtle faults.} Most reviewed studies address one to three fault types, and many restrict evaluation to faults with clearly discriminative electrical signatures such as short-circuit or open-circuit conditions. The degradation fault is notably underrepresented despite its practical importance: it manifests as a subtle, progressive reduction in module current that is difficult to distinguish from natural performance variability caused by environmental fluctuations. Reconstruction-based anomaly detection models are particularly prone to misclassifying mild degradation as normal operation because they learn to reconstruct the normal manifold and tend to reconstruct subtle deviations well. This limitation motivates an approach that explicitly handles a diverse set of four fault types, including the challenging degradation class, and evaluates diagnostic performance on a per-class basis rather than through aggregate accuracy metrics that can mask poor performance on specific fault categories.
+
+\textbf{The absence of edge deployment constraints.} As shown in Table~\ref{tab:synthesis}, no reviewed work reports the deployment of a diagnostic model on embedded hardware or quantifies inference latency and memory footprint under realistic computational constraints. This represents a significant disconnect between research and practice: PV monitoring systems are increasingly expected to operate at the edge of the network, close to the data source, to minimize communication bandwidth requirements and enable local decision-making. Designing models with edge deployment constraints in mind from the outset, and validating them on resource-constrained hardware, constitutes a contribution that the existing literature has not addressed.
+
+\textbf{The absence of lifecycle management and data drift handling.} PV system characteristics evolve over time as modules age, soiling patterns change seasonally, and environmental conditions shift. Static models trained once and deployed without updating mechanisms are inherently unable to adapt to this distribution shift, leading to gradual performance degradation that is difficult to detect without dedicated monitoring. The existing literature makes no provision for online adaptation, drift detection, or model retraining under operational conditions. An end-to-end pipeline incorporating drift detection mechanisms alongside the diagnostic model represents a practical contribution toward operationally robust PV fault monitoring.
+
+% ────────────────────────────────────────────────────────────
+\section*{Chapter Conclusion}
+% ────────────────────────────────────────────────────────────
+
+This chapter has reviewed the principal data-driven approaches to PV fault detection and diagnosis across three input modalities, characterized the available public datasets, and identified five research gaps in the existing literature. The review established that electrical and meteorological operational measurements represent the most practical and scalable diagnostic modality, that the scarcity of real-world labeled data constitutes a fundamental challenge for the field, and that the absence of edge deployment considerations in the existing literature creates a gap between reported research performance and practical operational requirements. Part~II of this document presents the contributions of this thesis, which directly address each of the identified limitations through a rigorous, reproducible pipeline applied to real PV field data and validated through deployment on an embedded Jetson Nano platform.

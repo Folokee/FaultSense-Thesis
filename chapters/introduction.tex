@@ -1,59 +1,30 @@
 % ============================================================
-% Chapter 1: Introduction
+% General Introduction
 % ============================================================
-\chapter{Introduction}
+\chapter*{General Introduction}
+\addcontentsline{toc}{chapter}{General Introduction}
 \label{ch:introduction}
 
-\section{Background and Motivation}
-\label{sec:background}
+\section*{Context}
 
-Provide the broader context of the research area. Explain why this topic is
-important and relevant to the field. Include background information that helps
-the reader understand the problem domain.
+Over the past two decades, photovoltaic (PV) technology has established itself as one of the fastest-growing sources of electricity in the world. Record-breaking deployment figures have been recorded year after year, with global cumulative installed capacity surpassing 1,400 gigawatts by the end of 2023 and continuing to climb as module costs decline and national climate commitments intensify \citep{iea2024}. This expansion is not merely a market trend. It reflects a profound and necessary restructuring of global energy systems in response to the twin pressures of fossil fuel depletion and climate change. The 2015 Paris Agreement accelerated this shift by committing signatory nations to limit global warming to well below two degrees Celsius, and solar energy has since emerged as a central pillar of decarbonization strategies across virtually every region of the world.
 
-\section{Problem Statement}
-\label{sec:problem}
+Photovoltaic systems are particularly attractive within this context because of several intrinsic advantages that distinguish them from other renewable energy technologies. Their modular architecture allows deployment at scales ranging from a few panels on a residential rooftop to hundreds of megawatts in utility-scale power plants. They operate silently, produce no direct greenhouse gas emissions during generation, and involve relatively low operational and maintenance expenditure once installed. Unlike wind or hydropower, PV systems have no moving parts, which theoretically reduces mechanical failure rates and extends the expected service lifetime of well-maintained installations to twenty-five years or more. These characteristics, combined with continuously improving conversion efficiencies and falling manufacturing costs, make solar photovoltaics a foundational technology for the energy transition.
 
-Clearly state the research problem that this thesis addresses. The problem
-statement should be specific, focused, and researchable. It should highlight
-the gap in existing knowledge or practice that your work aims to fill.
+Algeria occupies a uniquely favorable position within this global context. The country benefits from one of the most abundant solar resources on the African continent, with an average daily irradiance exceeding 5 kilowatt-hours per square meter across most of its territory and a sunshine duration surpassing 3,000 hours per year in the Saharan regions \citep{cder2025}. Recognizing this exceptional potential, the Algerian government has committed to an ambitious national renewable energy plan targeting 15,000 megawatts of installed renewable capacity by 2035, with solar power constituting the dominant share \citep{energygov2025}. The Centre de Développement des Énergies Renouvelables (CDER), the host organization of this thesis, is at the forefront of this national effort. CDER conducts applied research in solar energy characterization, system performance monitoring, and fault management, and is directly involved in a national research project (PNR) dedicated to artificial intelligence-based diagnosis of photovoltaic faults. This thesis is conducted within the framework of that project, reflecting both the scientific relevance and the direct institutional motivation of the work undertaken.
 
-\section{Research Questions}
-\label{sec:questions}
+\section*{Problematic and Motivation}
 
-Formulate the research questions that guide your investigation:
-\begin{enumerate}
-    \item Research question 1?
-    \item Research question 2?
-    \item Research question 3?
-\end{enumerate}
+Despite the theoretical simplicity of photovoltaic conversion, PV installations in the field are susceptible to a wide and diverse range of faults. Partial shading, whether caused by dust accumulation, vegetation growth, or neighboring structures, reduces the output of affected modules and can activate bypass diodes in ways that introduce complex nonlinear dynamics into the electrical behavior of the array. Module degradation, driven by long-term exposure to ultraviolet radiation, thermal cycling, and humidity ingress, manifests as a gradual and often imperceptible decline in current generation that is difficult to distinguish from natural performance variability. Short-circuit faults and open-circuit failures, by contrast, produce abrupt electrical signatures that are more readily detectable but can, if unaddressed, evolve into fire hazards. Each of these fault types leaves a characteristic footprint in the voltage, current, and power measurements of the affected string, making the operational data of the system a rich source of diagnostic information \citep{navid2021}.
 
-\section{Research Objectives}
-\label{sec:objectives}
+The economic consequences of undetected faults are significant and well-documented. A comprehensive technical risk assessment conducted under the International Energy Agency's Photovoltaic Power Systems Programme found that faults in grid-connected PV plants account for substantial annual energy losses and, in some cases, irreversible equipment damage \citep{herz2021}. Degradation faults are particularly insidious in this regard: because they develop gradually, they can persist unnoticed for extended periods, quietly eroding the energy yield of a system whose nominal output figures suggest normal operation. The cumulative financial impact of such losses, compounded across the lifetime of a large installation, can amount to millions of euros in foregone revenue and unnecessary replacement costs.
 
-List the objectives that your research aims to achieve:
-\begin{enumerate}
-    \item Objective 1.
-    \item Objective 2.
-    \item Objective 3.
-\end{enumerate}
+Traditional approaches to PV monitoring rely on periodic manual inspection by qualified technicians. Such inspections are costly, infrequent, and practically unfeasible at the scale of modern solar farms, which may encompass thousands of modules distributed across hundreds of hectares. This mismatch between the granularity of real-world fault development and the coarseness of manual inspection creates a critical operational gap. Automated fault detection and diagnosis (FDD) systems address this gap by continuously analyzing the electrical and meteorological data already produced by inverters and monitoring sensors, enabling the detection of anomalies in near real-time and the classification of their type with sufficient precision to guide targeted maintenance interventions \citep{elbanby2023}. The transition from reactive to condition-based maintenance that such systems enable has been shown to reduce operational and maintenance costs substantially, making automated FDD not only a technical objective but also a compelling economic case for plant operators.
 
-\section{Contributions}
-\label{sec:contributions}
+A fundamental challenge in building effective AI-based FDD systems lies in the nature of real-world PV data. Field measurements are subject to sensor noise, communication interruptions that produce missing values, and severe class imbalance since fault conditions represent only a small fraction of total operational time. Furthermore, the diversity of PV installations, spanning different hardware configurations, climatic environments, and sampling rates, means that a model trained on data from one system may fail to generalize to another \citep{belhachat2024overview}. Addressing these challenges requires not only a well-chosen model architecture but a rigorous end-to-end data pipeline with explicit mechanisms for handling real-world data imperfections and with safeguards against the data leakage that has been shown to inflate reported performance in much of the existing literature.
 
-Summarize the main contributions of this thesis:
-\begin{itemize}
-    \item Contribution 1.
-    \item Contribution 2.
-    \item Contribution 3.
-\end{itemize}
+\section*{Objectives}
 
-\section{Thesis Structure}
-\label{sec:structure}
+This thesis pursues three main objectives that together constitute a complete, reproducible, and operationally grounded AI-based FDD solution for photovoltaic systems. The first objective consists in developing a rigorous and reproducible data pipeline, spanning raw data ingestion, temporal splitting, preprocessing, and feature engineering, that is capable of handling the imperfections inherent in real-world PV measurements and that incorporates explicit mechanisms to prevent data leakage throughout the model development process. The second objective consists in proposing and systematically evaluating cost-effective, lightweight machine learning and deep learning architectures for two complementary diagnostic tasks: anomaly detection, which identifies whether a system is operating under fault conditions, and fault classification, which determines the specific fault type responsible for an observed deviation. These architectures are evaluated not only on their diagnostic accuracy but on their suitability for deployment under the computational constraints of embedded hardware. The third objective consists in deploying the validated solution on a Jetson Nano embedded platform and developing a graphical user interface for real-time system monitoring, thereby bridging the gap between laboratory model performance and operational field deployment and demonstrating the practical viability of the proposed approach at the edge.
 
-Provide a brief overview of the structure of the remainder of the thesis.
-Chapter~\ref{ch:literature-review} reviews the relevant literature.
-Chapter~\ref{ch:methodology} describes the methodology.
-Chapter~\ref{ch:results} presents the results.
-Chapter~\ref{ch:discussion} discusses the findings.
-Chapter~\ref{ch:conclusion} concludes the thesis and outlines future work.
+The remainder of this document is organized as follows. Part~I presents a comprehensive state of the art. Chapter~\ref{ch:pv-systems} introduces the theoretical foundations of photovoltaic systems and establishes a structured fault taxonomy. Chapter~\ref{ch:ai-background} reviews the artificial intelligence methods most relevant to the problem of FDD. Chapter~\ref{ch:related-work} surveys the existing literature on data-driven PV fault detection and diagnosis, analyzes the available datasets in this field, and identifies the research gaps that motivate the contributions of this work. Part~II then presents the contributions. Chapter~\ref{ch:pipeline} describes the data pipeline and experimental setup. Chapter~\ref{ch:features} details the feature engineering methodology. Chapter~\ref{ch:detection} presents the anomaly detection results. Chapter~\ref{ch:classification} presents the fault classification results. Chapter~\ref{ch:deployment} describes the edge deployment on the Jetson Nano platform and the associated graphical interface. A general conclusion closes the document with a synthesis of findings, a discussion of limitations, and perspectives for future work.
