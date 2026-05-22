@@ -66,11 +66,6 @@
 % Abstract
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
-Renewable energy sources, particularly photovoltaic (PV) systems, play an increasingly vital role in addressing global energy demands and environmental sustainability. As PV installations scale rapidly worldwide, ensuring their reliable and efficient operation becomes a critical engineering challenge. Faults arising from component degradation, environmental stressors, or electrical anomalies can significantly reduce energy yield and compromise system safety if left undetected.
-
-This work provides a comprehensive review of fault detection, classification, and prediction methods for PV systems. A structured fault taxonomy is established to characterize the diverse types of failures that affect PV installations. Two major diagnostic families are then examined: model-driven approaches, which rely on physical representations of system behavior, and data-driven approaches, which leverage machine learning and deep learning techniques to extract patterns from operational data.
-
-Key open challenges and emerging research directions are identified to guide the development of more robust, scalable, and intelligent PV monitoring solutions. The findings highlight the complementarity of both paradigms and the potential of their convergence toward autonomous and adaptive fault diagnosis frameworks.
 
 \vspace{1cm}
 \noindent\textbf{Keywords:} photovoltaic systems, fault detection and diagnosis, machine learning, deep learning, predictive maintenance.
@@ -102,16 +97,13 @@ Key open challenges and emerging research directions are identified to guide the
 % ── Main matter ─────────────────────────────────────────────
 \pagenumbering{arabic}
 
-\input{chapters/introduction}
-\input{chapters/literature-review}
-\input{chapters/methodology}
-\input{chapters/results}
-\input{chapters/discussion}
-\input{chapters/conclusion}
+\input{chapters/01-pv-systems-fdd}
+\input{chapters/02-ml-methods}
+
 
 % ── Bibliography ────────────────────────────────────────────
 \bibliographystyle{apalike}
-\bibliography{references}
+\bibliography{references,zotero_refs}
 
 % ── Appendices ──────────────────────────────────────────────
 \appendix
