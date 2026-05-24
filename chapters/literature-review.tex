@@ -8,7 +8,7 @@ The field of fault detection and diagnosis in photovoltaic systems has attracted
 
 % ────────────────────────────────────────────────────────────
 \section{Data Survey}
-\label{sec:datasets}
+\label{sec:data-survey}
 % ────────────────────────────────────────────────────────────
 
 The availability of labeled, high-quality data is the foundational prerequisite for any supervised or semi-supervised learning approach to PV fault diagnosis. A comprehensive survey of open datasets for assessing PV system reliability highlights a striking asymmetry in the current data landscape: fault-labeled datasets collected from real field installations are rare, primarily because acquiring them requires either waiting for faults to occur naturally, a process that may span years, or organizing dedicated measurement campaigns in which fault conditions are artificially induced under controlled conditions \citep{chen2025datasets}. Simulated datasets, by contrast, can be readily reproduced from circuit models using tools such as MATLAB/Simulink and are consequently far more abundant in the literature, though their idealized statistical properties limit their relevance to real operational scenarios. Table~\ref{tab:datasets} provides a structured overview of the main publicly available datasets, distinguishing between fault-labeled datasets and unlabeled performance datasets; datasets used in this work are marked with~($\star$).
@@ -132,7 +132,7 @@ Three patterns emerge from this synthesis. First, reported accuracies are consis
 \label{sec:gap}
 % ────────────────────────────────────────────────────────────
 
-The preceding review, combined with the dataset landscape analyzed in Section~\ref{sec:datasets}, identifies five interconnected gaps in the existing literature that motivate the specific contributions of this thesis.
+The preceding review, combined with the dataset landscape analyzed in Section~\ref{sec:data-survey}, identifies five interconnected gaps in the existing literature that motivate the specific contributions of this thesis.
 
 \textbf{The operational profile of imaging-based and sweep-based modalities.} Thermographic approaches inspect modules through dedicated infrared cameras carried by unmanned aerial vehicles, with per-campaign costs in the range of 0.5 to 3.0 euros per module \citep{herz2021} and a cadence that is inherently event-driven rather than continuous. I-V curve methods rely on an active sweep of the module or string operating point; recent inverter-integrated solutions have considerably reduced the operational overhead of this sweep, but the procedure remains a discrete diagnostic event and depends on vendor-specific hardware. The operational electrical and meteorological measurements continuously produced by standard inverters and meteo sensors, by contrast, are already part of the instrumentation deployed for plant performance monitoring and do not require any fault-detection-specific hardware. This motivates anchoring the proposed approach on these continuously available channels, which together form the data type that any grid-connected installation already supplies.
 

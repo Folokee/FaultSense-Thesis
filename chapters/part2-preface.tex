@@ -1,0 +1,29 @@
+% ============================================================
+% Part II — Preface
+% ============================================================
+
+\newpage
+\thispagestyle{plain}
+\vspace*{2cm}
+
+{\noindent\large\bfseries Part II — Contributions}
+
+\vspace{1.2cm}
+
+\noindent Part~I established the theoretical foundations of this work: the physics of photovoltaic systems and their failure modes, the machine learning and deep learning methods relevant to fault detection and diagnosis, and the state of the art that defines the open problems this work addresses. Part~II presents the original contributions.
+
+\vspace{0.6cm}
+
+\noindent Three contributions structure this part. First, a reproducible, leakage-controlled data pipeline is constructed and validated on two independent real-world field datasets, demonstrating architectural portability across distinct field sites. Second, both diagnostic tasks are evaluated at the per-class level, providing a fine-grained characterization of each method's diagnostic capability under real field conditions, beyond what aggregate metrics alone can reveal. Third, the complete system is deployed on a Jetson Nano edge platform with drift detection and on-device retraining, closing the loop between offline training and operational use.
+
+\vspace{0.6cm}
+
+\noindent \textbf{Chapter~\ref{ch:design}} defines the shared experimental infrastructure common to both tasks: the formal system model, the data pipeline, the splitting and preprocessing protocols, the feature engineering profiles, and the evaluation methodology.
+
+\noindent \textbf{Chapter~\ref{ch:detection}} presents the anomaly detection task (Task~A): a semi-supervised formulation and a comparative evaluation across classical and deep learning methods.
+
+\noindent \textbf{Chapter~\ref{ch:classification}} presents the fault classification task (Task~B): a multi-class tournament on real fault data, with a dedicated leakage validation of the headline result.
+
+\noindent \textbf{Chapter~\ref{ch:deployment}} presents the edge deployment: ONNX model export, Jetson Nano benchmarks, the monitoring graphical interface, and the operational drift detection and on-device retraining loop.
+
+\clearpage
