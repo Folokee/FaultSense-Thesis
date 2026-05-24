@@ -1,8 +1,564 @@
 % ============================================================
-% Bibliography — Add your references below
+% Bibliography — FaultSense PFE Thesis
+% Migrated from master-thesis/bibliography/ + new entries
 % ============================================================
 
-% ── Add your references below this line ─────────────────────
+% ── Global context & Algeria ────────────────────────────────
+
+@techreport{irena_costs2025,
+  title       = {Renewable Power Generation Costs in 2024},
+  author      = {{International Renewable Energy Agency}},
+  year        = {2025},
+  institution = {International Renewable Energy Agency},
+  address     = {Abu Dhabi},
+}
+
+@techreport{irena2026,
+  title        = {Renewable Capacity Statistics 2026},
+  author       = {{International Renewable Energy Agency}},
+  year         = {2026},
+  institution  = {International Renewable Energy Agency},
+  address      = {Abu Dhabi},
+}
+
+@misc{iea2024,
+  title        = {Renewables 2024: Analysis and Forecast to 2030},
+  author       = {{International Energy Agency}},
+  year         = {2024},
+  howpublished = {\url{https://www.iea.org/reports/renewables-2024}},
+  note         = {Revised version, October 2024. Licence: IEA CC BY 4.0},
+}
+
+@techreport{herz2021,
+  title       = {Quantification of Technical Risks in {PV} Power Systems},
+  author      = {Herz, Magnus and Friesen, Gabi and Jahn, Ulrike and K{\"o}ntges, Marc and Lindig, Sascha and Moser, David},
+  institution = {{IEA} {PVPS} Task 13},
+  year        = {2021},
+  number      = {IEA-PVPS T13-23:2021},
+  address     = {Paris, France},
+  isbn        = {978-3-907281-11-6},
+}
+
+@techreport{cder2025,
+  title        = {Solar Energy and Photovoltaic Deployment Context in Algeria},
+  institution  = {Centre de D{\'e}veloppement des {\'E}nergies Renouvelables},
+  year         = {2025},
+  address      = {Algiers, Algeria},
+  note         = {Internal report},
+}
+
+@misc{energygov2025,
+  author       = {{Algerian Ministry of Energy and Mines}},
+  title        = {Renewable Energies},
+  year         = {2025},
+  howpublished = {\url{https://www.energy.gov.dz/en/1408/renewable-energies-re}},
+  note         = {Accessed: February 2026},
+}
+
+% ── Datasets ────────────────────────────────────────────────
+
+@article{costa2020sensors,
+  author  = {Costa, Clayton H. and de Oliveira Boaventura, Igor and de Souza Grillo, Daniel and {Tadim}, Marcus V. and {Cust{\'o}dio}, Igor},
+  title   = {A method for identification of photovoltaic array faults using electrical measurements},
+  journal = {Sensors},
+  volume  = {20},
+  number  = {17},
+  pages   = {4688},
+  year    = {2020},
+  doi     = {10.3390/s20174688},
+}
+
+@article{bakdi2021gpvs,
+  author  = {Bakdi, Azzeddine and Bounoua, Wahiba and Guichi, Amar and Mekhilef, Saad},
+  title   = {Real-time fault detection in {PV} systems under {MPPT} using {PMU} and high-frequency multi-sensor data through online {PCA}-{KDE}-based multivariate {KL} divergence},
+  journal = {International Journal of Electrical Power \& Energy Systems},
+  volume  = {125},
+  pages   = {106457},
+  year    = {2021},
+  doi     = {10.1016/j.ijepes.2020.106457},
+}
+
+@article{chen2025datasets,
+  author  = {Chen, Zonghao and Bhatt, Dhruv and Rabelo, Luis and Gao, Wenzhong},
+  title   = {Open datasets for assessing photovoltaic system reliability},
+  journal = {Applied Energy},
+  volume  = {395},
+  pages   = {124052},
+  year    = {2025},
+  doi     = {10.1016/j.apenergy.2025.124052},
+}
+
+@misc{pvdaq2023,
+  author       = {{National Renewable Energy Laboratory}},
+  title        = {{PVDAQ}: Photovoltaic Data Acquisition},
+  year         = {2023},
+  howpublished = {\url{https://openei.org/wiki/PVDAQ}},
+  note         = {Accessed: January 2026},
+}
+
+@article{skipd2023,
+  author  = {Nie, Yuhao and Zeiler, Quentin and Bhatt, Dhruv and Karimi, Behnam and Blum, Helene and Huizinga, Johan and Buchanan, Krzysztof and Flohr, Matthias},
+  title   = {{SKIPP'D}: A {SKy} Images and Photovoltaic Power Generation Dataset for short-term solar forecasting},
+  journal = {Solar Energy},
+  volume  = {255},
+  pages   = {171--179},
+  year    = {2023},
+  doi     = {10.1016/j.solener.2023.03.043},
+}
+
+@article{srisiri_artificial_2025,
+  author  = {Srisiri, Wachira and Leemput, Niek and Phimphui, Issaraporn and Aurasopon, Apinan and Thippayawat, Phansak and Sa-ngiamvibool, Woravijit},
+  title   = {Artificial Intelligent Power Analyzers for the Identification and Classification of Faults in {PV} Systems},
+  journal = {Scientific Reports},
+  volume  = {16},
+  number  = {1},
+  pages   = {1110},
+  year    = {2025},
+  doi     = {10.1038/s41598-025-30678-y},
+}
+
+% ── Review and survey papers ────────────────────────────────
+
+@article{navid2021,
+  author  = {Navid, Qadeer and Hassan, Amjad and Fardoun, Abdullah A. and Ramzan, Rehan and Alraeesi, Ali},
+  title   = {Fault Diagnostic Methodologies for Utility-Scale Photovoltaic Power Plants: A State of the Art Review},
+  journal = {Sustainability},
+  volume  = {13},
+  number  = {4},
+  pages   = {1629},
+  year    = {2021},
+  doi     = {10.3390/su13041629},
+}
+
+@article{elbanby2023,
+  author  = {El-Banby, G.M. and Moawad, N.M. and Abouzalm, B.A. and Abouzaid, W.F. and Ramadan, E.A.},
+  title   = {Photovoltaic system fault detection techniques: a review},
+  journal = {Neural Computing and Applications},
+  volume  = {35},
+  pages   = {24829--24842},
+  year    = {2023},
+  doi     = {10.1007/s00521-023-09041-7},
+}
+
+@article{belhachat2024overview,
+  author  = {Belhachat, F. and Larbes, C. and Bennia, R.},
+  title   = {Recent advances in fault detection techniques for photovoltaic systems: An overview, classification and performance evaluation},
+  journal = {Optik},
+  volume  = {306},
+  pages   = {171797},
+  year    = {2024},
+  doi     = {10.1016/j.ijleo.2024.171797},
+}
+
+@article{dasilva_fault_2025,
+  author  = {Da Silva, Rafael Issa and De Oliveira, Joylan Nunes and Escobar, Arnaldo Mendez and Neto, Ademar Virgolino da Silva},
+  title   = {Fault detection framework for photovoltaic systems: a comprehensive review and future directions},
+  journal = {Evolutionary Intelligence},
+  year    = {2025},
+  doi     = {10.1007/s12065-025-01086-y},
+}
+
+@article{lema_conventional_2024,
+  author  = {Lema, Chernet Berhanu and Gyan, Frank and Ochieng, Fred Otieno and Munda, Josiah L.},
+  title   = {Conventional and Machine Learning--Based Fault Detection and Diagnosis Methods for Photovoltaic Systems: A Review},
+  journal = {International Journal of Photoenergy},
+  volume  = {2024},
+  pages   = {5517822},
+  year    = {2024},
+  doi     = {10.1155/2024/5517822},
+}
+
+@article{zenebe2022,
+  author    = {Zenebe, Tewodros M. and Midtg{\aa}rd, Ole M. and V{\"o}ller, Stefanie and Cali, {\"U}nal},
+  title     = {Machine Learning for PV System Operational Fault Analysis: Literature Review},
+  booktitle = {Intelligent Technologies and Applications},
+  journal   = {Communications in Computer and Information Science},
+  volume    = {1616},
+  pages     = {339--358},
+  publisher = {Springer},
+  year      = {2022},
+  doi       = {10.1007/978-3-031-10525-8_27},
+}
+
+% ── Thermal image-based methods ─────────────────────────────
+
+@article{manno2021thermal,
+  author  = {Manno, D. and Cipriani, G. and Ciulla, G. and Di Dio, V. and Guarino, S. and Lo Brano, V.},
+  title   = {Deep learning strategies for automatic fault diagnosis in photovoltaic systems by thermographic images},
+  journal = {Energy Conversion and Management},
+  volume  = {241},
+  pages   = {114315},
+  year    = {2021},
+  doi     = {10.1016/j.enconman.2021.114315},
+}
+
+@article{akram2020transfer,
+  author  = {Akram, M. Waqar and Li, Guiqiang and Jin, Yi and Chen, Xiao and Zhu, Changan and Zhao, Xudong and Khaliq, Abdul and Faheem, M. and Ahmad, Ashfaq},
+  title   = {Automatic detection of photovoltaic module defects in infrared images with isolated and develop-model transfer deep learning},
+  journal = {Solar Energy},
+  volume  = {198},
+  pages   = {175--186},
+  year    = {2020},
+  doi     = {10.1016/j.solener.2020.01.055},
+}
+
+@article{korkmaz2022multiscale,
+  author  = {Korkmaz, Deniz and Acikgoz, Hakan},
+  title   = {An efficient fault classification method in solar photovoltaic modules using transfer learning and multi-scale convolutional neural network},
+  journal = {Engineering Applications of Artificial Intelligence},
+  volume  = {113},
+  pages   = {104959},
+  year    = {2022},
+  doi     = {10.1016/j.engappai.2022.104959},
+}
+
+@article{xie2024styolo,
+  author  = {Xie, Hanfei and Yuan, Baoxi and Hu, Chengyu and Gao, Yujie and Wang, Feng and Wang, Chunlan and Wang, Yuqian and Chu, Peng},
+  title   = {{ST-YOLO}: A defect detection method for photovoltaic modules based on infrared thermal imaging and machine vision technology},
+  journal = {PLOS ONE},
+  volume  = {19},
+  number  = {12},
+  pages   = {e0310742},
+  year    = {2024},
+  doi     = {10.1371/journal.pone.0310742},
+}
+
+@article{dhimish2025hotspot,
+  author  = {Dhimish, Mahmoud},
+  title   = {{HOTSPOT-YOLO}: A Lightweight Deep Learning Attention-Driven Model for Detecting Thermal Anomalies in Drone-Based Solar Photovoltaic Inspections},
+  journal = {arXiv preprint arXiv:2508.18912},
+  year    = {2025},
+}
+
+@article{gong2024deep,
+  author  = {Gong, Bin and An, Aimin and Shi, Yaoke and Zhang, Xuemin},
+  title   = {Fast fault detection method for photovoltaic arrays with adaptive deep multiscale feature enhancement},
+  journal = {Applied Energy},
+  volume  = {353},
+  pages   = {122071},
+  year    = {2024},
+  doi     = {10.1016/j.apenergy.2023.122071},
+}
+
+% ── I-V curve-based methods ─────────────────────────────────
+
+@article{chen2017,
+  author  = {Chen, Zhicong and Wu, Lijun and Cheng, Shuying and Lin, Peijie and Wu, Yue and Lin, Wencheng},
+  title   = {Intelligent fault diagnosis of photovoltaic arrays based on optimized kernel extreme learning machine and {I--V} characteristics},
+  journal = {Applied Energy},
+  volume  = {204},
+  pages   = {912--931},
+  year    = {2017},
+  doi     = {10.1016/j.apenergy.2017.05.034},
+}
+
+@article{eskandari2020,
+  author  = {Eskandari, Aref and Milimonfared, Jafar and Aghaei, Mohammadreza},
+  title   = {Line-line fault detection and classification for photovoltaic systems using ensemble learning model based on {I--V} characteristics},
+  journal = {Solar Energy},
+  volume  = {211},
+  pages   = {354--365},
+  year    = {2020},
+  doi     = {10.1016/j.solener.2020.09.071},
+}
+
+@article{liu2021sae,
+  author  = {Liu, Yongjie and Ding, Kun and Zhang, Jingwei and Li, Yuanliang and Yang, Zenan and Zheng, Wenming and Chen, Xiang},
+  title   = {Fault diagnosis approach for photovoltaic array based on the stacked auto-encoder and clustering with {I--V} curves},
+  journal = {Energy Conversion and Management},
+  volume  = {245},
+  pages   = {114603},
+  year    = {2021},
+  doi     = {10.1016/j.enconman.2021.114603},
+}
+
+@article{qu2024dust,
+  author  = {Qu, Jiaqi and Sun, Qiang and Qian, Zheng and Wei, Lu and Zareipour, Hamidreza},
+  title   = {Fault diagnosis for {PV} arrays considering dust impact based on transformed graphical features of characteristic curves and convolutional neural network with {CBAM} modules},
+  journal = {Applied Energy},
+  volume  = {355},
+  pages   = {122252},
+  year    = {2024},
+  doi     = {10.1016/j.apenergy.2023.122252},
+}
+
+@article{bressan2016,
+  author  = {Bressan, M. and El Basri, Y. and Galeano, A. G. and Alonso, C.},
+  title   = {A shadow fault detection method based on the standard error analysis of {I--V} curves},
+  journal = {Renewable Energy},
+  volume  = {99},
+  pages   = {1181--1190},
+  year    = {2016},
+  doi     = {10.1016/j.renene.2016.08.028},
+}
+
+% ── Electrical / meteorological ML methods ──────────────────
+
+@article{garoudja2017ml,
+  author  = {Garoudja, Elyes and Chouder, Aissa and Kara, Kamel and Silvestre, Santiago},
+  title   = {An enhanced machine learning based approach for failures detection and diagnosis of {PV} systems},
+  journal = {Energy Conversion and Management},
+  volume  = {151},
+  pages   = {496--513},
+  year    = {2017},
+  doi     = {10.1016/j.enconman.2017.09.019},
+}
+
+@article{amiri2024rf,
+  author  = {Amiri, Ahmed Faris and Oudira, Houcine and Chouder, Aissa and Kichou, Sofiane},
+  title   = {Faults detection and diagnosis of {PV} systems based on machine learning approach using random forest classifier},
+  journal = {Energy Conversion and Management},
+  volume  = {301},
+  pages   = {118076},
+  year    = {2024},
+  doi     = {10.1016/j.enconman.2024.118076},
+}
+
+@article{noura_explainable_2025,
+  author  = {Noura, Hassan N. and Allal, Zaid and Salman, Ola and Chahine, Khaled},
+  title   = {Explainable artificial intelligence of tree-based algorithms for fault detection and diagnosis in grid-connected photovoltaic systems},
+  journal = {Engineering Applications of Artificial Intelligence},
+  volume  = {139},
+  pages   = {109503},
+  year    = {2025},
+  doi     = {10.1016/j.engappai.2024.109503},
+}
+
+@article{kull_adaptive_2025,
+  author  = {Kull, Karl and Khan, Muhammad Amir and Asad, Bilal and Naseer, Muhammad and Kallaste, Ants and Vaimann, Toomas},
+  title   = {Adaptive Deep Belief Networks and {LightGBM}-Based Hybrid Fault Diagnostics for {SCADA}-Managed {PV} Systems: A Real-World Case Study},
+  journal = {Electronics},
+  volume  = {14},
+  pages   = {3649},
+  year    = {2025},
+  doi     = {10.3390/electronics14183649},
+}
+
+@article{kabir_isolation_2023,
+  author  = {Kabir, Shaharier and Shufian, Abu and Zishan, Md. Saniat Rahman},
+  title   = {Isolation Forest Based Anomaly Detection and Fault Localization for Solar {PV} System},
+  booktitle = {2023 3rd International Conference on Robotics, Electrical and Signal Processing Techniques (ICREST)},
+  journal = {ICREST},
+  pages   = {341--345},
+  year    = {2023},
+  doi     = {10.1109/ICREST57604.2023.10070033},
+}
+
+@article{suliman2024ml,
+  author  = {Suliman, Fouad and Anayi, Fatih and Packianather, Michael},
+  title   = {Electrical faults analysis and detection in photovoltaic arrays based on machine learning classifiers},
+  journal = {Sustainability},
+  volume  = {16},
+  pages   = {1102},
+  year    = {2024},
+  doi     = {10.3390/su16031102},
+}
+
+@article{zwirtes_fault_2025,
+  author  = {Zwirtes, Jossias and L{\'i}bano, Fausto and Silva, Luis and Pignaton de Freitas, Edison},
+  title   = {Fault Detection in Photovoltaic Systems Using a Machine Learning Approach},
+  journal = {IEEE Access},
+  volume  = {13},
+  pages   = {1--1},
+  year    = {2025},
+  doi     = {10.1109/ACCESS.2025.3547838},
+}
+
+@article{fazai2019,
+  author  = {Fazai, R. and Abodayeh, K. and Mansouri, M. and Trabelsi, M. and Nounou, H. and Nounou, M. and Georghiou, G. E.},
+  title   = {Machine learning-based statistical testing hypothesis for fault detection in photovoltaic systems},
+  journal = {Solar Energy},
+  volume  = {190},
+  pages   = {405--413},
+  year    = {2019},
+  doi     = {10.1016/j.solener.2019.08.032},
+}
+
+% ── Electrical / meteorological DL methods ──────────────────
+
+@article{amiri2024dl,
+  author  = {Amiri, Ahmed Faris and Kichou, Sofiane and Oudira, Houcine and Chouder, Aissa and Silvestre, Santiago},
+  title   = {Fault detection and diagnosis of a photovoltaic system based on deep learning using the combination of {CNN} and {Bi-GRU}},
+  journal = {Sustainability},
+  volume  = {16},
+  pages   = {1012},
+  year    = {2024},
+  doi     = {10.3390/su16031012},
+}
+
+@article{seghiour2023autoencoder,
+  author  = {Seghiour, Abdellatif and Ait Abbas, Hamou and Chouder, Aissa and Rabhi, Abdlhamid},
+  title   = {Deep learning method based on autoencoder neural network applied to faults detection and diagnosis of photovoltaic system},
+  journal = {Simulation Modelling Practice and Theory},
+  volume  = {123},
+  pages   = {102704},
+  year    = {2023},
+  doi     = {10.1016/j.simpat.2022.102704},
+}
+
+@article{titouni_hybrid_2025,
+  author  = {Titouni, Salem and Hammache, Boualem and Belazzoug, Massinissa and Himeur, Yassine and Messaoudene, Idris and Oulefki, Adel and Dawoud, Diana W. and Chetouah, Farouk and Atalla, Shadi and Mansoor, Wathiq},
+  title   = {Hybrid {CNN}-Autoencoder model for accurate and efficient fault diagnosis in grid-connected photovoltaic systems},
+  journal = {International Journal of Electrical Power \& Energy Systems},
+  volume  = {173},
+  pages   = {111454},
+  year    = {2025},
+  doi     = {10.1016/j.ijepes.2025.111454},
+}
+
+@article{yan_som-dbtgnet_2025,
+  author  = {Yan, Peng and Zheng, Shaokai and Huang, Zhi and Peng, Lei and Liu, Jiawen and Wang, Daolei},
+  title   = {{SOM}-{DBTGNet}: A hybrid {PV} fault diagnosis method integrating self-organizing maps and dual-branch temporal graph convolution network},
+  journal = {Process Safety and Environmental Protection},
+  volume  = {204},
+  pages   = {108148},
+  year    = {2025},
+  doi     = {10.1016/j.psep.2025.108148},
+}
+
+@article{desouzasilva2024,
+  author  = {De Souza Silva, J.L. and Mahmoudi, E. and Carvalho, R.R.M. and Dos Santos Barros, T.A.},
+  title   = {Classification of anomalies in photovoltaic systems using supervised machine learning techniques and real data},
+  journal = {Energy Reports},
+  volume  = {11},
+  pages   = {4642--4656},
+  year    = {2024},
+  doi     = {10.1016/j.egyr.2024.04.040},
+}
+
+@article{attouri_adaptive_2026,
+  author  = {Attouri, Khadija and Mansouri, Majdi and Kouadri, Abdelmalek},
+  title   = {Adaptive {PolyKAN}-based autoencoder for fault detection and classification in wind and solar power systems},
+  journal = {Ain Shams Engineering Journal},
+  volume  = {17},
+  number  = {1},
+  pages   = {103884},
+  year    = {2026},
+  doi     = {10.1016/j.asej.2025.103884},
+}
+
+@article{cai2022arc,
+  author  = {Cai, Xuerong and Wai, Rong-Jong},
+  title   = {Intelligent {DC} arc-fault detection of solar {PV} power generation system via optimized {VMD}-based signal processing and {PSO--SVM} classifier},
+  journal = {IEEE Journal of Photovoltaics},
+  volume  = {12},
+  number  = {4},
+  pages   = {1058--1077},
+  year    = {2022},
+  doi     = {10.1109/JPHOTOV.2022.3166919},
+}
+
+@article{hichri2024salp,
+  author  = {Hichri, Amal and Hajji, Mansour and Mansouri, Majdi and Nounou, Hazem and Bouzrara, Kais},
+  title   = {Supervised machine learning-based salp swarm algorithm for fault diagnosis of photovoltaic systems},
+  journal = {Journal of Engineering and Applied Science},
+  volume  = {71},
+  number  = {12},
+  year    = {2024},
+  doi     = {10.1186/s44147-023-00344-z},
+}
+
+@article{liu2024mlsc,
+  author  = {Liu, Bo and Sun, Kai and Wang, Xiaoyu and Zhao, Jian and Hou, Xiaochao},
+  title   = {Fault diagnosis of photovoltaic strings by using machine learning-based stacking classifier},
+  journal = {IET Renewable Power Generation},
+  volume  = {18},
+  pages   = {384--397},
+  year    = {2024},
+  doi     = {10.1049/rpg2.12755},
+}
+
+@article{vieira2022mlp,
+  author  = {Vieira, Romenia Gurgel and Dhimish, Mahmoud and Ara{\'u}jo, Fabio Meneghetti Ugulino de and Guerra, Maria Izabel da Silva},
+  title   = {Comparing multilayer perceptron and probabilistic neural network for {PV} systems fault detection},
+  journal = {Expert Systems with Applications},
+  volume  = {201},
+  pages   = {117248},
+  year    = {2022},
+  doi     = {10.1016/j.eswa.2022.117248},
+}
+
+@article{harrou2018reliable,
+  author  = {Harrou, Fouzi and Sun, Ying and Taghezouit, Bilal and Saidi, Ahmed and Hamlati, Mohamed-Elkarim},
+  title   = {Reliable fault detection and diagnosis of photovoltaic systems based on statistical monitoring approaches},
+  journal = {Renewable Energy},
+  volume  = {116},
+  pages   = {22--37},
+  year    = {2018},
+  doi     = {10.1016/j.renene.2017.09.048},
+}
+
+@article{chahine_tree-based_2025,
+  author  = {Chahine, Khaled},
+  title   = {Tree-Based Algorithms and Incremental Feature Optimization for Fault Detection and Diagnosis in Photovoltaic Systems},
+  journal = {Eng},
+  volume  = {6},
+  pages   = {20},
+  year    = {2025},
+  doi     = {10.3390/eng6010020},
+}
+
+@article{saiprakash_improved_2024,
+  author  = {Saiprakash, Chidurala and Kumar Joga, S Ramana and Mohapatra, Alivarani and Nayak, Byamakesh},
+  title   = {Improved fault detection and classification in {PV} arrays using stockwell transform and data mining techniques},
+  journal = {Results in Engineering},
+  volume  = {23},
+  pages   = {102808},
+  year    = {2024},
+  doi     = {10.1016/j.rineng.2024.102808},
+}
+
+@article{Hasan2026PVDegradation,
+  author  = {Hasan, A. A. Q. and Zuhdi, A. W. M. and Al-Shetwi, A. Q. and others},
+  title   = {Investigating Long-Term Degradation and Defects of Solar Photovoltaic Modules in Tropical Climates: A Case Study of Malaysia},
+  journal = {IET Renewable Power Generation},
+  volume  = {20},
+  number  = {1},
+  pages   = {e70198},
+  year    = {2026},
+  doi     = {10.1049/rpg2.70198},
+}
+
+@article{hajji2023irradiance,
+  author  = {Hajji, Mansour and Yahyaoui, Zahra and Mansouri, Majdi and Nounou, Hazem and Nounou, Mohamed},
+  title   = {Fault detection and diagnosis in grid-connected {PV} systems under irradiance variations},
+  journal = {Energy Reports},
+  volume  = {9},
+  pages   = {4005--4017},
+  year    = {2023},
+  doi     = {10.1016/j.egyr.2023.03.033},
+}
+
+@article{qu2022unsupervised,
+  author  = {Qu, Jiaqi and Qian, Zheng and Pei, Yan and Wei, Lu and Zareipour, Hamidreza and Sun, Qiang},
+  title   = {Unsupervised hourly weather status pattern recognition and blending fitting model for {PV} system fault detection},
+  journal = {Applied Energy},
+  volume  = {319},
+  pages   = {119271},
+  year    = {2022},
+  doi     = {10.1016/j.apenergy.2022.119271},
+}
+
+@article{wang_online_2022,
+  author  = {Wang, Mengyuan and Xu, Xiaoyuan and Yan, Zheng},
+  title   = {Online fault diagnosis of {PV} array considering label errors based on distributionally robust logistic regression},
+  journal = {Renewable Energy},
+  volume  = {203},
+  pages   = {68--80},
+  year    = {2022},
+  doi     = {10.1016/j.renene.2022.12.048},
+}
+
+@article{zheng_advancements_2024,
+  author  = {Zheng, Junyao},
+  title   = {Advancements in Fault Detection of Photovoltaic Systems: Machine Learning and Signal Processing Approaches},
+  journal = {Journal of Materials Science and Chemical Engineering},
+  volume  = {12},
+  number  = {6},
+  pages   = {42--56},
+  year    = {2024},
+  doi     = {10.4236/msce.2024.126001},
+}
 
 % ── PV systems — fundamental textbooks ──────────────────────
 
