@@ -1,0 +1,133 @@
+\chapter{Data Pipeline Implementation and Experimental Setup}
+
+\section{Introduction}
+
+Following the design phase outlined in the previous chapter, this chapter details the implementation of the data pipeline, specifically the data ingestion, splitting, preprocessing and
+feature engineering choices made for the two selected datasets: Costa and La~Réunion, as well as the setup and tools used throughout the development and evaluation of the FDD system.
+
+\section{Tools and Frameworks}
+The following tools and libraries were used in the development of the FDD pipeline:
+\par\noindent\textbf{Python:} The primary programming language used for data processing, model development, and evaluation.
+
+\par\noindent\textbf{PyTorch:} The deep learning framework used for building and training the machine learning models.
+
+\par\noindent\textbf{Scikit-learn:} A machine learning library used for data preprocessing, feature engineering, and evaluation metrics.
+
+\par\noindent\textbf{Google Colab:} An online platform used for developing and testing the code, as well as for training the models on GPU resources.
+\par\noindent\textbf{GitHub:} A version control system used for code management and collaboration.
+\par\noindent\textbf{DagsHub:} A platform used for orchestrating and automating the data pipeline, ensuring reproducibility and scalability of the data processing workflow, as well as keeping track of experiments, results and model artifacts.
+\par\noindent\textbf{Data Version Control (DVC):} A tool used for versioning datasets and machine learning models, integrated with GitHub for seamless tracking of changes in data and code.
+\par\noindent\textbf{MLflow:} A platform used for managing the machine learning lifecycle, including experiment tracking, model versioning, and deployment.
+
+
+\section{Data Ingestion}
+This step involves loading the raw data from the Costa and La~Réunion datasets, then applying a series of transformations to output a unified table ready for the next stage.
+These transformations include:
+\paragraph{La~Réunion} 
+\begin{itemize}
+    \item \textbf{Merging:} Read both meteorological and electrical file, then performs a join on the timestamp columns to create a single sorted table with all the features.
+    \item \textbf{Column Renaming:} Rename the columns to a unified naming across both datasets.
+    \item \textbf{Serializing:} Save the resulting table in a Parquet file and generates a JSON schema manifest. 
+\end{itemize}
+\paragraph{Costa}
+\begin{itemize}
+    \item \textbf{Converting:} Convert original raw MAT files to Numpy arrays.
+    \item \textbf{Filtering:} Remove negative irradiance values to resolve wrong sensor readings.
+    \item \textbf{Timestamp Generation:} Creates a fake synthetic 1 Hz index in microseconds. It anchors the first sample to a specific UTC epoch to align the recorded irradiance curve with local solar noon in Brazil, increasing the time by 1,000,000 microseconds (1 second) per row. 
+    \item \textbf{Daytime Trimming:} Filter out nighttime samples by setting a minimum irradiance threshold of 100 W/m².
+    \item \textbf{Serializing:} Save the resulting table in a Parquet file and generates a JSON schema manifest.
+\end{itemize}
+
+\section{Splitting Protocol}
+\label{sec:implementation-splitting}
+
+Because the overall FDD system addresses two distinct operational sub-problems---anomaly detection and fault classification---a single monolithic data split is insufficient. Instead, the pipeline implements a multi-path partitioning algorithm to operationalize essential integrity principles: atomic grouping, temporal ordering, and leakage prevention. Prior to any partitioning, records lacking timestamp or label definitions are dropped as unrecoverable. The partitioning strategy relies on specific structural metadata generated at runtime.
+
+\subsection{Gap-Based Segmentation and Atomic Units}
+The first step of the splitting algorithm assigns every row to a contiguous time block. A new \texttt{continuity\_segment\_id} is generated whenever the difference between consecutive timestamps exceeds a 300-second threshold. This 5-minute span is sufficiently large to represent an operational break, such as a night cycle or an extended sensor dropout, effectively separating distinct operational periods. Additionally, a stricter \texttt{episode\_id} is generated that enforces breaks not only at temporal gaps but also at any fault label transition. This ensures that a single segment never contains a mixture of normal and fault conditions. 
+For the Costa dataset, \texttt{episode\_id} serves as the indivisible atomic unit for partitioning, ensuring fault episodes are preserved entirely. For the La~Réunion dataset, the broader \texttt{continuity\_segment\_id} is used as the default unit.
+
+\subsection{Task-Specific Allocation Algorithms}
+Once atomic units are defined, the pipeline allocates them to training, validation, and test partitions (targeting a 70/15/15 ratio) using structures tailored to the anomaly detection and fault classification tasks.
+
+\paragraph{Hybrid Semi-Supervised Split:}
+For the anomaly detection task, the model must map the nominal operational manifold without exposure to labeled fault data. The algorithm selects the chronologically first 70\% of the normal-class segments to form the training partition. The remaining normal segments, alongside all fault-class segments, are split sequentially according to temporal order (50/50) into validation and test partitions. Incorporating faults only in the evaluation sets enforces a strict semi-supervised environment.
+
+\paragraph{Temporal-Stratified Split:}
+For the fault classification task, the algorithm executes a temporal-stratified split on each evaluable class independently. It sequences the segments by start time and computes boundary indices that minimize the combined error against the target 70/15/15 ratio for both segment-counts and row-counts, weighting the row-count error at twice the magnitude to select for the learning signal. 
+Due to variations in fault distributions, an evaluable-class filter is applied: the Costa processing operates across all five predefined classes (labels 0 through 4), while La~Réunion is restricted to classes exhibiting at least three distinct segments (labels 3.1, 3.2, and 4.0). Classes with insufficient occurrences are restricted to training only, ensuring valid evaluation downstream.
+
+\subsection{Normal-Class Downsampling}
+Because normal operating periods vastly outnumber induced fault periods, preserving the complete normal class biases the classification objective. Following the temporal-stratified allocation for the Costa dataset in the fault classification task, the normal class within the training partition is aggressively downsampled to a maximum threshold of 15,000 samples. Crucially, this downsampling extracts a temporal head (the first chronological $N$ rows) rather than a randomized subset. This prevents the fragmentation of local autocorrelation, preserving the structural integrity required for temporal feature generation.
+
+\subsection{Day-Based Chronological Baseline}
+To provide a baseline against the class-stratified approach, an independent chronological method is implemented specifically for the Costa dataset. In this pathway, the atomic unit shifts to the \texttt{operating\_day}, with partitions generated as contiguous multi-day blocks. To enforce the temporal embargo specified in the design constraints without discarding entire recording days, the algorithm applies a fraction-based boundary purge: the forward 50\% of the earliest operating day assigned to downstream partitions (validation and test) is dropped. This engineered boundary establishes a chronological gap, preventing look-ahead leakage across overlapping rolling windows.
+
+\section{Preprocessing}
+\label{sec:implementation-preprocessing}
+
+The preprocessing stage functions as a minimal cleaning layer between split assignment and feature engineering. Its guiding principle is to preserve the genuine operational signals---both normal and anomalous---required for the downstream tasks while staying as lean as the underlying dataset quality permits. The preprocessing intensity is explicitly calibrated to address the specific structural deficits of each dataset without imposing generic blanket operations. Crucially, all statistics estimated during preprocessing are derived exclusively from the training partition and applied uniformly to the validation and test splits, preventing any possibility of data leakage.
+
+\subsection{Tiered Missing-Value Imputation}
+For the Costa dataset, exploration revealed a complete, synthetically indexed 1~Hz timeline devoid of missing values; consequently, imputation routines are disabled for this dataset. Conversely, the La~Réunion dataset exhibits varied temporal continuity gaps extending from seconds to hours. To handle this, a segment-bound, tiered imputation strategy is applied:
+\begin{itemize}
+    \item \textbf{Short gaps ($\le$ 60 seconds):} Resolved via forward-filling. This assumes transient communication or sensor dropouts where the operational state remains largely static.
+    \item \textbf{Medium gaps (60--300 seconds):} Resolved via linear interpolation between bounding observations, relying on the smooth variation of underlying environmental variables.
+    \item \textbf{Long gaps ($>$ 300 seconds):} Rows are dropped permanently. Fabricating observations across multi-hour shutdowns or major operational disruptions injects unwarranted artifacts into the modeling pipeline.
+\end{itemize}
+This imputation is executed strictly on a per-segment basis to prevent bridging distinct operational regimes. Furthermore, a strict override rule is enforced: \emph{if any gap overlaps with a fault-labeled period, those rows are immediately dropped without imputation.} Interpolating across an active fault could artificially synthesize fault signatures, distorting the very deviations the classification model is meant to identify.
+
+\subsection{Outlier Removal}
+To address spurious sensor spikes without jeopardizing genuine anomaly detection, a scope-restricted Interquartile Range (IQR) outlier filter is applied. 
+The algorithm calculates bounds corresponding to $\text{Q}1 - 3 \times \text{IQR}$ and $\text{Q}3 + 3 \times \text{IQR}$ for primary sensor channels (6 channels for Costa, 9 channels for La~Réunion). A conservative multiplier of 3 ensures only severe sensor malfunctions are flagged.
+
+The bounds are computed exclusively over the normal-class rows of the training partition. Furthermore, the dropping mechanism is applied solely to normal-class segments. Fault-class rows are entirely exempt from outlier rejection because extreme, erratic measurements during those windows represent valid physical fault signatures rather than measurement errors. 
+
+\subsection{Physical Invariant Restoration}
+For the Costa dataset, power channels (\texttt{pdc1}, \texttt{pdc2}, \texttt{pdc}) are explicitly derived combinations of raw current and voltage channels. Following the outlier removal phase, it is possible for intermediate states of raw sensors to be dropped, leaving pre-calculated power values disconnected from their constituent variables. To resolve this, all derived power channels are deterministically recomputed from the cleaned primary channels ($P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$). This enforcement maintains the algebraic and physical identities within every row of the final preprocessed dataframe.
+
+
+% ────────────────────────────────────────────────────────────
+\section{Feature Engineering and Profile Ablation}
+\label{sec:feature-engineering}
+% ────────────────────────────────────────────────────────────
+
+The feature engineering stage transforms cleaned operational measurements into the representations consumed by the downstream models. Two design principles govern its implementation. The first is that features are organized into named profiles, each corresponding to a coherent ablation level that strictly extends its predecessor, enabling a principled comparison of feature representations by contrasting adjacent profile levels. The second is that all selection statistics are estimated exclusively from the training partition, in keeping with the leakage-prevention discipline established in Section~\ref{sec:splitting}.
+
+\subsection{Physics-Informed Features}
+
+The starting point of the profile ladder is a compact set of physics-informed features motivated directly by the exploratory observations of Section~\ref{sec:eda}. These features encode domain knowledge about photovoltaic operation that a purely data-driven model would otherwise have to rediscover from raw observations, and they are constructed to remain numerically stable across the full operating range of the installation.
+
+The first family normalizes power and current channels by the incident irradiance. Under healthy operation, the ratios $P_{\mathrm{dc},s} / G$ and $I_{\mathrm{dc},s} / G$ are approximately constant because irradiance is the dominant driver of both quantities. Normalization collapses the large diurnal amplitude swing present in the raw channels and exposes the fault-related residual that carries the diagnostic signal. The denominator is floored at 1~W/m$^2$ to prevent numerical instability at dawn and dusk.
+
+The second family is the per-string imbalance descriptors. For multi-string installations where each string is individually instrumented, the normalized difference between per-string currents, voltages, and powers provides a sensitive indicator of localized faults that do not manifest in plant-aggregated quantities. Three imbalance features (power imbalance, current imbalance, and voltage imbalance) are computed as normalized pairwise differences and exploit the natural redundancy of the multi-string architecture.
+
+The third family is the temperature-corrected power. The maximum power point of crystalline silicon modules decreases approximately linearly with temperature above the 25\,$^\circ$C standard test condition reference, at a rate given by the module-specific temperature coefficient $\gamma_{P_{\mathrm{max}}}$. The temperature-corrected power divides the observed output by the expected thermal loss factor, and its further normalization by irradiance produces a feature that isolates the fault-related power deviation from the component attributable to ordinary thermal behavior.
+
+The fourth family comprises the first-order temporal derivatives of the primary channels ($\mathrm{d}P/\mathrm{d}t$, $\mathrm{d}V/\mathrm{d}t$, and $\mathrm{d}I/\mathrm{d}t$), computed as discrete differences between consecutive cleaned samples. Rapid transients in current or voltage are characteristic of certain fault types, particularly short circuits and open circuits, and these derivative features expose such transients more clearly than the raw values when the absolute magnitude of the signal is large.
+
+Together, the 4 families yield approximately 17 engineered features after the selection stack described below has pruned the candidate pool. This feature set defines the profile \texttt{plus\_physics}.
+
+\subsection{Profile Ladder}
+
+The named profiles form an additive ablation ladder in which each rung strictly extends the one below it. The 4 profiles evaluated in this thesis are as follows:
+
+\begin{itemize}
+    \item \texttt{baseline\_raw}: the cleaned sensor columns produced by preprocessing, with no engineered features. This profile provides the reference level against which the contribution of feature engineering is measured. The hygiene pruning step described below is the only selection applied.
+    \item \texttt{plus\_physics}: extends \texttt{baseline\_raw} by adding the 4 physics-informed feature families described above and applying the full hygiene-plus-mRMR selection stack. This is the primary profile used for the headline results in the contribution chapters.
+    \item \texttt{plus\_temporal}: extends \texttt{plus\_physics} by adding cyclic encoding of the time of day, representing the hour and minute as sine and cosine projections so that the model receives a continuous, smooth representation of diurnal position without a discontinuity at midnight.
+    \item \texttt{plus\_rolling}: extends \texttt{plus\_temporal} by adding causal rolling statistics (rolling mean and rolling standard deviation) over short causal windows, providing the model with a compact summary of recent history that remains strictly within the training partition boundaries.
+\end{itemize}
+
+\subsection{Selection Stack}
+
+The candidate feature pool is pruned by a 2-stage train-only selector stack before the final feature set is written to disk. The first stage is hygiene pruning: near-constant columns whose variance falls below a numerical threshold are removed, exact duplicate columns are collapsed, and deterministic algebraic aliases (such as the identity $P_{\mathrm{dc}} = P_{\mathrm{dc}1} + P_{\mathrm{dc}2}$ identified during exploratory analysis) are detected and reduced to a single representative. This stage requires no label information and therefore introduces no leakage risk.
+
+The second stage applies minimum-redundancy maximum-relevance (mRMR) feature selection under the mutual information difference (MID) criterion \citep{peng2005mrmr}, with a target retained pool of 64 features after hygiene. The relevance term scores each candidate by its mutual information with the task label; the redundancy term penalizes mutual information against already-retained features; the greedy selection proceeds until the target size is reached or the pool is exhausted. All mutual information estimates are computed from the training partition only. For large training partitions, estimation is performed on a stratified, group-aware subset of up to 30\,000 rows, which preserves the statistical structure of the label distribution and the temporal grouping while keeping the selection step tractable within the project's computational budget.
+
+% ────────────────────────────────────────────────────────────
+\section{Conclusion}
+% ────────────────────────────────────────────────────────────
+
+This chapter detailed the technical implementation of the data pipeline, translating the conceptual design requirements into a concrete, reproducible engineering workflow. The end-to-end processing lifecycle, encompassing ingestion, rigorous segmentation, preprocessing, and feature engineering was constructed to strictly safeguard against data leakage and maintain evaluation integrity. By integrating MLOps tools such as DVC for dataset versioning and DagsHub for orchestrating the dependency graph, the pipeline ensures that all intermediate artifacts and final evaluation datasets are perfectly traceable. With the foundational data structures cleansed, standardized, and enriched through ablation profiles, the groundwork is complete. The subsequent chapters will leverage these inference-ready features to formulate, train, and evaluate the specific machine learning architectures selected for the anomaly detection and fault classification models.
+
