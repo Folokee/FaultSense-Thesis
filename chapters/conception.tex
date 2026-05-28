@@ -1,0 +1,85 @@
+\chapter{Design of a Fault Detection and Diagnosis Pipeline for Photovoltaic Systems}
+\label{ch:conception}
+
+\section{Introduction}
+
+The process of designing a FDD pipeline for photovoltaic systems involves several parts, including system architecture, dataset selection, data preprocessing, feature engineering, model selection and evaluation.
+Each of these steps is cruicial to build a robust and effective FDD solution. The following sections will detail the design choices made for each step, as well as the tools used.
+
+\section{System Architecture}
+The overall architecture includes 4 main components, as illustrated in figure \ref{fig:system_architecture}:
+    
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/chap3/fdd-arch.png}
+    \caption{FDD Pipeline Architecture.}
+    \label{fig:system_architecture}
+\end{figure}
+
+\section{Dataset Selection and Visualization}
+\subsection{Dataset Description}
+Based on the previous dataset survey in\ref{sec:datasets}, the Costa dataset was selected for the development and evaluation of our FDD pipeline.
+The Costa dataset is collected from a grid-connected pilot PV plant located in City of Curitiba-State of Paraná, Brazil. It contains 16 Canadian 330W Poly-crystalline Modules (CS6U-330P) divided into 2 strings of 8 modules each
+running the Maximum Power Poin Tracking (MPPT) algorithm. The system may yeild 5kW peak installed capacity \citep{MonitoringSystemOnline2020}. The figure \ref{fig:costa_circuit} illustrates in detail the electrical configuration.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/chap3/costa-shema.png}
+    \caption{Costa Photovoltaic Plant Electrical Diagram \citep{MonitoringSystemOnline2020}.}
+    \label{fig:costa_circuit}
+\end{figure}
+
+This dataset contains 4 fault types: \textbf{Shadowing}, \textbf{Degradation}, \textbf{Open-Circuit} and \textbf{Short-Circuit}. The full detail is illustrated in Table~\ref{tab:costa_label_counts}.
+
+\begin{table}[H]
+    \centering
+    \caption{Number of data points in the Costa dataset.}
+    \label{tab:costa_label_counts}
+    \begin{tabular}{l r}
+        \toprule
+        Label & Number of data points \\
+        \midrule
+        Degradation & 10,371 \\
+        Short-circuit & 5,999 \\
+        Open-circuit & 6,024 \\
+        Partial shadowing & 184,311 \\
+        No fault introduced & 309,253 \\
+        \midrule
+        Total & 515,958 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+This dataset was chosen for its real-world nature which captures the noise and imperfections of actual PV system measurements, as well as its diverse fault types
+and the presence of a large number of data points which allows for robust model training and evaluation. Additionally, the dataset includes both electrical and meteorological measurements. A full list of available features is provided in Table~\ref{tab:costa_features}.
+
+\begin{table}[H]
+    \centering
+    \caption{Costa dataset features and descriptions.}
+    \label{tab:costa_features}
+    \begin{tabularx}{\textwidth}{l X}
+        \toprule
+        Feature & Description \\
+        \midrule
+        \texttt{vdc1} & voltage measured for string~1 (V). \\
+        \texttt{vdc2} & voltage measured for string~2 (V). \\
+        \texttt{idc1} & current measured for string~1 (A). \\
+        \texttt{idc2} & current measured for string~2 (A). \\
+        \texttt{pdc1} & power measured for string~1 (W). \\
+        \texttt{pdc2} & power measured for string~2 (W). \\
+        \texttt{pdc} & total power measured for the system (W). \\
+        \texttt{pvt} & Average PV module temperature (\textdegree{}C). \\
+        \texttt{irr} & Solar irradiance (W/m$^2$). \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\section{Data Preprocessing and Feature Engineering}
+
+\subsection{Data Preprocessing}
+Data preprocessing is the first step in the FDD pipeline, and it involves cleaning and transforming the raw data to make it suitable for model training.
+
+
+\subsection{Feature Engineering}
+Feature engineering is the process of creating new features from existing ones to improve model performance.

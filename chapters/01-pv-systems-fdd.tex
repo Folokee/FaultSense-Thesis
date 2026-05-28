@@ -1,13 +1,13 @@
 % ============================================================
 % Chapter 1: Introduction to Photovoltaic Systems and Fault Detection and Diagnosis Techniques
 % ============================================================
-\chapter{Background on Photovoltaic Systems}
+\chapter{Background on Photovoltaic Systems and Artificial Intelligence}
 \label{ch:pv-systems-fdd}
 
 \section{Introduction}
 \label{sec:pv-introduction}
 
-This chapter presents the generalities of photovoltaic systems, including their operating principles and main components, followed by a description of the different faults that can occur in such installations. The final part introduces fault detection and diagnosis strategies that rely on electrical and meteorological sensor data to identify abnormal operating conditions and classify fault types in photovoltaic systems.
+This chapter presents the generalities of photovoltaic systems, including their operating principles, main components, and monitoring infrastructure, followed by a description of the most common faults that can affect PV installations. The final part provides a background on artificial intelligence for PV Fault Detection and Diagnosis (FDD), with a focus on the machine learning and deep learning methods that are relevant to detection and diagnosis tasks and that are used throughout this work.
 
 \section{Fundamentals of Photovoltaic Systems}
 \label{sec:pv-fundamentals}
@@ -81,10 +81,9 @@ A photovoltaic system comprises several functional components designed to captur
 
 \subsection{Surveillance Systems}
 \label{sec:pv-surveillance}
-In the PV context, survillance systems refer to the integrated hardware and software tools used to collect and monitor system data, including electrical and meteorological parameters. These system are generally composed of sensors, plus a Supervisory Control and Data Acquisition (SCADA) system that collects, processes, and visualizes the data for performance monitoring and fault detection purposes \citep{taylorEffectivenessSCADASystem2020}.
+In the PV context, surveillance systems refer to the integrated hardware and software tools used to collect and monitor system data, including electrical and meteorological parameters. These systems are generally composed of sensors and a Supervisory Control and Data Acquisition (SCADA) platform that collects, processes, and visualizes the measurements for performance monitoring and fault detection \citep{taylorEffectivenessSCADASystem2020}.
 
-A SCADA system typically includes Feild Devices (sensors and actuators), the main sensors in a PV system are a Pyranometer to measure solar irradiance, a Thermometer for ambient temperature and an Anemometer for wind speed measurement. Electrical parameters such as voltage, current, and power are measured directly from inverters. Remote Terminal Units are responsible for gathering data from sensors,
-Master Terminal Units act as central nodes, collecting data from RTUs and providing interfaces for human operators. The collected data is also stored in a database for historical analysis \citep{yadavArchitectureSecuritySCADA2021}. An example of a SCADA system for PV monitoring can be seen in Figure~\ref{fig:scada-pv}.
+A SCADA system typically includes field devices (sensors and actuators). In a PV plant, the main sensors include a pyranometer to measure solar irradiance, a thermometer for ambient temperature, and an anemometer for wind speed measurement. Electrical quantities such as voltage, current, and power are measured at the inverter level. Remote Terminal Units (RTUs) gather the signals from sensors, while Master Terminal Units (MTUs) act as central nodes that collect data from RTUs and provide interfaces for human operators. The collected data is also stored in a database for historical analysis \citep{yadavArchitectureSecuritySCADA2021}. An example of a SCADA system for PV monitoring is shown in Figure~\ref{fig:scada-pv}.
 
 \begin{figure}[H]
     \centering
@@ -133,3 +132,137 @@ faults and DC side faults. Down below are the most pertinent faults that can occ
 
     \item \textbf{Inverter Fault:} Occurs when the power conversion stage malfunctions, affecting DC/AC conversion, cooling, or maximum power point tracking.
 \end{itemize}
+
+\section{Artificial Intelligence for PV Fault Detection and Diagnosis}
+\label{sec:ai-fdd}
+
+Artificial intelligence (AI) techniques are increasingly adopted to support automated monitoring of photovoltaic systems by extracting diagnostic information from heterogeneous measurements, including electrical signals, meteorological variables, thermographic imagery, and I--V characteristics. In the context of Fault Detection and Diagnosis (FDD), AI-based methods typically address two related problems: fault detection, which aims to identify deviations from normal operation, and fault diagnosis, which aims to determine the fault type, severity, or location once an anomaly is detected. Survey studies report that data-driven approaches can complement classical threshold-based rules by learning complex nonlinear relationships and by adapting to installation-specific behavior \citep{mellit2018artificial,kurukuru2021machine}.
+
+From a methodological viewpoint, AI-based FDD approaches are commonly categorized into Machine Learning (ML) and Deep Learning (DL) methods. ML methods usually rely on hand-crafted features and relatively shallow models, whereas DL methods learn hierarchical representations directly from raw or minimally processed data. The following subsections provide a compact background on the model families used throughout this project.
+
+\subsection{Machine Learning Methods}
+\label{sec:ml_background}
+
+\subsubsection{Support Vector Machines (SVM)}
+
+Support Vector Machines (SVM) are supervised learning algorithms designed for classification and regression tasks. The main objective of SVM is to determine an optimal separating hyperplane that maximizes the margin between different classes in the feature space. For nonlinear problems, kernel functions are used to project the data into a higher-dimensional space where linear separation becomes possible.
+
+Given a training dataset $\{(x_i,y_i)\}_{i=1}^{N}$, the decision function is expressed as:
+\begin{equation}
+f(x)=\text{sign}(w^Tx+b),
+\end{equation}
+where $w$ is the normal vector of the hyperplane and $b$ is the bias term. For nonlinear classification, kernel functions such as the radial basis function (RBF) are commonly employed:
+\begin{equation}
+K(x_i,x_j)=\exp\bigl(-\gamma \lVert x_i-x_j \rVert^2\bigr).
+\end{equation}
+
+SVM models are widely used in PV fault diagnosis because of their strong generalization capability and robustness in high-dimensional feature spaces.
+
+\subsubsection{K-Nearest Neighbors (KNN)}
+
+K-Nearest Neighbors (KNN) is a non-parametric supervised learning algorithm that classifies a sample according to the majority class among its $k$ nearest neighbors in the feature space. Unlike model-based algorithms, KNN does not explicitly learn parameters during training and instead relies on similarity measures between samples.
+
+The Euclidean distance is commonly used:
+\begin{equation}
+d(x_i,x_j)=\sqrt{\sum_{n=1}^{m}(x_{in}-x_{jn})^2},
+\end{equation}
+where $m$ is the number of features.
+
+KNN is particularly suitable for PV datasets with moderate dimensionality and nonlinear decision boundaries.
+
+\subsubsection{Decision Trees}
+
+Decision Trees (DT) are hierarchical supervised learning models that recursively partition the feature space into subsets according to decision rules. Each internal node represents a condition on an input feature, while leaf nodes correspond to output classes.
+
+The selection of the optimal split is generally based on impurity measures such as entropy:
+\begin{equation}
+H(S)=-\sum_{i=1}^{C}p_i\log_2(p_i),
+\end{equation}
+where $p_i$ is the probability of class $i$ and $C$ is the number of classes.
+
+Decision Trees are interpretable and computationally efficient, making them suitable for fault classification and rule-based diagnostic systems.
+
+\subsubsection{Random Forest}
+
+Random Forest (RF) is an ensemble learning technique based on the aggregation of multiple decision trees trained on randomized subsets of data and features. Each tree independently produces a prediction, and the final decision is obtained through majority voting.
+
+If $T_k(x)$ denotes the prediction of the $k$-th tree, the final classifier is:
+\begin{equation}
+\hat{y}=\text{mode}\{T_1(x),T_2(x),...,T_n(x)\}.
+\end{equation}
+
+Random Forest improves robustness and reduces overfitting compared to single decision trees, particularly for noisy PV operational datasets.
+
+\subsection{Deep Learning Methods}
+\label{sec:dl_background}
+
+\subsubsection{Autoencoders and Variational Autoencoders}
+
+Autoencoders (AE) are unsupervised neural networks designed to learn compressed latent representations of input data. An autoencoder consists of an encoder function that maps the input into a latent space and a decoder function that reconstructs the original input.
+
+The latent representation is obtained as:
+\begin{equation}
+z=f(Wx+b),
+\end{equation}
+while the reconstructed output is:
+\begin{equation}
+\hat{x}=g(W'z+b').
+\end{equation}
+
+The network is trained by minimizing the reconstruction error:
+\begin{equation}
+L=\lVert x-\hat{x} \rVert^2.
+\end{equation}
+
+Variational Autoencoders (VAE) extend conventional autoencoders by learning probabilistic latent distributions instead of deterministic representations. Rather than encoding a single latent vector, the encoder estimates the mean $\mu$ and variance $\sigma^2$ of a probability distribution:
+\begin{equation}
+z \sim \mathcal{N}(\mu,\sigma^2).
+\end{equation}
+
+VAEs improve latent space continuity and are suitable for anomaly detection and generative modeling.
+
+\subsubsection{Long Short-Term Memory (LSTM)}
+
+Long Short-Term Memory (LSTM) networks are recurrent neural networks specifically designed to model temporal dependencies in sequential data. LSTM architectures introduce memory cells and gating mechanisms to overcome the vanishing gradient problem encountered in conventional RNNs.
+
+The forget gate is expressed as:
+\begin{equation}
+f_t=\sigma(W_f[h_{t-1},x_t]+b_f),
+\end{equation}
+while the cell state update is:
+\begin{equation}
+C_t=f_tC_{t-1}+i_t\tilde{C}_t.
+\end{equation}
+
+LSTM networks are widely applied in PV fault diagnosis because they effectively capture temporal variations in voltage, current, irradiance, and temperature signals.
+
+\subsubsection{Transformer Networks}
+
+Transformer models are deep learning architectures based entirely on attention mechanisms rather than recurrent structures. Their main advantage lies in the ability to capture long-range dependencies while enabling parallel computation.
+
+The self-attention mechanism is defined as:
+\begin{equation}
+\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V,
+\end{equation}
+where $Q$, $K$, and $V$ denote the query, key, and value matrices.
+
+Transformers are increasingly used in PV fault diagnosis and forecasting due to their strong sequence modeling capability.
+
+\subsubsection{Convolutional Neural Networks (CNN)}
+
+Convolutional Neural Networks (CNN) are deep architectures specialized for extracting spatial features from structured data such as images or transformed signal matrices. CNNs employ convolutional filters to learn local feature patterns automatically.
+
+The convolution operation is expressed as:
+\begin{equation}
+S(i,j)=(X*K)(i,j)=\sum_m\sum_n X(m,n)K(i-m,j-n),
+\end{equation}
+where $X$ is the input matrix and $K$ is the convolution kernel.
+
+CNNs are extensively used in PV systems for thermal image analysis, I--V curve classification, and defect localization because of their strong feature extraction capability.
+
+\section{Conclusion}
+\label{sec:ch1-conclusion}
+
+Photovoltaic installations are complex engineered systems that combine operational components for energy conversion and conditioning with protection devices for safe operation and monitoring infrastructures for supervision. This complexity is reflected in the diversity of signals and subsystems involved, ranging from PV modules and power electronics to disconnect devices, sensors, and SCADA platforms responsible for data acquisition and visualization.
+
+Because PV plants operate under variable environmental conditions and rely on many interconnected components, they remain vulnerable to a wide range of faults that can progressively degrade performance or create safety risks if they are not handled promptly. Maintaining energy yield and ensuring system longevity therefore requires timely fault detection and diagnosis, ideally based on continuous monitoring data. In this context, AI-based approaches provide a compelling solution, since machine learning and deep learning models can exploit the available measurements to detect abnormal behavior and support diagnostic decisions at scale.
