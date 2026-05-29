@@ -144,6 +144,7 @@ From a methodological viewpoint, AI-based FDD approaches are commonly categorize
 \label{sec:ml_background}
 
 \subsubsection{Support Vector Machines (SVM)}
+\label{subsec:svm}
 
 Support Vector Machines (SVM) are supervised learning algorithms designed for classification and regression tasks. The main objective of SVM is to determine an optimal separating hyperplane that maximizes the margin between different classes in the feature space. For nonlinear problems, kernel functions are used to project the data into a higher-dimensional space where linear separation becomes possible.
 
@@ -193,6 +194,26 @@ If $T_k(x)$ denotes the prediction of the $k$-th tree, the final classifier is:
 
 Random Forest improves robustness and reduces overfitting compared to single decision trees, particularly for noisy PV operational datasets.
 
+\subsubsection{Isolation Forest}
+\label{subsec:iforest}
+
+Isolation Forest (IF) is an unsupervised anomaly detector that isolates outliers by random partitioning of the feature space. It builds an ensemble of randomized binary trees, each grown by randomly selecting a feature and split value. Anomalies, being few and distinct from normal behavior, are isolated in fewer splits, yielding shorter path lengths.
+
+Let $h(x)$ be the path length (number of edges) of sample $x$ in a tree. Over $t$ trees, the average path length is given by
+
+\begin{equation}
+E[h(x)] = \frac{1}{t} \sum_{i=1}^{t} h_i(x).
+\end{equation}
+
+The anomaly score is then defined as
+
+\begin{equation}
+s(x,\psi) = 2^{-\frac{E[h(x)]}{c(\psi)}},
+\end{equation}
+
+where $\psi$ is the subsampling size and $c(\psi)$ normalizes the score using the average path length in a binary search tree of size $\psi$.
+
+IF is well-suited to PV fault detection: it requires no labeled fault data, handles high-dimensional features, and directly outputs an anomaly score that can be thresholded for detection.
 \subsection{Deep Learning Methods}
 \label{sec:dl_background}
 
@@ -259,6 +280,38 @@ S(i,j)=(X*K)(i,j)=\sum_m\sum_n X(m,n)K(i-m,j-n),
 where $X$ is the input matrix and $K$ is the convolution kernel.
 
 CNNs are extensively used in PV systems for thermal image analysis, I--V curve classification, and defect localization because of their strong feature extraction capability.
+
+
+\subsection{Other Methods}
+\subsubsection{Bayesian Online Change Point Detection (BOCD)}
+Bayesian Online Changepoint Detection (BOCD) is an online probabilistic method for detecting abrupt changes in time-series data.\cite{BayesianOnlineChangepoint2007} At each time step, it estimates the posterior distribution of the \emph{run length} $r_t$, defined as the number of observations since the last changepoint.
+
+Given observations $x_{1:t}$, the predictive distribution for the next sample is
+
+\begin{equation}
+P(x_{t+1} \mid x_{1:t})
+=
+\sum_{r_t}
+P(x_{t+1} \mid r_t, x_t^{(r)})
+\, P(r_t \mid x_{1:t}),
+\end{equation}
+
+where $x_t^{(r)}$ denotes the observations associated with the current run.\cite{BayesianOnlineChangepoint2007}
+
+The run-length posterior is updated recursively as
+
+\begin{equation}
+P(r_t, x_{1:t})
+=
+\sum_{r_{t-1}}
+P(r_t \mid r_{t-1})
+P(x_t \mid r_{t-1}, x_t^{(r)})
+P(r_{t-1}, x_{1:t-1}),
+\end{equation}
+
+where $P(r_t \mid r_{t-1})$ is defined through a hazard function $H(\tau)$ controlling the probability of a changepoint.\cite{BayesianOnlineChangepoint2007}
+
+BOCD is well-suited for fault diagnosis and anomaly detection because it operates causally in real time, provides uncertainty-aware detection, and identifies regime changes through high posterior probability at $r_t = 0$.\cite{BayesianOnlineChangepoint2007}
 
 \section{Conclusion}
 \label{sec:ch1-conclusion}

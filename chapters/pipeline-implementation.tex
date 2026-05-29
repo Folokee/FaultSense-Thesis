@@ -18,7 +18,30 @@ The following tools and libraries were used in the development of the FDD pipeli
 \par\noindent\textbf{DagsHub:} A platform used for orchestrating and automating the data pipeline, ensuring reproducibility and scalability of the data processing workflow, as well as keeping track of experiments, results and model artifacts.
 \par\noindent\textbf{Data Version Control (DVC):} A tool used for versioning datasets and machine learning models, integrated with GitHub for seamless tracking of changes in data and code.
 \par\noindent\textbf{MLflow:} A platform used for managing the machine learning lifecycle, including experiment tracking, model versioning, and deployment.
+\par\noindent\textbf{Optuna:} A hyperparameter optimization framework used for tuning the machine learning models to achieve optimal performance.
 
+
+% ────────────────────────────────────────────────────────────
+\section{Pipeline Architecture}
+\label{sec:pipeline-architecture}
+% ────────────────────────────────────────────────────────────
+The data pipeline that transforms raw field recordings into the inference-ready representations consumed by every modeling experiment is organized as 5 sequential stages: ingestion, splitting, preprocessing, feature engineering, and model training. This staged organization is a deliberate architectural choice rather than an implementation convenience. A monolithic transformation script would make it impossible to enforce leakage-prevention invariants at a well-defined boundary, to rebuild expensive downstream stages independently when upstream logic changes, or to apply the same pipeline to a new field dataset without touching the transformation code. The staged structure addresses all 3 requirements simultaneously and is the structural foundation of the portability claim: the same pipeline code, parameterized by a site-specific configuration file, produces independent artifact trees for each field dataset with no shared internal state.
+
+The pipeline is constructed as a Directed Acyclic Graph (DAG) of processing stages. Each stage defines formal inputs and outputs, ensuring that downstream processes strictly depend on verified upstream states. This structural abstraction enforces data lineage and prevents the reuse of stale data when upstream logic changes, ensuring end-to-end reproducibility independently of the underlying execution engine. Figure~\ref{fig:pipeline} illustrates the complete pipeline and the role of each stage.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/chap3/pipeline-arch.png}
+  \caption{Data pipeline architecture}
+  \label{fig:pipeline}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Ingestion} converts raw sensor logs from a given field site into a unified operational table: acquisition streams recorded by heterogeneous systems at different sampling frequencies are joined and aligned, night-time observations are discarded, and the fault condition is assigned to a single shared label column. This conversion is the only stage that carries site-specific format knowledge; every downstream stage receives an identical schema and is fully insulated from the acquisition details of the source system.
+    \item \textbf{Splitting} partitions the consolidated table into training, validation, and test sets according to a strict temporal grouping protocol. No sample-level transformation is performed at this stage; splitting is the gate at which evaluation integrity is established, and it must precede all subsequent stages that estimate statistics from the data.
+    \item \textbf{Preprocessing} cleans the normal-class rows of the training partition through outlier removal (fault-labeled rows are exempt, as extreme values in those rows are expected fault signatures) and, for sites where the exploratory analysis identifies sustained temporal gaps in the field recording, tiered missing-value imputation, then estimates all cleaning statistics exclusively from that partition and applies them as fixed constants to validation and test.    
+    \item \textbf{Feature engineering} transforms cleaned measurements into the representations consumed by the downstream models: named profiles specify which feature families are constructed, and a train-only selection stack eliminates redundant and low-relevance candidates before yielding the final feature matrices. The profile system makes this stage a controlled ablation instrument, isolating the contribution of each feature family across experiments.    
+    \item \textbf{Model training} fits each candidate model on the feature-engineered partitions, restricts hyperparameter optimisation strictly to the training and validation partitions, and computes final metrics on the test partition exactly once after the winning configuration has been selected. All configurations, architectural choices, and evaluation results are tracked systematically, ensuring that every reported metric is traceable to a specific architectural state and data partition.
+\end{itemize}
 
 \section{Data Ingestion}
 This step involves loading the raw data from the Costa and La~Réunion datasets, then applying a series of transformations to output a unified table ready for the next stage.
