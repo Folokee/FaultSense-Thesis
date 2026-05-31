@@ -1,0 +1,91 @@
+\chapter{Fault Diagnosis}\label{ch:fault-diagnosis}
+
+\section{Introduction}
+
+After an anomalous operating state is detected, the next step in a Fault Detection and Diagnosis (FDD) workflow is to identify the most likely fault type. In practical operation, fault diagnosis supports decision-making by narrowing the set of plausible causes and enabling targeted inspection and corrective actions. In this project, diagnosis is formulated as a supervised multi-class classification task performed on engineered features extracted from the PV system measurements.
+
+Unlike the anomaly detection stage, which aims to separate healthy behavior from abnormal behavior using mostly normal-only training data (Chapter~\ref{ch:anomaly-detection}), the diagnosis stage assumes that labeled fault categories are available for training. The objective is therefore not to produce an anomaly score, but to output a discrete fault class among a predefined set of operating states.
+
+\section{Task Formulation and Methodology}
+
+\paragraph{Problem definition.}
+Let $x \in \mathbb{R}^F$ denote a feature vector computed from a time segment of PV electrical and meteorological signals, and let $y \in \{0,\dots,C-1\}$ denote the corresponding fault label among $C$ classes. The diagnosis task consists in learning a classifier $f_\theta$ that maps $x$ to a class probability vector $\hat{p}(y\mid x)$, and predicts the most likely class $\hat{y}=\arg\max_c \hat{p}(c\mid x)$. Because fault classes can be imbalanced in realistic PV logs, the training and evaluation protocol must account for class frequency differences.
+
+\paragraph{Inputs.}
+Diagnosis is performed on pre-engineered tabular features rather than on raw time-series windows. Feature computation is executed upstream in the preprocessing and featurization pipeline, and the classification stage consumes the resulting feature tables. This design keeps the diagnosis models lightweight and enables transparent analysis of feature contributions.
+
+\paragraph{Evaluation protocol and metrics.}
+The dataset is split into training, validation, and test partitions using the same leakage-aware splitting protocol described in Section~\ref{sec:implementation-splitting}. Model selection is primarily driven by macro-averaged F1-score (macro F1), which assigns equal weight to each class and is therefore sensitive to minority-class performance. For completeness, additional metrics are reported, including overall accuracy, balanced accuracy, macro and weighted precision/recall/F1, and one-vs-rest (OvR) precision--recall AUC values (weighted and per-class).
+
+\section{Shared Experimental Infrastructure}\label{sec:diag-shared-infra}
+
+This section summarizes the shared training and evaluation infrastructure used by all implemented diagnosis models. The common utilities are implemented in the module \texttt{src/modeling/classification/ml/common.py}, and are designed to enforce consistent validation discipline, reproducibility, and comparable reporting across models.
+
+\paragraph{Pipeline overview.}
+The diagnosis workflow follows a fixed sequence of stages: data ingestion, split generation, preprocessing, feature extraction, and classifier training. In this chapter, only the classification stage is detailed. The classifier is trained and evaluated exclusively on the engineered feature tables produced by the upstream pipeline.
+
+\paragraph{Feature ingestion and run management.}
+Feature tables are loaded through a single entrypoint that resolves the latest (or a specified) feature-generation run for the chosen dataset and feature profile. This mechanism ensures that model runs are traceable to a concrete, versioned feature artifact, and it allows repeatable comparisons across classifiers without re-running feature extraction.
+
+\paragraph{Threading policy.}
+To make experimentation efficient and predictable across machines, a resource-aware threading policy is applied. The available CPU budget is detected automatically, one core is reserved for the operating system, and the remaining threads are split between parallel hyperparameter optimization trials and per-trial model training threads. Command-line overrides allow the user to bound the total thread usage and the number of parallel optimization jobs.
+
+\paragraph{Label encoding.}
+Fault labels are encoded into contiguous integer identifiers $\{0,\dots,C-1\}$ using a fitted label encoder. The encoder is trained on the training labels and then applied unchanged to validation and test partitions. It is serialized alongside the model artifact to ensure that inference uses the same class mapping as training.
+
+\paragraph{Hyperparameter optimization (HPO) and validation modes.}
+All implemented diagnosis models support automatic hyperparameter optimization through a unified interface. Two validation modes are available. The default mode uses a classical holdout protocol in which each trial is fitted on the training partition and scored on the validation partition using macro F1. An alternative mode performs a per-class, segment-aware temporal cross-validation in which folds follow an expanding-window structure. This second mode provides a stronger guard against temporal leakage when fault segments exhibit time-dependent structure.
+
+\paragraph{Probability calibration.}
+In addition to maximizing classification accuracy, reliable probability estimates are important for downstream decision-making (e.g., confidence-based alerting and operator interfaces). Therefore, an optional probability calibration stage is enabled by default. After a base classifier is fitted on the training partition, a calibration model is fitted on the validation partition using sigmoid calibration (Platt scaling). Both uncalibrated and calibrated probability outputs are evaluated on the test set. Calibration quality is summarized with metrics such as log loss, a multi-class Brier score, and bin-based calibration errors including the Expected Calibration Error (ECE) and Maximum Calibration Error (MCE).
+
+\paragraph{Leakage checks.}
+Before and after training, automated checks are executed to detect common leakage failure modes. In particular, an exact-duplicate overlap check verifies that identical feature rows do not appear across training and validation partitions, and a leakage report is produced on the test partition unless explicitly skipped. These controls complement the splitting protocol by providing empirical evidence that partition boundaries are respected.
+
+\paragraph{Reporting artifacts.}
+To facilitate interpretability and comparison, all models produce a consistent reporting suite. This includes a confusion matrix (raw counts and normalized), OvR precision--recall curves per class, a predicted-class distribution plot, and reliability diagnostics when calibration is enabled. For tree-based models that expose feature importance scores, the top-ranked features are also reported to support qualitative analysis of which engineered variables drive the diagnosis decisions.
+
+\section{Model Lineup and Results}\label{sec:diag-model-lineup}
+
+This section presents the classification models implemented for fault diagnosis. All models operate on the same engineered feature representation and are trained and evaluated under the shared infrastructure described in Section~\ref{sec:diag-shared-infra}.
+
+\begin{table}[H]
+\centering
+\caption{Summary of implemented diagnosis models and their shared training protocol. HPO: Hyperparameter Optimization.}\label{tab:diag-model-summary}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Family} & \textbf{Class balancing} & \textbf{Calibration}\\
+\midrule
+LightGBM      & Gradient-boosted trees & Balanced class weights & Sigmoid on validation\\
+CatBoost      & Gradient-boosted trees & Balanced class weights & Sigmoid on validation\\
+ExtraTrees    & Randomized tree ensemble & Balanced class weights & Sigmoid on validation\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LightGBM Classifier}
+
+LightGBM is a gradient-boosting framework that builds an ensemble of decision trees sequentially, where each new tree focuses on correcting the errors made by the current ensemble. In the diagnosis setting, the model learns non-linear decision boundaries over engineered features and can capture complex interactions between electrical indicators and contextual variables. LightGBM is selected as the default classifier because it provides a strong accuracy--efficiency trade-off on tabular data and scales well during hyperparameter search.
+
+To mitigate class imbalance, the training procedure applies automatic class weighting so that minority fault classes receive proportionally higher penalty when misclassified. Hyperparameters such as the learning rate, number of boosting rounds, and tree complexity are tuned using the shared HPO protocol. When probability calibration is enabled, a sigmoid calibrator is fitted on validation predictions to improve the alignment between predicted confidence and empirical correctness.
+
+\paragraph{Results}
+% Intentionally left blank (to be filled with experimental results and analysis).
+
+\subsection{CatBoost Classifier}
+
+CatBoost is another gradient-boosting method that uses symmetric trees and an ordered boosting strategy designed to reduce prediction shift during training. Although CatBoost is particularly known for robust handling of categorical features, it also performs competitively on fully numerical feature sets and offers stable optimization behavior. In this project, CatBoost is implemented as an alternative to LightGBM within the same training harness.
+
+The model is tuned with the same primary objective (macro F1) and the same validation modes. Class imbalance is handled through the algorithm's native balanced class-weighting mechanism. When enabled, the same sigmoid calibration stage is applied to CatBoost probability outputs using validation data.
+
+\paragraph{Results}
+% Intentionally left blank (to be filled with experimental results and analysis).
+
+\subsection{ExtraTrees Classifier}
+
+ExtraTrees (Extremely Randomized Trees) is an ensemble method that averages the predictions of many decision trees built with strong randomization. In contrast to boosting, trees in ExtraTrees are trained largely independently, and randomness is injected by selecting split thresholds at random. This often yields robust performance with limited tuning effort, and it provides a useful non-boosting baseline for engineered-feature classification.
+
+In the implemented pipeline, the number of trees, depth limits, split constraints, and feature subsampling strategy are tuned under the shared HPO protocol. Class imbalance is handled via balanced class weights. Probability calibration, when enabled, follows the same validation-based sigmoid calibration procedure.
+
+\paragraph{Results}
+% Intentionally left blank (to be filled with experimental results and analysis).

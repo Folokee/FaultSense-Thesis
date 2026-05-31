@@ -1,0 +1,608 @@
+\chapter{Implementation and Evaluation of the Anomaly Detection and Fault Diagnosis Pipeline}
+
+\section{Introduction}
+This chapter details the implementation of the anomaly detection and fault diagnosis methods explored during this project. It covers the model architectures, training procedure and results
+obtained from the evaluation on the Costa dataset.
+
+\section{Tools and Experimental Setup}
+\subsection{Software and Libraries}
+The following tools and libraries were used in the development of the FDD pipeline:
+\par\noindent\textbf{Python:} The primary programming language used for data processing, model development, and evaluation.
+
+\par\noindent\textbf{PyTorch:} The deep learning framework used for building and training the machine learning models.
+
+\par\noindent\textbf{Scikit-learn:} A machine learning library used for data preprocessing, feature engineering, and evaluation metrics.
+
+\par\noindent\textbf{Google Colab:} An online platform used for developing and testing the code, as well as for training the models on GPU resources.
+\par\noindent\textbf{GitHub:} A version control system used for code management and collaboration.
+\par\noindent\textbf{DagsHub:} A platform used for orchestrating and automating the data pipeline, ensuring reproducibility and scalability of the data processing workflow, as well as keeping track of experiments, results and model artifacts.
+\par\noindent\textbf{Data Version Control (DVC):} A tool used for versioning datasets and machine learning models, integrated with GitHub for seamless tracking of changes in data and code.
+\par\noindent\textbf{MLflow:} A platform used for managing the machine learning lifecycle, including experiment tracking, model versioning, and deployment.
+\par\noindent\textbf{Optuna:} A hyperparameter optimization framework used for tuning the machine learning models to achieve optimal performance.
+
+\subsection{Experimental Setup}\label{sec:implementation-experimental-setup}
+This section summarizes the software stack and execution environment used to implement and evaluate the proposed Fault Detection and Diagnosis (FDD) pipeline. The goal is to ensure that the reported results can be reproduced from a versioned codebase, a traceable dataset state, and a documented configuration.
+
+\paragraph{Codebase and execution contract.}
+All experiments are implemented as a Python (\(\geq 3.11\)) monorepository, where each pipeline stage is exposed through a module entry point executed with a unified invocation pattern (e.g., \texttt{uv run python -m src.data.ingestion}). The \texttt{uv} build system is used as the only package and environment manager, ensuring consistent dependency resolution across local and cloud execution.
+
+\paragraph{Configuration management.}
+To minimize implicit assumptions and to enable systematic comparisons, all data and model decisions are externalized into YAML configuration files. The data configuration defines the active dataset, split policy, preprocessing options, and feature profiles, while the model configuration defines the active model lineup, hyperparameter optimization (HPO) settings, and detector-specific post-processing (e.g., anomaly threshold calibration). When multiple configuration scopes apply, parameters are resolved through a deterministic hierarchy (global defaults, dataset overrides, task directives, then profile overrides), which prevents silent overrides and simplifies run auditing.
+
+\paragraph{Data versioning and pipeline reproducibility.}
+Large artifacts (raw data, processed tables, and selected model checkpoints) are managed with Data Version Control (DVC). The end-to-end workflow is encoded as a multi-stage DVC pipeline (ingestion, splitting, preprocessing, featurization, and training), such that intermediate artifacts are regenerated from their upstream dependencies and tracked through content hashes. The DVC remote storage is hosted on DagsHub, while Git stores the lightweight \texttt{.dvc} pointers and the pipeline definition. This separation keeps the repository manageable while preserving traceability between the reported metrics and the exact data state that produced them.
+
+\paragraph{Compute environments and execution discipline.}
+Two execution environments are used depending on workload characteristics. CPU-oriented stages, including ingestion, exploratory analysis, and the classical machine learning baselines, are executed on a local machine. Deep learning training and HPO are executed on Google Colab with GPU acceleration (typically NVIDIA T4 or A100). In Colab sessions, a persistent Google Drive workspace is mounted and used as an artifacts root directory, so that Optuna studies, checkpoints, metrics, and plots survive runtime disconnections. This split avoids wasting GPU resources on CPU-bound data manipulation and focuses accelerated compute on the training loops that benefit from it.
+
+\paragraph{Hyperparameter optimization protocol.}
+Model selection is conducted with Optuna using the Tree-structured Parzen Estimator (TPE) sampler. Classical models are tuned with fixed trial budgets, where each trial is fast and therefore pruning is not required. Deep learning models use the same Optuna interface but can additionally enable early stopping and pruning strategies, because training a single trial can span multiple epochs. For all tasks, the validation partition is the only split used for HPO decisions (metric optimization and threshold selection), while the test partition is reserved for final reporting.
+
+\paragraph{Experiment tracking and artifacts.}
+All runs are tracked with MLflow and logged to a centralized DagsHub tracking server. Each run records the active dataset and split identifier, the selected feature profile, the final HPO parameters, and the computed validation and test metrics. In addition, lightweight artifacts are stored alongside metrics, including serialized preprocessing objects (e.g., scalers), model files (\texttt{.joblib} for classical models and checkpoints for deep learning), and diagnostic figures such as PR curves, score histograms, and confusion matrices. This tracking discipline supports direct comparison across the anomaly detection (Task~A) and fault classification (Task~B) experiments.
+
+\paragraph{Random seeds and repeated runs.}
+To control stochasticity, experiments are executed with predefined random seeds. A canonical single-run seed is used for rapid iteration, while a small multi-seed suite is used when estimating the stability of reported metrics. Unless stated otherwise, training and evaluation follow the leakage-aware splitting protocol described in Section~\ref{sec:implementation-splitting}.
+
+\section{Anomaly Detection Implementation and Results}
+% \subsection{Introduction}
+% Anomaly detection is the process of distinguishing between normal and anomalous states in a PV system. This chapter introduces the problem, 
+% then presents the explored models, and finally discusses the experimental results.
+
+\subsection{Task Formulation and Methodology}
+Semi-supervised learning is a machine learning technique that trains models using a small amount of labeled data and a large amount of unlabeled data.
+The anomaly detection task can be seen as a semi-supervised learning problem, this approach is ideal for our case because it allows us to leverage the limited labeled data available.
+The various methods discussed below follow a common framework:
+\begin{itemize}
+    \item Train a model on normal-behavior data to extract generalizable signatures of normal operation.
+    \item Derive a scoring function that measures deviation from normality—higher scores correspond to a higher likelihood of an anomaly.
+    \item Calibrate a threshold from this scoring function. During inference, the model computes the score and flags the current state as anomalous if the score exceeds the threshold.
+\end{itemize}
+
+\subsection{Model Lineup}
+
+This section describes the implementation of the anomaly detection model lineup and the hyperparameter optimization (HPO) protocol used to select the final configurations. The implementation follows a shared experimental contract across models: a unified split interface, a consistent scoring convention (higher scores indicate higher anomaly likelihood), a threshold calibration stage executed on validation scores, and a common reporting suite that includes prevalence-aware metrics.
+
+% \subsubsection{Classical Model Lineup and Results}
+\subsubsection{One-Class Support Vector Machine (OC-SVM)}
+As previously described in Subsection~\ref{subsec:svm}, SVM is mainly a supervised learning algorithm,
+but the One-Class SVM (OC-SVM) variant is designed for semi-supervised anomaly detection by identifying the smallest hyperplane
+that encloses the normal data in the feature space.
+Two kernel functions were explored: RBF and polynomial.
+\paragraph{} Optuna was used for hyperparameter optimization with 35 trials and Macro F1 as the objective metric, tuning the kernel-specific parameters.
+\paragraph{} The scoring function is the negative distance to the separating hyperplane, so that higher scores indicate higher anomaly likelihood.
+\paragraph{Results}
+On the test set, OC-SVM achieves a PR-AUC of 0.9977. Using the operating threshold calibrated on validation normal scores with the shared POT policy and a GPD tail fit, the final threshold is $\tau=4.7243$, yielding precision~=~0.9966, recall~=~0.8824, and F1~=~0.9360.
+
+Table~\ref{tab:ocsvm-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
+
+\begin{table}[H]
+\centering
+\caption{OC-SVM per-class test metrics.\label{tab:ocsvm-per-class}}
+\begin{tabular}{ccrrrr}
+\toprule
+\textbf{Fault class} & \textbf{Number of Samples} & \textbf{PR-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\midrule
+Short-Circuit & 1210  & 0.9998 & 0.9202 & 1.0000 & 0.9584 \\
+Degradation & 1168  & 0.8993 & 0.9175 & 1.0000 & 0.9570 \\
+Open-Circuit & 1211  & 1.0000 & 0.9202 & 1.0000 & 0.9584 \\
+Shadowing & 30973 & 0.9972 & 0.9961 & 0.8688 & 0.9281 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+
+\subsubsection{Isolation Forest}
+
+As previously discussed in Subsection~\ref{subsec:iforest}, Isolation Forest is an ensemble anomaly detection method that isolates anomalies by recursively partitioning the data with random splits. Anomalous points require fewer splits to be isolated, resulting in a shorter average path length from the root to the terminating leaf in the ensemble of random partitioning trees.
+
+\paragraph{} Hyperparameter optimization is conducted with Optuna using the TPE sampler over 35 trials, maximizing \texttt{macro\_per\_class\_pr\_auc} on the validation set. Table~\ref{tab:iforest-hpo} defines the search space.
+
+\begin{table}[H]
+\centering
+\caption{Isolation Forest hyperparameter search space.\label{tab:iforest-hpo}}
+\begin{tabular}{cc}
+\toprule
+\textbf{Parameter} & \textbf{Range} \\
+\midrule
+\texttt{n\_estimators}  & [200, 600], step~=~100 \\
+\texttt{max\_samples}   & categorical: $\{512, 1024, 2048, \texttt{auto}\}$ \\
+\texttt{max\_features}  & [0.5, 1.0], step~=~0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{} The anomaly score is obtained by negating the per-sample output of the \texttt{score\_samples} method, so that higher scores correspond to higher anomaly likelihood:
+\begin{equation}
+    s(x) = -\mathrm{score\_samples}(x).
+\end{equation}
+The operating threshold is calibrated on normal-only validation scores using the GPD tail-fit strategy described in Section~\ref{sec:ad-shared-infra}.
+
+\paragraph{Results}
+On the test set, Isolation Forest achieves a PR-AUC of 0.9897. Using the operating threshold calibrated on validation normal scores with the shared POT policy and a GPD tail fit, the final threshold is $\tau=0.5617$, yielding precision~=~0.9925, recall~=~0.7923, and F1~=~0.8812.
+
+Table~\ref{tab:iforest-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
+
+\begin{table}[H]
+\centering
+\caption{Isolation Forest per-class test metrics.\label{tab:iforest-per-class}}
+\begin{tabular}{ccrrrr}
+\toprule
+\textbf{Fault class} & \textbf{Number of Samples} & \textbf{PR-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\midrule
+Short-Circuit & 1220  & 0.9696 & 0.7995 & 1.0000 & 0.8886 \\
+Degradation   & 1180  & 0.5645 & 0.5672 & 0.3398 & 0.4250 \\
+Open-Circuit  & 1803  & 1.0000 & 0.8549 & 1.0000 & 0.9218 \\
+Shadowing     & 46630 & 0.9881 & 0.9918 & 0.7903 & 0.8796 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Bayesian Online Change Point Detection (BOCD)}
+
+The Bayesian Online Change Point Detection (BOCD) detector models each feature independently using a Normal-Inverse-Gamma (NIG) conjugate prior, and forms a joint multivariate predictive density as the product of univariate Student-$t$ predictives. The sequential run-length posterior is then used to compute a predictive mixture likelihood, which decreases sharply when the observed sequence becomes unlikely under the current run.
+
+\paragraph{} As in the other classical baselines, inputs are standardized using a \texttt{StandardScaler} fitted on the training partition. During \texttt{fit}, the NIG prior parameters are initialized from the training statistics, with $\mu_0$ set to the per-feature training mean and $\beta_0$ set to $\alpha_0$ times the per-feature training variance.
+
+\paragraph{} BOCD maintains a run-length distribution with a geometric hazard prior controlled by \texttt{hazard\_lambda} (denoted $\lambda$), where the changepoint probability is $h=1/\lambda$. The run-length posterior is truncated to $R_{\mathrm{trunc}}=200$ to keep memory and compute bounded by $\mathcal{O}(R_{\mathrm{trunc}}\times F)$.
+
+\paragraph{} The anomaly score is defined as the negative log predictive likelihood under the run-length mixture. Let $R_t(r)$ be the run-length posterior at time $t$ and $p(x_t\mid r)$ the corresponding predictive density; the score is computed as:
+\begin{equation}
+    s_t = -\log\left(\sum_{r=0}^{R_{\mathrm{trunc}}} R_t(r)\, p(x_t\mid r)\right).
+\end{equation}
+
+\paragraph{} To avoid state carryover across operational gaps, scoring is group-aware: the run-length distribution is reset at each segment boundary (\texttt{episode\_id} for Path~A and \texttt{operating\_day\_id} for Path~B). The first score in every segment is therefore computed from the global prior fitted on the training partition.
+
+\paragraph{} When hyperparameter optimization is enabled, Optuna is used with the TPE sampler for 35 trials, tuning only \texttt{hazard\_lambda}.
+
+\begin{table}[H]
+\centering
+\caption{BOCD hyperparameter search space.\label{tab:bocd-hpo}}
+\begin{tabular}{p{3.5cm}p{4.3cm}p{6.0cm}}
+\toprule
+\textbf{Parameter} & \textbf{Range} & \textbf{Meaning} \\
+\midrule
+\texttt{hazard\_lambda} & $[50, 2000]$ (log-uniform) & Expected run length before a changepoint: $h=1/\lambda$. Lower values imply more frequent expected changepoints and typically higher sensitivity. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{} The operating threshold is calibrated on validation scores. For BOCD, $\tau$ is selected by scanning the validation PR curve and choosing the threshold that maximizes validation F1 (\texttt{validation\_pr\_curve\_f1}).
+
+\paragraph{Results}
+
+On the test set, BOCD achieves a PR-AUC of 0.8221. Using the operating threshold selected on the validation PR curve to maximize F1, the final threshold is $\tau=-4.9190$, yielding precision~=~0.6901, recall~=~0.9010, and F1~=~0.7816.
+
+Table~\ref{tab:bocd-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
+
+\begin{table}[H]
+\centering
+\caption{BOCD per-class test metrics.\label{tab:bocd-per-class}}
+\begin{tabular}{ccrrrr}
+\toprule
+\textbf{Fault class} & \textbf{Number of Samples} & \textbf{PR-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\midrule
+Short-Circuit & 2439  & 0.0790 & 0.0632 & 0.9483 & 0.1185 \\
+Degradation   & 2855  & 0.0613 & 0.0573 & 0.7296 & 0.1062 \\
+Open-Circuit  & 2410  & 0.3001 & 0.0657 & 1.0000 & 0.1232 \\
+Shadowing     & 77058 & 0.8110 & 0.6698 & 0.9027 & 0.7690 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% \subsection{Novel Approaches}
+In this section, we present novel model architectures developed for this exact task, these approaches are based on deep learning and explore complementary features from classical appraches, as well as from the literature. 
+\subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
+The proposed Mamba Adaptive Anomaly Transformer (MAAT) is a deep semi-supervised anomaly detector designed for multivariate PV time-series data. The architecture combines sparse anomaly attention with a parallel Mamba state-space branch and a minimax association learning objective. Unlike classical reconstruction-based autoencoders, MAAT jointly models reconstruction fidelity and temporal association consistency, allowing the detector to identify subtle deviations in temporal dynamics even when reconstruction error alone remains low.
+
+\paragraph{} The overall architecture is illustrated in Fig.~\ref{fig:maat_architecture}. The model receives an input window
+\[
+x \in \mathbb{R}^{B \times W \times F},
+\]
+where $B$ denotes the batch size, $W$ the temporal window length, and $F$ the number of features. The input is first transformed through a \texttt{DataEmbedding} module composed of:
+\begin{itemize}
+    \item a linear token embedding projecting $F \rightarrow d_{\text{model}}$,
+    \item a sinusoidal positional embedding,
+    \item and a dropout layer applied after summation.
+\end{itemize}
+
+The resulting representation is:
+\[
+H^{(0)} \in \mathbb{R}^{B \times W \times d_{\text{model}}}.
+\]
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/detection/maat-architecture.png}
+    \caption{Overall architecture of the proposed MAAT model combining sparse anomaly attention and Mamba state-space modeling.}
+    \label{fig:maat_architecture}
+\end{figure}
+
+\paragraph{} The encoder consists of $L$ stacked \texttt{EncoderLayer} blocks. Each layer contains two parallel temporal modeling branches: a sparse anomaly-attention branch and a Mamba state-space branch. Their outputs are fused through a learned gating mechanism before being processed by a position-wise feed-forward network.
+
+\paragraph{} The anomaly-attention branch computes two distinct temporal association matrices:
+\begin{itemize}
+    \item the \emph{series association} $S$, learned through block-local sparse self-attention,
+    \item and the \emph{prior association} $P$, defined by a Gaussian kernel parameterized by learned variance terms.
+\end{itemize}
+
+Given queries $Q$, keys $K$, and values $V$, the series association is computed as:
+
+\begin{equation}
+S = \mathrm{Softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right),
+\end{equation}
+
+where attention is restricted to positions within the same temporal block of size \texttt{block\_size}. This sparse attention mechanism constrains the model to learn local temporal dependencies characteristic of normal PV operation.
+
+\paragraph{} In parallel, the prior association is modeled using a Gaussian kernel:
+
+\begin{equation}
+P_{i,j} \propto
+\exp\left(
+-\frac{|i-j|^2}{2\sigma_i^2}
+\right),
+\end{equation}
+
+where $\sigma_i$ is learned dynamically through a dedicated linear projection layer. The prior distribution represents an inductive bias describing expected local temporal continuity under normal operating conditions.
+
+\paragraph{} Unlike standard attention mechanisms, only the learned series association $S$ is used for value aggregation:
+
+\begin{equation}
+\mathrm{Attention}(Q,K,V) = S \cdot V.
+\end{equation}
+
+The Gaussian prior $P$ is used exclusively for discrepancy-based anomaly scoring and minimax optimization.
+
+\paragraph{} Parallel to the attention branch, each encoder layer contains a Mamba selective state-space model (SSM) branch. The Mamba block models long-range temporal dependencies with linear computational complexity, enabling efficient processing of long PV sequences while preserving sequential dynamics that may not be captured by local attention alone.
+
+\paragraph{} The outputs of the attention and Mamba branches are fused through a learned gating mechanism:
+
+\begin{equation}
+G = \sigma\left(
+W_g [H_{\mathrm{mamba}} \, \| \, H_{\mathrm{attn}}]
+\right),
+\end{equation}
+
+\begin{equation}
+H_{\mathrm{fused}}
+=
+G \odot H_{\mathrm{mamba}}
++
+(1-G) \odot H_{\mathrm{attn}},
+\end{equation}
+
+where $\sigma(\cdot)$ denotes the sigmoid activation and $\odot$ the element-wise product. This mechanism allows the network to adaptively determine whether local attention-based patterns or long-range state-space dynamics should dominate for a given temporal context.
+
+\paragraph{} The fused representation is processed through residual connections, Layer Normalization, and a position-wise feed-forward network implemented using $1\times1$ convolutions with GELU activation. After the final encoder layer, a linear projection reconstructs the original feature space:
+
+\[
+\hat{x} \in \mathbb{R}^{B \times W \times F}.
+\]
+
+\paragraph{} MAAT is trained using a minimax objective combining reconstruction error and association discrepancy. Let $\mathcal{L}_{\mathrm{rec}}$ denote the reconstruction mean squared error and $\mathrm{KL}(\cdot\|\cdot)$ the Kullback--Leibler divergence. The training objective is defined as:
+
+\begin{equation}
+\mathcal{L}
+=
+2\mathcal{L}_{\mathrm{rec}}
++
+k
+\left[
+\mathrm{KL}(P \| S)
+-
+\mathrm{KL}(S \| P)
+\right],
+\end{equation}
+
+where $k$ controls the balance between reconstruction and association learning. This minimax formulation encourages the learned series associations to diverge maximally from the Gaussian prior on normal data, thereby amplifying deviations during anomalous conditions.
+
+\paragraph{} During inference, anomaly scores are computed using both reconstruction error and association discrepancy. The discrepancy between the series and prior associations is first estimated as:
+
+\begin{equation}
+D_t
+=
+\mathrm{KL}(S \| P)
++
+\mathrm{KL}(P \| S).
+\end{equation}
+
+The discrepancy is transformed into temporal importance weights using a temperature-scaled softmax:
+
+\begin{equation}
+w_t
+=
+\mathrm{Softmax}(-T D_t),
+\end{equation}
+
+where $T$ is the temperature hyperparameter. The final timestep-level anomaly score is then computed as:
+
+\begin{equation}
+A_t
+=
+w_t \cdot \|x_t - \hat{x}_t\|^2.
+\end{equation}
+
+Window-level anomaly scores are obtained by taking the maximum score over the temporal dimension. This formulation ensures that anomalies are detected only when both temporal associations are disrupted and reconstruction quality deteriorates.
+
+\paragraph{} MAAT is trained exclusively on healthy operating data, following a semi-supervised anomaly detection paradigm. Hyperparameter optimization is performed using Optuna with a two-stage Tree-structured Parzen Estimator (TPE) search strategy. The first stage optimizes training-related parameters such as learning rate, dropout, temperature, and reconstruction weight, while the second stage optimizes architectural parameters including window size, block size, embedding dimension, number of heads, encoder depth, and feed-forward dimension.
+
+\paragraph{} To ensure consistent thresholding across all evaluated baselines, the anomaly threshold is calibrated using a Peaks-Over-Threshold (POT) Generalized Pareto Distribution (GPD) fitted on validation-normal scores.
+
+\paragraph{Results}
+
+\section{Fault Diagnosis Implementation and Results}
+\subsection{Task Formulation and Methodology}
+
+\paragraph{Problem definition.}
+Let $x \in \mathbb{R}^F$ denote a feature vector computed from a time segment of PV electrical and meteorological signals, and let $y \in \{0,\dots,C-1\}$ denote the corresponding fault label among $C$ classes. The diagnosis task consists in learning a classifier $f_\theta$ that maps $x$ to a class probability vector $\hat{p}(y\mid x)$, and predicts the most likely class $\hat{y}=\arg\max_c \hat{p}(c\mid x)$. Because fault classes can be imbalanced in realistic PV logs, the training and evaluation protocol must account for class frequency differences.
+
+\paragraph{Inputs.}
+Diagnosis is performed on pre-engineered tabular features rather than on raw time-series windows. Feature computation is executed upstream in the preprocessing and featurization pipeline, and the classification stage consumes the resulting feature tables. This design keeps the diagnosis models lightweight and enables transparent analysis of feature contributions.
+
+\paragraph{Evaluation protocol and metrics.}
+The dataset is split into training, validation, and test partitions using the same leakage-aware splitting protocol described in Section~\ref{sec:implementation-splitting}. Model selection is primarily driven by macro-averaged F1-score (macro F1), which assigns equal weight to each class and is therefore sensitive to minority-class performance. For completeness, additional metrics are reported, including overall accuracy, balanced accuracy, macro and weighted precision/recall/F1, and one-vs-rest (OvR) precision--recall AUC values (weighted and per-class).
+
+% \section{Shared Experimental Infrastructure}\label{sec:diag-shared-infra}
+
+% This section summarizes the shared training and evaluation infrastructure used by all implemented diagnosis models. The common utilities are implemented in the module \texttt{src/modeling/classification/ml/common.py}, and are designed to enforce consistent validation discipline, reproducibility, and comparable reporting across models.
+
+% \paragraph{Pipeline overview.}
+% The diagnosis workflow follows a fixed sequence of stages: data ingestion, split generation, preprocessing, feature extraction, and classifier training. In this chapter, only the classification stage is detailed. The classifier is trained and evaluated exclusively on the engineered feature tables produced by the upstream pipeline.
+
+% \paragraph{Feature ingestion and run management.}
+% Feature tables are loaded through a single entrypoint that resolves the latest (or a specified) feature-generation run for the chosen dataset and feature profile. This mechanism ensures that model runs are traceable to a concrete, versioned feature artifact, and it allows repeatable comparisons across classifiers without re-running feature extraction.
+
+% \paragraph{Threading policy.}
+% To make experimentation efficient and predictable across machines, a resource-aware threading policy is applied. The available CPU budget is detected automatically, one core is reserved for the operating system, and the remaining threads are split between parallel hyperparameter optimization trials and per-trial model training threads. Command-line overrides allow the user to bound the total thread usage and the number of parallel optimization jobs.
+
+% \paragraph{Label encoding.}
+% Fault labels are encoded into contiguous integer identifiers $\{0,\dots,C-1\}$ using a fitted label encoder. The encoder is trained on the training labels and then applied unchanged to validation and test partitions. It is serialized alongside the model artifact to ensure that inference uses the same class mapping as training.
+
+% \paragraph{Hyperparameter optimization (HPO) and validation modes.}
+% All implemented diagnosis models support automatic hyperparameter optimization through a unified interface. Two validation modes are available. The default mode uses a classical holdout protocol in which each trial is fitted on the training partition and scored on the validation partition using macro F1. An alternative mode performs a per-class, segment-aware temporal cross-validation in which folds follow an expanding-window structure. This second mode provides a stronger guard against temporal leakage when fault segments exhibit time-dependent structure.
+
+% \paragraph{Probability calibration.}
+% In addition to maximizing classification accuracy, reliable probability estimates are important for downstream decision-making (e.g., confidence-based alerting and operator interfaces). Therefore, an optional probability calibration stage is enabled by default. After a base classifier is fitted on the training partition, a calibration model is fitted on the validation partition using sigmoid calibration (Platt scaling). Both uncalibrated and calibrated probability outputs are evaluated on the test set. Calibration quality is summarized with metrics such as log loss, a multi-class Brier score, and bin-based calibration errors including the Expected Calibration Error (ECE) and Maximum Calibration Error (MCE).
+
+% \paragraph{Leakage checks.}
+% Before and after training, automated checks are executed to detect common leakage failure modes. In particular, an exact-duplicate overlap check verifies that identical feature rows do not appear across training and validation partitions, and a leakage report is produced on the test partition unless explicitly skipped. These controls complement the splitting protocol by providing empirical evidence that partition boundaries are respected.
+
+% \paragraph{Reporting artifacts.}
+% To facilitate interpretability and comparison, all models produce a consistent reporting suite. This includes a confusion matrix (raw counts and normalized), OvR precision--recall curves per class, a predicted-class distribution plot, and reliability diagnostics when calibration is enabled. For tree-based models that expose feature importance scores, the top-ranked features are also reported to support qualitative analysis of which engineered variables drive the diagnosis decisions.
+
+\subsection{Model Lineup and Results}
+\label{sec:diag-model-lineup}
+
+This section presents the classification models implemented for fault diagnosis. All models operate on the same engineered feature representation and are trained and evaluated under a shared training and evaluation harness.
+
+\begin{table}[H]
+\centering
+\caption{Summary of implemented diagnosis models and their shared training protocol. HPO: Hyperparameter Optimization.}\label{tab:diag-model-summary}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Family} & \textbf{Class balancing} & \textbf{Calibration}\\
+\midrule
+LightGBM      & Gradient-boosted trees & Balanced class weights & Sigmoid on validation\\
+CatBoost      & Gradient-boosted trees & Balanced class weights & Sigmoid on validation\\
+ExtraTrees    & Randomized tree ensemble & Balanced class weights & Sigmoid on validation\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{LightGBM Classifier}
+
+% LightGBM is a gradient-boosting framework that builds an ensemble of decision trees sequentially, where each new tree focuses on correcting the errors made by the current ensemble. In the diagnosis setting, the model learns non-linear decision boundaries over engineered features and can capture complex interactions between electrical indicators and contextual variables. LightGBM is selected as the default classifier because it provides a strong accuracy--efficiency trade-off on tabular data and scales well during hyperparameter search.
+
+% To mitigate class imbalance, the training procedure applies automatic class weighting so that minority fault classes receive proportionally higher penalty when misclassified. Hyperparameters such as the learning rate, number of boosting rounds, and tree complexity are tuned using the shared HPO protocol. When probability calibration is enabled, a sigmoid calibrator is fitted on validation predictions to improve the alignment between predicted confidence and empirical correctness.
+
+The gradient‑boosting classifier is built on \texttt{lightgbm.LGBMClassifier}, a histogram‑based algorithm that provides fast training and low memory usage.
+The model is configured with the following fixed parameters:
+
+\begin{itemize}
+    \item \texttt{objective = "multiclass"} – multi‑class classification using the softmax objective.
+    \item \texttt{num\_class} – set automatically to the number of distinct labels in the training data.
+    \item \texttt{random\_state} – fixed to a global seed for reproducibility.
+    \item \texttt{class\_weight = "balanced"} – per‑sample weights are computed as \(1 / \text{class\_frequency}\), so minority classes receive proportionally higher penalties during training, mitigating class imbalance.
+\end{itemize}
+
+Hyper‑parameters are tuned with Optuna (50 trials, TPE sampler, no pruning).
+The search space is defined by compact, closed intervals (Table~\ref{tab:lgbm_hp_space}); a custom suggestion parser maps \texttt{[int, int]} lists to integer uniform suggestions and \texttt{[float, float]} lists to float uniform suggestions.
+
+\begin{table}[H]
+\centering
+\caption{LightGBM hyper‑parameter search space.}
+\label{tab:lgbm_hp_space}
+\begin{tabular}{@{}lccp{5.5cm}@{}}
+\toprule
+Parameter & Range & Description \\
+\midrule
+\texttt{n\_estimators}         & [200, 500]     & Number of boosting rounds \\
+\texttt{learning\_rate}     & [0.05, 0.10]   & Step‑size shrinkage \\
+\texttt{num\_leaves}        & [31, 63]       & Maximum leaves per tree \\
+\texttt{subsample}          & [0.8, 1.0]     & Fraction of rows used per iteration \\
+\texttt{colsample\_bytree}  & [0.7, 1.0]     & Fraction of columns used per tree \\
+\texttt{reg\_alpha}         & [\(10^{-8}\), 10.0] & L1 regularisation \\
+\texttt{reg\_lambda}        & [\(10^{-8}\), 10.0] & L2 regularisation \\
+\texttt{min\_child\_samples} & [10, 100]      & Minimum data points in a leaf \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+After hyper‑parameter selection, the final model is fitted on the combined training and validation sets.
+When calibration is enabled, a sigmoid (Platt) scaling is applied via \texttt{CalibratedClassifierCV} using the validation partition as a single hold‑out fold.
+The complete pipeline (classifier, optional calibrator, label encoder, feature names, and manifest) is serialised with \texttt{joblib}.
+
+\paragraph{Results}
+On the test set, LightGBM achieved an accuracy of 0.9897. The macro-averaged precision, recall, and F1-score were 0.9323, 0.9699, and 0.9496, respectively, which indicates strong class-balanced performance under the balanced class-weighting policy. The weighted OvR PR-AUC reached 0.9974, confirming 
+high separability across the four fault classes. Table~\ref{tab:lightgbm-per-class} reports the per-class precision, recall, F1-score, and OvR PR-AUC. Figure~\ref{fig:lgbm-confusion-matrix} shows normalizd confusion matrix for test predictions of the best LightGBM model. 
+
+
+
+\begin{table}[H]
+\centering
+\caption{LightGBM per-class test metrics.\label{tab:lightgbm-per-class}}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Class} & \textbf{Support} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{PR-AUC} \\
+\midrule
+Short-Circuit & 1182 & 0.8923 & 0.8968 & 0.8945 & 0.9357 \\
+Degradation & 596  & 0.8417 & 0.9899 & 0.9098 & 0.9875 \\
+Open-Circuit & 1201 & 0.9992 & 1.0000 & 0.9996 & 1.0000 \\
+Shadowing & 32333 & 0.9962 & 0.9928 & 0.9945 & 0.9998 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/classification/confusion_matrix_light.png}
+    \caption{LightGBM normalized confusion matrix.}
+    \label{fig:lgbm-confusion-matrix}
+\end{figure}
+
+\subsubsection{CatBoost Classifier}
+
+% CatBoost is another gradient-boosting method that uses symmetric trees and an ordered boosting strategy designed to reduce prediction shift during training. Although CatBoost is particularly known for robust handling of categorical features, it also performs competitively on fully numerical feature sets and offers stable optimization behavior. In this project, CatBoost is implemented as an alternative to LightGBM within the same training harness.
+
+% The model is tuned with the same primary objective (macro F1) and the same validation modes. Class imbalance is handled through the algorithm's native balanced class-weighting mechanism. When enabled, the same sigmoid calibration stage is applied to CatBoost probability outputs using validation data.
+CatBoost is integrated via \texttt{catboost.CatBoostClassifier}, employing symmetric trees and ordered target encoding.
+The classifier is initialised with the following fixed parameters:
+
+\begin{itemize}
+    \item \texttt{loss\_function = "MultiClass"} – multi‑class cross‑entropy.
+    \item \texttt{eval\_metric = "TotalF1:average=Macro"} – macro‑averaged F1 is tracked natively during training, removing the need for an external evaluation step inside the objective function.
+    \item \texttt{auto\_class\_weights = "Balanced"} – CatBoost’s built‑in automatic class balancing, analogous to LightGBM’s \texttt{class\_weight="balanced"}.
+    \item \texttt{random\_seed} – set to the global seed.
+    \item \texttt{thread\_count} – number of threads, directly assigned from the resolved thread count (no \texttt{n\_jobs}/\texttt{num\_threads} separation).
+\end{itemize}
+
+Hyper‑parameter search uses the same Optuna framework (50 trials, TPE sampler) or falls back to the midpoint of each range when optimisation is disabled.
+The search space (Table~\ref{tab:catboost_hp_space}) contains log‑uniform, integer, float, and categorical domains; the suggestion parser interprets the explicit \texttt{\{type, low, high\}} specification accordingly, applying step sizes for integers and logarithmic sampling where indicated.
+
+\begin{table}[H]
+\centering
+\caption{CatBoost hyper‑parameter search space.}
+\label{tab:catboost_hp_space}
+\begin{tabular}{@{}lcp{5.5cm}p{2.5cm}@{}}
+\toprule
+Parameter & Range & Description \\
+\midrule
+\texttt{iterations}         & [300, 1200] (step 100) & Number of boosting rounds \\
+\texttt{depth}           & [4, 8]       & Tree depth \\
+\texttt{learning\_rate}  & [0.02, 0.15] & Step‑size shrinkage \\
+\texttt{l2\_leaf\_reg}   & [\(10^{-2}\), 20.0] & L2 regularisation on leaf values \\
+\texttt{random\_strength}& [\(10^{-8}\), 5.0] & Amount of randomness for scoring splits \\
+\texttt{bagging\_temperature} & [0.0, 5.0] & Bayesian bootstrap intensity \\
+\texttt{border\_count}    & \{64, 128, 254\} & Number of splits for numerical features \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The training pipeline follows the same logical steps as LightGBM: feature loading, leakage precheck, label encoding, HPO objective (hold‑out or segment‑temporal CV with macro F1 as the target), optional probability calibration via sigmoid Platt scaling, and final serialisation.
+The CatBoost‑specific differences are:
+
+\begin{enumerate}
+    \item The native \texttt{eval\_metric} provides macro F1 without the need for external \texttt{sklearn} computation inside the objective function.
+    \item Class balancing is handled by \texttt{auto\_class\_weights="Balanced"}.
+    \item Thread parallelism is controlled solely by \texttt{thread\_count}; there is no \texttt{n\_jobs} versus \texttt{num\_threads} distinction.
+    \item No separate evaluation set is passed during fitting — all data are used for training and metrics are tracked internally.
+\end{enumerate}
+
+After hyper‑parameter selection, the final model is fitted on the combined training and validation sets. When calibration is requested, a \texttt{\_PrefitEstimator} wrapper is used to feed the pre‑trained model into \texttt{CalibratedClassifierCV} (sigmoid, with the validation partition acting as a single calibration fold).
+\paragraph{Results}
+On the test set, CatBoost achieved an accuracy of 0.9920. The macro-averaged precision, recall, and F1-score were 0.9239, 0.9958, and 0.9565, respectively, which indicates strong class-balanced performance under the native balanced class-weighting policy. The weighted OvR PR-AUC reached 0.9979, confirming high separability across the 
+four fault classes. Table~\ref{tab:catboost-per-class} reports the per-class precision, recall, F1-score, and OvR PR-AUC. Figure~\ref{fig:catboost_confusion_matrix} show the normalized confusion matrix for the test set.
+
+\begin{table}[H]
+\centering
+\caption{CatBoost per-class test metrics.\label{tab:catboost-per-class}}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Class} & \textbf{Support} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{PR-AUC} \\
+\midrule
+Short-Circuit & 1182 & 0.9064 & 1.0000 & 0.9509 & 0.9632 \\
+Degradation & 596  & 0.7933 & 0.9916 & 0.8814 & 0.9586 \\
+Open-Circuit & 1201 & 0.9959 & 1.0000 & 0.9979 & 1.0000 \\
+Shadowing & 32333 & 1.0000 & 0.9915 & 0.9957 & 0.9999 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures/classification/confusion_matrix_cat.png}
+    \caption{Confusion matrix for the CatBoost classifier on the test set.}
+    \label{fig:catboost_confusion_matrix}
+\end{figure}
+
+\subsubsection{ExtraTrees Classifier}
+
+% ExtraTrees (Extremely Randomized Trees) is an ensemble method that averages the predictions of many decision trees built with strong randomization. In contrast to boosting, trees in ExtraTrees are trained largely independently, and randomness is injected by selecting split thresholds at random. This often yields robust performance with limited tuning effort, and it provides a useful non-boosting baseline for engineered-feature classification.
+
+% In the implemented pipeline, the number of trees, depth limits, split constraints, and feature subsampling strategy are tuned under the shared HPO protocol. Class imbalance is handled via balanced class weights. Probability calibration, when enabled, follows the same validation-based sigmoid calibration procedure.
+The ensemble of extremely randomised trees is built with \texttt{sklearn.ensemble.ExtraTreesClassifier}.
+Random splits and random feature subsets yield lower bias than a conventional Random Forest and produce well‑calibrated probability estimates out of the box.
+The estimator is configured with the following fixed parameters:
+
+\begin{itemize}
+    \item \texttt{random\_state} – fixed to the global seed for reproducibility.
+    \item \texttt{class\_weight = "balanced"} – sklearn’s native inverse‑frequency weighting to handle class imbalance.
+    \item \texttt{n\_jobs} – set to the resolved number of parallel jobs.
+\end{itemize}
+
+Hyper‑parameters are tuned via the same Optuna pipeline (50 trials, TPE sampler) or fall back to the midpoint of each range.
+The search space (Table~\ref{tab:et_hp_space}) contains integer, categorical, and boolean domains; the suggestion parser interprets the explicit type specifications accordingly, applying a step of 100 for \texttt{n\_estimators} and sampling uniformly from the categorical sets.
+
+\begin{table}[H]
+\centering
+\caption{ExtraTrees hyper‑parameter search space.}
+\label{tab:et_hp_space}
+\begin{tabular}{@{}lcp{5.5cm}p{3cm}@{}}
+\toprule
+Parameter  & Range & Description \\
+\midrule
+\texttt{n\_estimators}         & [300, 1200] (step 100) & Number of trees in the ensemble \\
+\texttt{criterion}           & \{gini, entropy, log\_loss\} & Split quality measure \\
+\texttt{max\_depth}          & \{None, 8, 12, 16, 24, 32\} & Maximum tree depth (None = unbounded) \\
+\texttt{min\_samples\_split}   & [2, 20]       & Minimum samples to split an internal node \\
+\texttt{min\_samples\_leaf}    & [1, 10]       & Minimum samples in a leaf node \\
+\texttt{max\_features}       & \{sqrt, log2, 0.5, 0.8, 1.0\} & Fraction/function of features considered per split \\
+\texttt{bootstrap}           & \{False, True\} & Whether to use bootstrap samples \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The training flow follows the identical shared utility structure used by LightGBM and CatBoost: feature loading, exact‑duplicate leakage precheck, label encoding, HPO objective (hold‑out or segment‑temporal CV with macro F1 as the target), optional sigmoid calibration, and final serialisation.
+Being a pure scikit‑learn estimator, ExtraTrees does not possess native evaluation callbacks or a dedicated evaluation set; each HPO trial fits a fresh \texttt{ExtraTreesClassifier} on the training data and evaluates the macro F1 score using sklearn.
+The final model is fitted on the combined training‑validation split, and when calibration is enabled the pre‑trained ensemble is wrapped in \texttt{CalibratedClassifierCV} with the validation partition serving as a single calibration fold.
+
+\paragraph{Results}
+On the test set, ExtraTrees achieved an accuracy of 0.9929. The macro-averaged precision, recall, and F1-score were 0.9319, 0.9954, and 0.9611, respectively, which indicates strong class-balanced performance under the balanced class-weighting policy. The weighted OvR PR-AUC reached 0.9979, confirming high separability across the four fault classes. Table~\ref{tab:extratrees-per-class} reports the per-class precision, recall, F1-score, and OvR PR-AUC. Figure \ref{fig:et_confusion_matrix} shows the confusion matrix, illustrating the distribution of true versus predicted classes and highlighting any misclassification patterns.
+
+
+\begin{table}[H]
+\centering
+\caption{ExtraTrees per-class test metrics.\label{tab:extratrees-per-class}}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Class} & \textbf{Support} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{PR-AUC} \\
+\midrule
+Short-Circuit & 1182 & 0.9104 & 0.9975 & 0.9520 & 0.9483 \\
+Degradation & 596  & 0.8174 & 0.9916 & 0.8961 & 0.9872 \\
+Open-Circuit & 1201 & 1.0000 & 1.0000 & 1.0000 & 1.0000 \\
+Shadowing & 32333 & 0.9999 & 0.9925 & 0.9962 & 0.9998 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures/classification/confusion_matrix_extra.png}
+    \caption{Confusion matrix for the ExtraTrees classifier on the test set.}
+    \label{fig:et_confusion_matrix}
+\end{figure}
+
+
+
