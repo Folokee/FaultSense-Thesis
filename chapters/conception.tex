@@ -343,7 +343,7 @@ The 3 feature profiles evaluated in this thesis are as follows:
 
 \begin{itemize}
     \item \texttt{baseline\_raw}: the cleaned sensor columns produced by preprocessing, with no engineered features. This profile provides the reference level against which the contribution of each feature family is measured.
-    \item \texttt{plus\_physics}: extends \texttt{baseline\_raw} by adding the 4 physics-informed feature families of Section~\ref{sec:feature-engineering}. This is the primary profile used for the headline results in Chapters~\ref{ch:detection} and~\ref{ch:classification}.
+    \item \texttt{plus\_physics}: extends \texttt{baseline\_raw} by adding the 4 physics-informed feature families of Section~\ref{sec:feature-engineering}. This is the primary profile used for the headline results in Chapter~\ref{ch:implementation}.
     \item \texttt{plus\_rolling}: extends \texttt{plus\_physics} by adding the rolling mean and rolling standard deviation over windows $w \in \{10, 30\}$ for each physics-informed feature.
 \end{itemize}
 

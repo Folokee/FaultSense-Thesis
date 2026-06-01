@@ -282,40 +282,41 @@ Shadowing     & 184311 & 0.8291 & 1.0000 & 0.8167 & 0.8991 \\
 \end{tabular}
 \end{table}
 
-\subsubsection{PC-AE (Physics-Conditioned Autoencoder)} 
-PC-AE is a feed-forward autoencoder conditioned on the same physics context $\mathbf{c} = (\texttt{irr}, \texttt{pvt})$ that is used by PC-Flow. The encoder compresses the input $\mathbf{x}$ concatenated with $\mathbf{c}$ into a low-dimensional latent code; the decoder reconstructs $\hat{\mathbf{x}}$ from the latent code and $\mathbf{c}$. The anomaly score is the mean squared reconstruction error $\mathrm{MSE}(\mathbf{x}, \hat{\mathbf{x}})$. PC-AE is trained on normal-class data with a mean squared error objective; reconstruction error is low for samples that fall on the normal manifold and high for out-of-distribution samples.
+\subsubsection{PC-Flow (Physics-Conditioned Normalizing Flow)}
 
-PC-AE serves as the primary architectural ablation point for PC-Flow: both methods condition on the same physics context, differ only in their scoring principle (reconstruction MSE versus exact conditional log-likelihood), and are trained on the same partitions with the same optimization protocol.
+PC-Flow is a conditional normalizing flow: a bijective generative model that learns the conditional density $p(\mathbf{x} \mid \mathbf{c})$ of the normal-class feature vector $\mathbf{x}$ given the physics operating context $\mathbf{c} = (\texttt{irr}, \texttt{pvt})$. The anomaly score for a test sample is the negative conditional log-likelihood:
+\[
+    s(\mathbf{x} \mid \mathbf{c}) = -\log p(\mathbf{x} \mid \mathbf{c}) = \frac{1}{2}\|\mathbf{z}\|^2 + \frac{D}{2}\log(2\pi) - \sum_{k=1}^{K} \log|\det J_k|,
+\]
+where $\mathbf{z} = f(\mathbf{x}; \mathbf{c})$ is the latent representation under the invertible transformation $f$, and $J_k$ is the Jacobian of the $k$-th coupling block. Higher scores indicate samples that are unlikely under the learned normal-class conditional distribution, and therefore more anomalous.
 
-\paragraph{Results}
-On the test set, PC-AE achieves a PR-AUC of 0.9707. At the selected operating threshold, the precision, recall, and F1-score are 0.9209, 0.8022, and 0.8555, respectively. Table~\ref{tab:pcae-overall} reports the aggregate metrics, while Table~\ref{tab:pcae-per-class-pr-auc} reports the one-vs-normal PR-AUC per fault class.
+\paragraph{} Reconstruction-based detectors score a sample by its mean squared error $\mathrm{MSE}(\mathbf{x}, \hat{\mathbf{x}}) = \frac{1}{D}\sum_{i=1}^{D}(x_i - \hat{x}_i)^2$. This averaging over all $D$ feature dimensions has two structural limitations: a subtle fault signal localized in one or two channels, such as the inter-string current divergence that characterizes the degradation class, is diluted by reconstruction accuracy on the remaining non-informative dimensions, and a deep bottleneck that learns to reconstruct normal-class data can generalize to mild anomalies, assigning them a low anomaly score. The normalizing flow avoids both failure modes: the log-likelihood is computed exactly without a lossy bottleneck, and the score accounts for the full multivariate structure of the conditional density rather than averaging error independently across dimensions.
 
-\begin{table}[H]
-\centering
-\caption{PC-AE overall anomaly detection metrics on the test set.\label{tab:pcae-overall}}
-\begin{tabular}{lc}
-\toprule
-\textbf{Metric} & \textbf{Value} \\
-\midrule
-PR-AUC & 0.9707 \\
-Precision (at threshold) & 0.9209 \\
-Recall (at threshold) & 0.8022 \\
-F1 (at threshold) & 0.8555 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{} The operating context $\mathbf{c}$ is fed into every coupling block's scale-and-translate network, so the flow models $p(\mathbf{x} \mid \mathbf{c})$ directly: a sample is flagged as anomalous if its electrical state is unlikely given its irradiance and temperature. This formulation captures the diagnostic question in PV fault detection precisely. PC-Flow is stateless — each measurement is scored independently without recurrence, attention over past windows, or temporal memory — which simplifies the deployment contract to a single feature vector in, a single scalar score out, requiring no warm-up period or history buffer.
+
+\paragraph{Architecture.} PC-Flow consists of $K = 4$ conditional affine coupling blocks. Each block splits the feature vector into two halves using a fixed binary alternating mask, computes a scale-and-translate pair $(\mathbf{s}, \mathbf{t}) = \mathrm{MLP}([\mathbf{x}_a; \mathbf{c}])$ conditioned on the pass-through half and the physics context, applies the invertible transformation $\mathbf{x}_b' = \mathbf{x}_b \odot \exp(\mathbf{s}) + \mathbf{t}$, and applies a fixed random permutation so that all feature dimensions mix across the depth of the stack. The log-scale is bounded with $\tanh(\mathbf{s}) \cdot 2$ for training stability. The coupling MLP hidden dimension is 32 with GELU activations, and the scale-and-translate head is zero-initialized so each block starts as the identity transformation. The total parameter count is approximately 23,000, and the base distribution is a standard isotropic Gaussian. The \texttt{plus\_physics} profile with 15 modeled dimensions and 2 context dimensions was used as the input representation.
+
+\paragraph{Training and HPO.} The training objective is the mean negative conditional log-likelihood on normal-class training samples. A StandardScaler fit on the normal-class training rows is applied before the flow. No fault-labeled data enters the training objective. Hyperparameter optimization uses Optuna with the TPE sampler, maximizing the fold-average validation macro per-class PR-AUC with the GPD threshold calibrated on the train-normal NLL scores. The search space covers the number of coupling blocks $K \in \{2, 4, 6, 8\}$, hidden dimension $d_h \in \{16, 32, 64\}$, batch size, learning rate, and weight decay. Early stopping monitors the validation macro per-class PR-AUC and checkpoints the configuration at its peak.
+
+\paragraph{PC-Flow Results}
+
+Table~\ref{tab:pcflow-results} reports the 5-fold episode-stratified cross-validation evaluation of PC-Flow on the Costa dataset. Values are reported as mean $\pm$ standard deviation across folds.
 
 \begin{table}[H]
 \centering
-\caption{PC-AE per-class OvR PR-AUC vs normal on the test set.\label{tab:pcae-per-class-pr-auc}}
+\caption{PC-Flow anomaly detection results on Costa (5-fold episode-stratified CV, GPD threshold).\label{tab:pcflow-results}}
 \begin{tabular}{lc}
 \toprule
-\textbf{Fault class} & \textbf{PR-AUC} \\
+\textbf{Metric} & \textbf{Mean $\pm$ std} \\
 \midrule
-Short-Circuit & 0.9999 \\
-Degradation   & 0.9501 \\
-Open-Circuit  & 1.0000 \\
-Shadowing     & 0.9609 \\
+Test macro per-class PR-AUC       & 0.990 $\pm$ 0.007 \\
+\quad Short-Circuit               & 1.000 \\
+\quad Degradation                 & 0.973 $\pm$ 0.023 \\
+\quad Open-Circuit                & 1.000 \\
+\quad Shadowing                   & 0.985 $\pm$ 0.012 \\
+Test worst-class PR-AUC           & 0.968 $\pm$ 0.018 \\
+Test binary PR-AUC                & 0.989 $\pm$ 0.008 \\
+Leakage validation                & CLEAN (all folds) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -333,7 +334,7 @@ The \textbf{One‑Class SVM} delivers excellent overall ranking (PR‑AUC 0.9977
 
 \textbf{GTBAD}, a Transformer–BiLSTM reconstruction model, yields respectable deployment metrics (macro F1 0.9156) but its per‑class ranking quality is extremely uneven. For Short‑Circuit and Degradation the PR‑AUC values are near chance level (0.0432 and 0.0410), while Open‑Circuit (0.9890) and Shadowing (0.8291) are well ranked. This indicates that the reconstruction error works well for large‑scale anomalies (Open‑Circuit, Shadowing) but fails to provide a meaningful ordering for the more subtle fault types, likely because the model overfits to the dominant normal patterns and does not amplify the signal of those faults.
 
-\textbf{PC‑AE} (Physics‑Conditioned Autoencoder) stands out by delivering consistently high ranking quality across all fault classes. Its per‑class PR‑AUC values are 0.9999 (Short‑Circuit), 0.9501 (Degradation), 1.0000 (Open‑Circuit), and 0.9609 (Shadowing). The conditioning on irradiance and module temperature forces the autoencoder to learn a physically meaningful normal manifold, making the reconstruction error a robust anomaly score that correctly orders anomalies ahead of normal samples irrespective of the fault type. Even though its overall F1 (0.8555) is lower than some competitors, the uniform ranking quality per class is unmatched.
+\textbf{PC-Flow} (Physics-Conditioned Normalizing Flow) delivers consistently high ranking quality across all fault classes under a rigorous 5-fold episode-stratified cross-validation protocol. Its per-class PR-AUC values are 1.000 (Short-Circuit and Open-Circuit), 0.973 (Degradation), and 0.985 (Shadowing), with a worst-class PR-AUC of 0.968 and a binary PR-AUC of 0.989. The exact conditional log-likelihood avoids the limitations of reconstruction-based scoring: the score accounts for the full multivariate structure of the conditional density rather than averaging error independently across dimensions, and the absence of a lossy bottleneck ensures that subtle fault signatures such as the inter-string current divergence of the degradation class are not diluted by non-informative dimensions. The stateless architecture of fewer than 23,000 parameters, accepting a single feature vector and producing a single scalar score, directly targets the 50~ms edge inference budget without recurrence or temporal memory overhead. The physics conditioning on irradiance and module temperature provides the inductive bias necessary to model normal PV behaviour as a conditional density, making the negative log-likelihood a robust and interpretable anomaly score.
 
 To facilitate a direct comparison, Table~\ref{tab:model-summary-overall} summarizes the overall PR-AUC and F1 for all anomaly detection models.
 
@@ -348,13 +349,13 @@ OC-SVM & 0.9977 & 0.9360 \\
 Isolation Forest & 0.9897 & 0.8812 \\
 BOCD & 0.8221 & 0.7816 \\
 GTBAD & 0.4756 & 0.9156 \\
-PC-AE & 0.9707 & 0.8555 \\
+PC-Flow & 0.989 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Winning Model: PC‑AE}
-Although OC‑SVM and GTBAD offer higher deployment‑oriented metrics (F1, precision, recall) in several classes, \textbf{PC‑AE is selected as the winning model} because it delivers the best and most consistent \emph{ranking quality} per fault class, as measured by per‑class PR‑AUC. A high PR‑AUC indicates that the anomaly score reliably orders true anomalies above normal samples, which is the most critical property for an anomaly detection system in practice: it guarantees that, regardless of the chosen threshold, the model’s internal ordering is trustworthy. PC‑AE achieves near‑perfect PR‑AUC for Short‑Circuit, Open‑Circuit, and Shadowing, and a very strong 0.9501 for Degradation—a class where all other models exhibit significant ranking weaknesses. The physics conditioning provides the inductive bias necessary to capture the normal PV behaviour, making the reconstruction error a robust and interpretable anomaly score. Therefore, PC‑AE is chosen as the best overall candidate for reliable fault detection in this PV dataset.
+\paragraph{Winning Model: PC-Flow}
+\textbf{PC-Flow is selected as the winning model} because it delivers the best and most consistent ranking quality per fault class under a rigorous 5-fold episode-stratified cross-validation protocol, as measured by per-class PR-AUC. A high PR-AUC indicates that the anomaly score reliably orders true anomalies above normal samples, which is the most critical property for an anomaly detection system in practice: it guarantees that, regardless of the chosen threshold, the model's internal ordering is trustworthy. PC-Flow achieves perfect PR-AUC for Short-Circuit and Open-Circuit, and very strong 0.973 for Degradation and 0.985 for Shadowing — with a worst-class PR-AUC of 0.968 that exceeds the best degradation-class PR-AUC of any other detector. The exact conditional log-likelihood scoring, stateless inference, and fewer than 23,000 parameters make it directly deployable within the 50~ms edge inference budget described in Chapter~\ref{ch:deployment}. Therefore, PC-Flow is chosen as the best overall candidate for reliable fault detection in this PV dataset.
 
 
 
@@ -458,7 +459,7 @@ The complete pipeline (classifier, optional calibrator, label encoder, feature n
 
 \paragraph{Results}
 On the test set, LightGBM achieved an accuracy of 0.9897. The macro-averaged precision, recall, and F1-score were 0.9323, 0.9699, and 0.9496, respectively, which indicates strong class-balanced performance under the balanced class-weighting policy. The weighted OvR PR-AUC reached 0.9974, confirming 
-high separability across the four fault classes. Table~\ref{tab:lightgbm-per-class} reports the per-class precision, recall, F1-score, and OvR PR-AUC. Figure~\ref{fig:lgbm-confusion-matrix} shows normalizd confusion matrix for test predictions of the best LightGBM model. 
+high separability across the four fault classes. Table~\ref{tab:lightgbm-per-class} reports the per-class precision, recall, F1-score, and OvR PR-AUC. Figure~\ref{fig:lgbm-confusion-matrix} shows normalized confusion matrix for test predictions of the best LightGBM model. 
 
 
 
@@ -668,7 +669,7 @@ While ExtraTrees offers a slightly higher macro F1 and LightGBM excels on Degrad
 
 
 \section{Conclusion}
-This chapter implemented and evaluated a two-stage Fault Detection and Diagnosis (FDD) pipeline on the Costa PV dataset. For anomaly detection, the \textbf{Physics-Conditioned Autoencoder (PC-AE)} was selected as the winning model because it delivers consistently high ranking quality across all fault classes (per-class PR-AUC >= 0.9501), ensuring reliable anomaly scoring regardless of the chosen threshold. For fault diagnosis, \textbf{CatBoost} emerged as the preferred classifier, offering the best PR-AUC for the safety-critical Short-Circuit class while maintaining perfect recall on that class and near-perfect metrics overall (macro F1 0.9565). Together, PC-AE and CatBoost form a coherent FDD pipeline: PC-AE provides sensitive, well-ordered anomaly alarms, and CatBoost gives precise, trustworthy fault identification once an alarm is raised. Both models are fully reproducible under the versioned experimental infrastructure, and their selection prioritises operational safety and per-class reliability over aggregate metrics alone.
+This chapter implemented and evaluated a two-stage Fault Detection and Diagnosis (FDD) pipeline on the Costa PV dataset. For anomaly detection, the \textbf{Physics-Conditioned Normalizing Flow (PC-Flow)} was selected as the winning model because it delivers consistently high ranking quality across all fault classes (per-class PR-AUC $\geq$ 0.973, worst-class PR-AUC 0.968) under 5-fold episode-stratified cross-validation, ensuring reliable anomaly scoring regardless of the chosen threshold. For fault diagnosis, \textbf{CatBoost} emerged as the preferred classifier, offering the best PR-AUC for the safety-critical Short-Circuit class while maintaining perfect recall on that class and near-perfect metrics overall (macro F1 0.9565). Together, PC-Flow and CatBoost form a coherent FDD pipeline: PC-Flow provides sensitive, well-ordered anomaly alarms through exact conditional density estimation, and CatBoost gives precise, trustworthy fault identification once an alarm is raised. Both models are fully reproducible under the versioned experimental infrastructure, and their selection prioritises operational safety and per-class reliability over aggregate metrics alone.
 
 
 
