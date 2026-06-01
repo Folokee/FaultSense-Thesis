@@ -1,4 +1,5 @@
 \chapter{Implementation and Evaluation of the Anomaly Detection and Fault Diagnosis Pipeline}
+\label{ch:implementation}
 
 \section{Introduction}
 This chapter details the implementation of the anomaly detection and fault diagnosis methods explored during this project. It covers the model architectures, training procedure and results
@@ -48,7 +49,7 @@ Model selection is conducted with Optuna using the Tree-structured Parzen Estima
 All runs are tracked with MLflow and logged to a centralized DagsHub tracking server. Each run records the active dataset and split identifier, the selected feature profile, the final HPO parameters, and the computed validation and test metrics. In addition, lightweight artifacts are stored alongside metrics, including serialized preprocessing objects (e.g., scalers), model files (\texttt{.joblib} for classical models and checkpoints for deep learning), and diagnostic figures such as PR curves, score histograms, and confusion matrices. This tracking discipline supports direct comparison across the anomaly detection (Task~A) and fault classification (Task~B) experiments.
 
 \paragraph{Random seeds and repeated runs.}
-To control stochasticity, experiments are executed with predefined random seeds. A canonical single-run seed is used for rapid iteration, while a small multi-seed suite is used when estimating the stability of reported metrics. Unless stated otherwise, training and evaluation follow the leakage-aware splitting protocol described in Section~\ref{sec:implementation-splitting}.
+To control stochasticity, experiments are executed with predefined random seeds. A canonical single-run seed is used for rapid iteration, while a small multi-seed suite is used when estimating the stability of reported metrics. Unless stated otherwise, training and evaluation follow the leakage-aware splitting protocol described in Section~\ref{sec:splitting}.
 
 \section{Anomaly Detection Implementation and Results}
 % \subsection{Introduction}
@@ -142,7 +143,7 @@ As previously discussed in Subsection~\ref{subsec:iforest}, Isolation Forest is 
 \begin{equation}
     s(x) = -\mathrm{score\_samples}(x).
 \end{equation}
-The operating threshold is calibrated on normal-only validation scores using the GPD tail-fit strategy described in Section~\ref{sec:ad-shared-infra}.
+The operating threshold is calibrated on normal-only validation scores using the GPD tail-fit strategy described in Section~\ref{sec:threshold-calibration}.
 
 \paragraph{Results}
 On the test set, Isolation Forest achieves a PR-AUC of 0.9897. Using the operating threshold calibrated on validation normal scores with the shared POT policy and a GPD tail fit, the final threshold is $\tau=0.5617$, yielding precision~=~0.9925, recall~=~0.7923, and F1~=~0.8812.

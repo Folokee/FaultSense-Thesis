@@ -24,11 +24,11 @@ This chapter specifies the design of the proposed photovoltaic Fault Detection a
 
 \section{System Architecture}
 The overall architecture includes 4 main components, as illustrated in figure \ref{fig:system_architecture}:
-\par\noindent\textbf{Data collection and transformation:} Collects raw data from sensors such as irradianceand ambient temperature, and electrical signals and applies the necessary preprocessing and transformations
+\par\noindent\textbf{Data collection and transformation:} Collects raw data from sensors such as irradiance and ambient temperature, and electrical signals and applies the necessary preprocessing and transformations
 to make it suitable for input to the next stage of the system.
 \par\noindent\textbf{Anomaly Detection:} Upon receiving the preprocessed data, this component detects persistent deviations from expected values under observed meteorological conditions. Such deviations may indicate an anomaly in the system.
-\par\noindent\textbf{Fault Diagnosis:} If an anomalt is detected, this component's responsability is to determine the type of fault that has occured from a pre-determined set of faults.
-\par\noindent\textbf{Monitoring Interface:} Displays the system's real-time status, including detected anomalies, diagnosed faults along with their confidance scores, incoming data visualizations and performance rapports. 
+\par\noindent\textbf{Fault Diagnosis:} If an anomaly is detected, this component's responsibility is to determine the type of fault that has occurred from a pre-determined set of faults.
+\par\noindent\textbf{Monitoring Interface:} Displays the system's real-time status, including detected anomalies, diagnosed faults along with their confidence scores, incoming data visualizations and performance reports. 
 
 
 \begin{figure}[H]
@@ -39,7 +39,7 @@ to make it suitable for input to the next stage of the system.
 \end{figure}
 
 \section{Dataset Selection}
-Based on the previous dataset survey in\ref{sec:data-survey}, the Costa and La Réunion datasets were selected for the development and evaluation of our FDD system.
+Based on the previous dataset survey in Section~\ref{sec:data-survey}, the Costa dataset was selected for the development and evaluation of our FDD system.
 \textbf{Costa} is the primary experimental dataset, collected from a pilot PV plant located in City of Curitiba-State of Paraná, Brazil. It contains 16 Canadian 330W Poly-crystalline Modules (CS6U-330P) divided into 2 strings of 8 modules each
 running the Maximum Power Poin Tracking (MPPT) algorithm. The system may yeild 5kW peak installed capacity \citep{MonitoringSystemOnline2020}. The figure \ref{fig:costa_circuit} illustrates in detail the electrical configuration.
 \begin{figure}[H]
@@ -319,7 +319,7 @@ Discrete first differences of the primary channels expose rapid transients chara
 \]
 These features also serve as stationary alternatives to the trending raw levels identified during the stationarity analysis of Section~\ref{sec:eda}.
 
-Together, the 4 families yield approximately 17 engineered features after the selection stack described below has pruned the candidate pool. This feature set defines the profile \texttt{plus\_physics}, which serves as the principal representation for the headline experiments in Chapters~\ref{ch:detection} and~\ref{ch:classification}.
+Together, the 4 families yield approximately 17 engineered features after the selection stack described below has pruned the candidate pool. This feature set defines the profile \texttt{plus\_physics}, which serves as the principal representation for the headline experiments in Chapter~\ref{ch:implementation}.
 
 \subsection{Statistical Features}
 
@@ -355,6 +355,7 @@ The second stage applies minimum-redundancy maximum-relevance (mRMR) feature sel
 
 
 \section{Threshold Calibration Policy}
+\label{sec:threshold-calibration}
 
 The primary evaluation metric for Task~A, PR-AUC, is a \emph{threshold-free} measure: it summarizes the quality of the score ranking across the entire precision-recall trade-off curve and is insensitive to the choice of any single operating threshold. A model with high PR-AUC produces a ranking in which fault samples tend to receive higher anomaly scores than normal samples, regardless of where the decision boundary is placed. However, deployment requires choosing one operating point on this curve: the threshold at which the continuous score is converted into a binary alarm. The quality of this operating point determines the actual precision and recall of the deployed system, and a poorly calibrated threshold can substantially degrade operational performance even when ranking quality is high.
 
@@ -362,45 +363,12 @@ The calibration challenge is that the threshold must be set entirely from traini
 
 Beyond a single operating point, the evaluation reports a suite of operating points covering the full precision-recall trade-off, from conservative to sensitive configurations, including conformal prediction-based thresholds \citep{vovk2005algorithmic} that provide distribution-free false-alarm rate guarantees, and sequential change-detection rules based on the CUSUM statistic \citep{page1954cusum} that exploit temporal structure to reduce spurious alarms. This suite constitutes the tiered alerting system described in Chapter~\ref{ch:deployment}; at the evaluation stage it serves to characterize how each model behaves across the entire deployable operating range, not only at one chosen point.
 
-\section{Probability Calibration}
-
-Gradient boosting classifiers produce a vector of class scores that sum to one and are conventionally interpreted as class probabilities. However, these scores are not guaranteed to be calibrated: a model may assign a confidence of 0.9 to a fault class while being correct only 60\% of the time at that confidence level. This miscalibration is invisible to discrimination metrics such as macro F1, which measure ranking quality rather than probabilistic accuracy. In the context of this work it matters because the monitoring interface presents the fault class confidence alongside the diagnostic label; miscalibrated scores degrade the operator's ability to triage alerts proportionally to their actual reliability.
-
-Post-hoc probability calibration applies to Task~B only. In Task~A, the semi-supervised formulation precludes it: fitting a calibrator requires binary fault/normal labels at training time, which are unavailable by design, and the anomaly score is an unbounded continuous quantity rather than a class probability. Task~A instead derives probabilistic operating points through conformal p-values, which provide finite-sample false-alarm guarantees without requiring fault-labeled calibration data. For Task~B, labeled data are available across all classes and gradient boosting models already output probability-like class scores that can be meaningfully recalibrated.
-
-Platt scaling \citep{platt1999probabilistic} fits a sigmoid function to the model's raw output scores using the validation set, mapping them to better-calibrated probability estimates without modifying the underlying model or its discrimination performance. Fitting on the validation set, rather than the training set, prevents the calibrator from exploiting the same distribution the base model was optimized on.
-
-Calibration quality is assessed through three complementary metrics:
-
-\begin{itemize}
-    \item \textbf{Brier score.} The mean squared error between the predicted class probability vector $\hat{p}_i \in \mathbb{R}^K$ and the one-hot ground truth $y_i \in \{0,1\}^K$, averaged over all samples and classes:
-    \[
-        \mathrm{BS} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{K} \sum_{k=1}^{K} (\hat{p}_{ik} - y_{ik})^2.
-    \]
-    A perfect calibrator achieves $\mathrm{BS} = 0$; a model that always predicts the class prior achieves $\mathrm{BS} = \bar{p}(1-\bar{p})$.
-
-    \item \textbf{Expected Calibration Error (ECE).} Predictions are partitioned into $M$ equal-width confidence bins. Within each bin $B_m$, the gap between mean predicted confidence and observed accuracy is computed; the ECE averages these gaps weighted by bin population:
-    \[
-        \mathrm{ECE} = \sum_{m=1}^{M} \frac{|B_m|}{N} \left| \mathrm{acc}(B_m) - \mathrm{conf}(B_m) \right|,
-    \]
-    where $\mathrm{acc}(B_m) = \frac{1}{|B_m|}\sum_{i \in B_m}\mathbf{1}[\hat{y}_i = y_i]$ and $\mathrm{conf}(B_m) = \frac{1}{|B_m|}\sum_{i \in B_m}\max_k \hat{p}_{ik}$.
-
-    \item \textbf{Maximum Calibration Error (MCE).} The worst-case bin-level miscalibration:
-    \[
-        \mathrm{MCE} = \max_{m \in \{1,\ldots,M\}} \left| \mathrm{acc}(B_m) - \mathrm{conf}(B_m) \right|.
-    \]
-    MCE is sensitive to the most poorly calibrated confidence region, complementing the average-case view of ECE.
-\end{itemize}
-
-Together, these metrics supplement the discrimination-oriented headline figures and establish the reliability of the probability outputs presented to the operator in the monitoring interface.
-
-
 % ────────────────────────────────────────────────────────────
 \section{Evaluation Methodology}
 \label{sec:evaluation-methodology}
 % ────────────────────────────────────────────────────────────
 
-This section defines the evaluation protocols applied uniformly across all experiments. It specifies the primary metrics for each task, the leakage validation checks, the cross-validation scheme, and the threshold calibration procedure. The choice of evaluation metrics constitutes the third tier of the class imbalance handling strategy, complementing the paradigm-level and training-level responses described in Section~\ref{sec:monitoring-system}: metrics are selected to reflect per-class diagnostic capability rather than aggregate accuracy, preventing majority-class prevalence from inflating the reported figures.
+This section defines the evaluation protocols applied uniformly across all experiments. It specifies the primary metrics for each task, the leakage validation checks, the cross-validation scheme, and the threshold calibration procedure. The choice of evaluation metrics constitutes the third tier of the class imbalance handling strategy, complementing the paradigm-level and training-level responses described in earlier sections: metrics are selected to reflect per-class diagnostic capability rather than aggregate accuracy, preventing majority-class prevalence from inflating the reported figures.
 
 \subsection{Headline Metrics}
 
