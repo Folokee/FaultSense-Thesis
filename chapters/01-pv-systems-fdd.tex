@@ -159,18 +159,6 @@ K(x_i,x_j)=\exp\bigl(-\gamma \lVert x_i-x_j \rVert^2\bigr).
 
 SVM models are widely used in PV fault diagnosis because of their strong generalization capability and robustness in high-dimensional feature spaces.
 
-\subsubsection{K-Nearest Neighbors (KNN)}
-
-K-Nearest Neighbors (KNN) is a non-parametric supervised learning algorithm that classifies a sample according to the majority class among its $k$ nearest neighbors in the feature space. Unlike model-based algorithms, KNN does not explicitly learn parameters during training and instead relies on similarity measures between samples.
-
-The Euclidean distance is commonly used:
-\begin{equation}
-d(x_i,x_j)=\sqrt{\sum_{n=1}^{m}(x_{in}-x_{jn})^2},
-\end{equation}
-where $m$ is the number of features.
-
-KNN is particularly suitable for PV datasets with moderate dimensionality and nonlinear decision boundaries.
-
 \subsubsection{Decision Trees}
 
 Decision Trees (DT) are hierarchical supervised learning models that recursively partition the feature space into subsets according to decision rules. Each internal node represents a condition on an input feature, while leaf nodes correspond to output classes.

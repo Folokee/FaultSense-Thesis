@@ -6,19 +6,25 @@ obtained from the evaluation on the Costa dataset.
 
 \section{Tools and Experimental Setup}
 \subsection{Software and Libraries}
-The following tools and libraries were used in the development of the FDD pipeline:
+The implementation relies on a small set of libraries and services, grouped by their role in the end-to-end pipeline.
+
+\paragraph{ML/DL core.}
 \par\noindent\textbf{Python:} The primary programming language used for data processing, model development, and evaluation.
+\par\noindent\textbf{PyTorch:} The deep learning framework used for implementing and training the neural models.
+\par\noindent\textbf{Scikit-learn:} Used for preprocessing, classical baselines, and evaluation metrics.
+\par\noindent\textbf{SciPy:} Scientific computing utilities used for numerical routines and statistical operations required by parts of the pipeline.
+\par\noindent\textbf{Optuna:} Hyperparameter optimization framework used to tune model configurations under a shared HPO protocol.
 
-\par\noindent\textbf{PyTorch:} The deep learning framework used for building and training the machine learning models.
+\paragraph{Data engineering and visualisation.}
+\par\noindent\textbf{Polars:} A high-performance DataFrame library used for efficient tabular data transformations in the preprocessing and feature engineering stages.
+\par\noindent\textbf{Matplotlib:} Used to generate diagnostic plots and result figures (e.g., curves and confusion matrices).
 
-\par\noindent\textbf{Scikit-learn:} A machine learning library used for data preprocessing, feature engineering, and evaluation metrics.
-
-\par\noindent\textbf{Google Colab:} An online platform used for developing and testing the code, as well as for training the models on GPU resources.
-\par\noindent\textbf{GitHub:} A version control system used for code management and collaboration.
-\par\noindent\textbf{DagsHub:} A platform used for orchestrating and automating the data pipeline, ensuring reproducibility and scalability of the data processing workflow, as well as keeping track of experiments, results and model artifacts.
-\par\noindent\textbf{Data Version Control (DVC):} A tool used for versioning datasets and machine learning models, integrated with GitHub for seamless tracking of changes in data and code.
-\par\noindent\textbf{MLflow:} A platform used for managing the machine learning lifecycle, including experiment tracking, model versioning, and deployment.
-\par\noindent\textbf{Optuna:} A hyperparameter optimization framework used for tuning the machine learning models to achieve optimal performance.
+\paragraph{Experiment tracking and reproducibility.}
+\par\noindent\textbf{GitHub:} Used for version control and collaborative code management.
+\par\noindent\textbf{Data Version Control (DVC):} Used to version datasets and large artifacts, and to encode the multi-stage pipeline as reproducible dependency graphs.
+\par\noindent\textbf{MLflow:} Free software used for experiment tracking, metrics logging, and model versioning.
+\par\noindent\textbf{DagsHub:} Used as a centralized platform for hosting the DVC remote and the MLflow tracking server, enabling traceability of runs and artifacts.
+\par\noindent\textbf{Google Colab:} Used as a managed GPU-backed execution environment for deep learning training and hyperparameter search.
 
 \subsection{Experimental Setup}\label{sec:implementation-experimental-setup}
 This section summarizes the software stack and execution environment used to implement and evaluate the proposed Fault Detection and Diagnosis (FDD) pipeline. The goal is to ensure that the reported results can be reproduced from a versioned codebase, a traceable dataset state, and a documented configuration.
@@ -69,7 +75,25 @@ As previously described in Subsection~\ref{subsec:svm}, SVM is mainly a supervis
 but the One-Class SVM (OC-SVM) variant is designed for semi-supervised anomaly detection by identifying the smallest hyperplane
 that encloses the normal data in the feature space.
 Two kernel functions were explored: RBF and polynomial.
-\paragraph{} Optuna was used for hyperparameter optimization with 35 trials and Macro F1 as the objective metric, tuning the kernel-specific parameters.
+\paragraph{} Optuna was used for hyperparameter optimization with 35 trials and Macro F1 as the objective metric, tuning the kernel-specific parameters. Table~\ref{tab:ocsvm-hpo} defines the search space for each kernel.
+
+\begin{table}[H]
+\centering
+\caption{OC-SVM hyperparameter search space grouped by kernel.\label{tab:ocsvm-hpo}}
+\begin{tabular}{llc}
+\toprule
+\textbf{Kernel} & \textbf{Parameter} & \textbf{Range} \\
+\midrule
+RBF & \texttt{nu} & [0.03, 0.10] \\
+ & \texttt{gamma} & [0.01, 0.08] \\
+\midrule
+Polynomial & \texttt{degree} & fixed: 3 \\
+ & \texttt{nu} & [0.01, 0.20] \\
+ & \texttt{gamma} & categorical: $\{\texttt{scale}, \texttt{auto}, 0.01, 0.1\}$ \\
+ & \texttt{coef0} & [0.0, 1.0] \\
+\bottomrule
+\end{tabular}
+\end{table}
 \paragraph{} The scoring function is the negative distance to the separating hyperplane, so that higher scores indicate higher anomaly likelihood.
 \paragraph{Results}
 On the test set, OC-SVM achieves a PR-AUC of 0.9977. Using the operating threshold calibrated on validation normal scores with the shared POT policy and a GPD tail fit, the final threshold is $\tau=4.7243$, yielding precision~=~0.9966, recall~=~0.8824, and F1~=~0.9360.
@@ -195,24 +219,9 @@ Shadowing     & 77058 & 0.8110 & 0.6698 & 0.9027 & 0.7690 \\
 % \subsection{Novel Approaches}
 In this section, we present novel model architectures developed for this exact task, these approaches are based on deep learning and explore complementary features from classical appraches, as well as from the literature. 
 \subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
-The proposed Mamba Adaptive Anomaly Transformer (MAAT) is a deep semi-supervised anomaly detector designed for multivariate PV time-series data. The architecture combines sparse anomaly attention with a parallel Mamba state-space branch and a minimax association learning objective. Unlike classical reconstruction-based autoencoders, MAAT jointly models reconstruction fidelity and temporal association consistency, allowing the detector to identify subtle deviations in temporal dynamics even when reconstruction error alone remains low.
+The Mamba Adaptive Anomaly Transformer (MAAT) is a semi‑supervised anomaly detector for multivariate PV time series that jointly considers reconstruction fidelity and temporal association consistency. The architecture, shown in Fig.~\ref{fig:maat_architecture}, embeds an input window into a model‑dimension representation using a linear projection, sinusoidal positional encoding, and dropout. An encoder of $L$ stacked layers processes the sequence, each layer containing two parallel branches: a sparse anomaly‑attention branch that learns block‑local temporal associations (series association) alongside a fixed Gaussian prior, and a Mamba state‑space branch that models long‑range dependencies with linear complexity. Their outputs are fused via a learned sigmoid gate, followed by a feed‑forward network. A final linear projection reconstructs the input.
 
-\paragraph{} The overall architecture is illustrated in Fig.~\ref{fig:maat_architecture}. The model receives an input window
-\[
-x \in \mathbb{R}^{B \times W \times F},
-\]
-where $B$ denotes the batch size, $W$ the temporal window length, and $F$ the number of features. The input is first transformed through a \texttt{DataEmbedding} module composed of:
-\begin{itemize}
-    \item a linear token embedding projecting $F \rightarrow d_{\text{model}}$,
-    \item a sinusoidal positional embedding,
-    \item and a dropout layer applied after summation.
-\end{itemize}
-
-The resulting representation is:
-\[
-H^{(0)} \in \mathbb{R}^{B \times W \times d_{\text{model}}}.
-\]
-
+MAAT is trained with a minimax loss that balances the reconstruction mean squared error against a signed Kullback–Leibler divergence between the learned and prior associations, forcing the series association to deviate from local continuity on normal data. At inference, anomaly scores combine the association discrepancy and reconstruction error through temperature‑weighted summation; the window‑level score is the maximum over time, ensuring that anomalies are flagged only when both temporal dynamics and reconstruction quality break down.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/detection/maat-architecture.png}
@@ -220,129 +229,141 @@ H^{(0)} \in \mathbb{R}^{B \times W \times d_{\text{model}}}.
     \label{fig:maat_architecture}
 \end{figure}
 
-\paragraph{} The encoder consists of $L$ stacked \texttt{EncoderLayer} blocks. Each layer contains two parallel temporal modeling branches: a sparse anomaly-attention branch and a Mamba state-space branch. Their outputs are fused through a learned gating mechanism before being processed by a position-wise feed-forward network.
-
-\paragraph{} The anomaly-attention branch computes two distinct temporal association matrices:
-\begin{itemize}
-    \item the \emph{series association} $S$, learned through block-local sparse self-attention,
-    \item and the \emph{prior association} $P$, defined by a Gaussian kernel parameterized by learned variance terms.
-\end{itemize}
-
-Given queries $Q$, keys $K$, and values $V$, the series association is computed as:
-
-\begin{equation}
-S = \mathrm{Softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right),
-\end{equation}
-
-where attention is restricted to positions within the same temporal block of size \texttt{block\_size}. This sparse attention mechanism constrains the model to learn local temporal dependencies characteristic of normal PV operation.
-
-\paragraph{} In parallel, the prior association is modeled using a Gaussian kernel:
-
-\begin{equation}
-P_{i,j} \propto
-\exp\left(
--\frac{|i-j|^2}{2\sigma_i^2}
-\right),
-\end{equation}
-
-where $\sigma_i$ is learned dynamically through a dedicated linear projection layer. The prior distribution represents an inductive bias describing expected local temporal continuity under normal operating conditions.
-
-\paragraph{} Unlike standard attention mechanisms, only the learned series association $S$ is used for value aggregation:
-
-\begin{equation}
-\mathrm{Attention}(Q,K,V) = S \cdot V.
-\end{equation}
-
-The Gaussian prior $P$ is used exclusively for discrepancy-based anomaly scoring and minimax optimization.
-
-\paragraph{} Parallel to the attention branch, each encoder layer contains a Mamba selective state-space model (SSM) branch. The Mamba block models long-range temporal dependencies with linear computational complexity, enabling efficient processing of long PV sequences while preserving sequential dynamics that may not be captured by local attention alone.
-
-\paragraph{} The outputs of the attention and Mamba branches are fused through a learned gating mechanism:
-
-\begin{equation}
-G = \sigma\left(
-W_g [H_{\mathrm{mamba}} \, \| \, H_{\mathrm{attn}}]
-\right),
-\end{equation}
-
-\begin{equation}
-H_{\mathrm{fused}}
-=
-G \odot H_{\mathrm{mamba}}
-+
-(1-G) \odot H_{\mathrm{attn}},
-\end{equation}
-
-where $\sigma(\cdot)$ denotes the sigmoid activation and $\odot$ the element-wise product. This mechanism allows the network to adaptively determine whether local attention-based patterns or long-range state-space dynamics should dominate for a given temporal context.
-
-\paragraph{} The fused representation is processed through residual connections, Layer Normalization, and a position-wise feed-forward network implemented using $1\times1$ convolutions with GELU activation. After the final encoder layer, a linear projection reconstructs the original feature space:
-
-\[
-\hat{x} \in \mathbb{R}^{B \times W \times F}.
-\]
-
-\paragraph{} MAAT is trained using a minimax objective combining reconstruction error and association discrepancy. Let $\mathcal{L}_{\mathrm{rec}}$ denote the reconstruction mean squared error and $\mathrm{KL}(\cdot\|\cdot)$ the Kullback--Leibler divergence. The training objective is defined as:
-
-\begin{equation}
-\mathcal{L}
-=
-2\mathcal{L}_{\mathrm{rec}}
-+
-k
-\left[
-\mathrm{KL}(P \| S)
--
-\mathrm{KL}(S \| P)
-\right],
-\end{equation}
-
-where $k$ controls the balance between reconstruction and association learning. This minimax formulation encourages the learned series associations to diverge maximally from the Gaussian prior on normal data, thereby amplifying deviations during anomalous conditions.
-
-\paragraph{} During inference, anomaly scores are computed using both reconstruction error and association discrepancy. The discrepancy between the series and prior associations is first estimated as:
-
-\begin{equation}
-D_t
-=
-\mathrm{KL}(S \| P)
-+
-\mathrm{KL}(P \| S).
-\end{equation}
-
-The discrepancy is transformed into temporal importance weights using a temperature-scaled softmax:
-
-\begin{equation}
-w_t
-=
-\mathrm{Softmax}(-T D_t),
-\end{equation}
-
-where $T$ is the temperature hyperparameter. The final timestep-level anomaly score is then computed as:
-
-\begin{equation}
-A_t
-=
-w_t \cdot \|x_t - \hat{x}_t\|^2.
-\end{equation}
-
-Window-level anomaly scores are obtained by taking the maximum score over the temporal dimension. This formulation ensures that anomalies are detected only when both temporal associations are disrupted and reconstruction quality deteriorates.
-
-\paragraph{} MAAT is trained exclusively on healthy operating data, following a semi-supervised anomaly detection paradigm. Hyperparameter optimization is performed using Optuna with a two-stage Tree-structured Parzen Estimator (TPE) search strategy. The first stage optimizes training-related parameters such as learning rate, dropout, temperature, and reconstruction weight, while the second stage optimizes architectural parameters including window size, block size, embedding dimension, number of heads, encoder depth, and feed-forward dimension.
-
-\paragraph{} To ensure consistent thresholding across all evaluated baselines, the anomaly threshold is calibrated using a Peaks-Over-Threshold (POT) Generalized Pareto Distribution (GPD) fitted on validation-normal scores.
 
 \paragraph{Results}
+
+\subsubsection{GTBAD: Gated Transformer-BiLSTM Anomaly Detector}
+
+The GTBAD model is a simple sequence-to-sequence pipeline: an input projection maps the feature vector to a model 
+dimension $d_{\text{model}} = 64$, a fixed sinusoidal positional encoding is added, and a 3‑layer Transformer encoder with 2 attention heads captures per‑step dependencies. The encoded representation is decoded by a single‑layer bidirectional LSTM with a hidden size of 32, followed by dropout ($p=0.1$) and a linear layer that projects
+ back to the original input space. Because the window length is set to 1, each time step is processed independently; the model learns to reconstruct normal operating patterns and flags anomalies via reconstruction error\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}. Figure~\ref{fig:gtbad_architecture} illustrates the GTBAD architecture.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/detection/gtbad-arch.png}
+    \caption{GTBAD architecture \citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}}
+    \label{fig:gtbad_architecture}
+\end{figure}
+
+Hyper‑parameters are tuned using the Good‑point‑set Vectorised Snow Ablation Optimiser (GVSAO), an improved variant of the snow ablation algorithm proposed by ~\cite{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}. GVSAO searches the two‑dimensional continuous space of learning rate (log‑scale) and batch size, combining good‑point‑set initialisation, a dual‑population 
+strategy, adaptive melting factors, and periodic oscillation mutations. The optimisation is run with a population of 10 over 5 generations, using 5‑epoch lightweight training per evaluation with early stopping. The search space is given in Table~\ref{tab:gtbad_hpo}.
+
+\begin{table}[H]
+\centering
+\caption{GTBAD hyper‑parameter search space tuned by GVSAO.}
+\label{tab:gtbad_hpo}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Hyper‑parameter & Range & Encoding \\
+\midrule
+Learning rate & $[10^{-5},\;10^{-1}]$ & Log\textsubscript{10}‑uniform \\
+Batch size & $[16,\;128]$ (integer) & Uniform, rounded \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results}
+
+On the test set, GTBAD achieves an overall macro-averaged precision of 0.9500, recall of 0.8867, and F1-score of 0.9156 at the selected operating threshold.
+Table~\ref{tab:gtbad-per-class} reports per-fault OvR PR-AUC and the corresponding precision, recall, and F1 when each fault class is treated as positive against the normal class.
+
+\begin{table}[H]
+\centering
+\caption{GTBAD per-class test metrics.\label{tab:gtbad-per-class}}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Fault class} & \textbf{Number of Samples} & \textbf{PR-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\midrule
+Short-Circuit & 5999 & 0.0432 & 0.9600 & 0.8800 & 0.9183 \\
+Degradation   & 10371 & 0.0410 & 0.9300 & 0.9300 & 0.9300 \\
+Open-Circuit  & 6024 & 0.9890 & 0.9100 & 0.9200 & 0.9150 \\
+Shadowing     & 184311 & 0.8291 & 1.0000 & 0.8167 & 0.8991 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{PC-AE (Physics-Conditioned Autoencoder)} 
+PC-AE is a feed-forward autoencoder conditioned on the same physics context $\mathbf{c} = (\texttt{irr}, \texttt{pvt})$ that is used by PC-Flow. The encoder compresses the input $\mathbf{x}$ concatenated with $\mathbf{c}$ into a low-dimensional latent code; the decoder reconstructs $\hat{\mathbf{x}}$ from the latent code and $\mathbf{c}$. The anomaly score is the mean squared reconstruction error $\mathrm{MSE}(\mathbf{x}, \hat{\mathbf{x}})$. PC-AE is trained on normal-class data with a mean squared error objective; reconstruction error is low for samples that fall on the normal manifold and high for out-of-distribution samples.
+
+PC-AE serves as the primary architectural ablation point for PC-Flow: both methods condition on the same physics context, differ only in their scoring principle (reconstruction MSE versus exact conditional log-likelihood), and are trained on the same partitions with the same optimization protocol.
+
+\paragraph{Results}
+On the test set, PC-AE achieves a PR-AUC of 0.9707. At the selected operating threshold, the precision, recall, and F1-score are 0.9209, 0.8022, and 0.8555, respectively. Table~\ref{tab:pcae-overall} reports the aggregate metrics, while Table~\ref{tab:pcae-per-class-pr-auc} reports the one-vs-normal PR-AUC per fault class.
+
+\begin{table}[H]
+\centering
+\caption{PC-AE overall anomaly detection metrics on the test set.\label{tab:pcae-overall}}
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+PR-AUC & 0.9707 \\
+Precision (at threshold) & 0.9209 \\
+Recall (at threshold) & 0.8022 \\
+F1 (at threshold) & 0.8555 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{PC-AE per-class OvR PR-AUC vs normal on the test set.\label{tab:pcae-per-class-pr-auc}}
+\begin{tabular}{lc}
+\toprule
+\textbf{Fault class} & \textbf{PR-AUC} \\
+\midrule
+Short-Circuit & 0.9999 \\
+Degradation   & 0.9501 \\
+Open-Circuit  & 1.0000 \\
+Shadowing     & 0.9609 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Discussion and Winning Model}
+
+The per‑class results reveal clear differences in how each model ranks and separates fault states from normal operation, beyond the aggregate metrics reported earlier.
+
+The \textbf{One‑Class SVM} delivers excellent overall ranking (PR‑AUC 0.9977) and strong per‑class PR‑AUC values, exceeding 0.99 for Short‑Circuit, Open‑Circuit, and Shadowing. The RBF kernel captures the normal data envelope effectively, and the calibrated threshold yields high F1 scores. However, the Degradation class PR‑AUC (0.8993) indicates that the distance‑based score struggles to rank subtle degradation patterns as consistently as the other faults.
+
+\textbf{Isolation Forest} achieves near‑perfect ranking for Open‑Circuit (PR‑AUC 1.0000) and very good results for Shadowing (0.9881), but its performance on Degradation drops sharply (PR‑AUC 0.5645, F1 0.4250). The axis‑parallel splits of the isolation trees appear insufficient to isolate the multivariate signature of degradation anomalies, making the score unreliable for that fault type.
+
+\textbf{BOCD} shows a marked weakness across all fault classes except Shadowing, with PR‑AUC values below 0.31 for Short‑Circuit, Degradation, and Open‑Circuit. The sequential change‑point model, built on univariate Normal–Inverse‑Gamma predictives, does not adapt well to the static PV context and produces many false positives, as reflected in very low precision. Its strength lies only in the abundant Shadowing class, but even there the ranking quality (PR‑AUC 0.8110) is below other models.
+
+\textbf{GTBAD}, a Transformer–BiLSTM reconstruction model, yields respectable deployment metrics (macro F1 0.9156) but its per‑class ranking quality is extremely uneven. For Short‑Circuit and Degradation the PR‑AUC values are near chance level (0.0432 and 0.0410), while Open‑Circuit (0.9890) and Shadowing (0.8291) are well ranked. This indicates that the reconstruction error works well for large‑scale anomalies (Open‑Circuit, Shadowing) but fails to provide a meaningful ordering for the more subtle fault types, likely because the model overfits to the dominant normal patterns and does not amplify the signal of those faults.
+
+\textbf{PC‑AE} (Physics‑Conditioned Autoencoder) stands out by delivering consistently high ranking quality across all fault classes. Its per‑class PR‑AUC values are 0.9999 (Short‑Circuit), 0.9501 (Degradation), 1.0000 (Open‑Circuit), and 0.9609 (Shadowing). The conditioning on irradiance and module temperature forces the autoencoder to learn a physically meaningful normal manifold, making the reconstruction error a robust anomaly score that correctly orders anomalies ahead of normal samples irrespective of the fault type. Even though its overall F1 (0.8555) is lower than some competitors, the uniform ranking quality per class is unmatched.
+
+To facilitate a direct comparison, Table~\ref{tab:model-summary-overall} summarizes the overall PR-AUC and F1 for all anomaly detection models.
+
+\begin{table}[H]
+\centering
+\caption{Overall PR-AUC and F1-score for all anomaly detection models.\label{tab:model-summary-overall}}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{PR-AUC} & \textbf{F1} \\
+\midrule
+OC-SVM & 0.9977 & 0.9360 \\
+Isolation Forest & 0.9897 & 0.8812 \\
+BOCD & 0.8221 & 0.7816 \\
+GTBAD & 0.4756 & 0.9156 \\
+PC-AE & 0.9707 & 0.8555 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Winning Model: PC‑AE}
+Although OC‑SVM and GTBAD offer higher deployment‑oriented metrics (F1, precision, recall) in several classes, \textbf{PC‑AE is selected as the winning model} because it delivers the best and most consistent \emph{ranking quality} per fault class, as measured by per‑class PR‑AUC. A high PR‑AUC indicates that the anomaly score reliably orders true anomalies above normal samples, which is the most critical property for an anomaly detection system in practice: it guarantees that, regardless of the chosen threshold, the model’s internal ordering is trustworthy. PC‑AE achieves near‑perfect PR‑AUC for Short‑Circuit, Open‑Circuit, and Shadowing, and a very strong 0.9501 for Degradation—a class where all other models exhibit significant ranking weaknesses. The physics conditioning provides the inductive bias necessary to capture the normal PV behaviour, making the reconstruction error a robust and interpretable anomaly score. Therefore, PC‑AE is chosen as the best overall candidate for reliable fault detection in this PV dataset.
+
+
+
+
 
 \section{Fault Diagnosis Implementation and Results}
 \subsection{Task Formulation and Methodology}
 
 \paragraph{Problem definition.}
 Let $x \in \mathbb{R}^F$ denote a feature vector computed from a time segment of PV electrical and meteorological signals, and let $y \in \{0,\dots,C-1\}$ denote the corresponding fault label among $C$ classes. The diagnosis task consists in learning a classifier $f_\theta$ that maps $x$ to a class probability vector $\hat{p}(y\mid x)$, and predicts the most likely class $\hat{y}=\arg\max_c \hat{p}(c\mid x)$. Because fault classes can be imbalanced in realistic PV logs, the training and evaluation protocol must account for class frequency differences.
-
-\paragraph{Inputs.}
-Diagnosis is performed on pre-engineered tabular features rather than on raw time-series windows. Feature computation is executed upstream in the preprocessing and featurization pipeline, and the classification stage consumes the resulting feature tables. This design keeps the diagnosis models lightweight and enables transparent analysis of feature contributions.
-
-\paragraph{Evaluation protocol and metrics.}
-The dataset is split into training, validation, and test partitions using the same leakage-aware splitting protocol described in Section~\ref{sec:implementation-splitting}. Model selection is primarily driven by macro-averaged F1-score (macro F1), which assigns equal weight to each class and is therefore sensitive to minority-class performance. For completeness, additional metrics are reported, including overall accuracy, balanced accuracy, macro and weighted precision/recall/F1, and one-vs-rest (OvR) precision--recall AUC values (weighted and per-class).
 
 % \section{Shared Experimental Infrastructure}\label{sec:diag-shared-infra}
 
@@ -603,6 +624,50 @@ Shadowing & 32333 & 0.9999 & 0.9925 & 0.9962 & 0.9998 \\
     \caption{Confusion matrix for the ExtraTrees classifier on the test set.}
     \label{fig:et_confusion_matrix}
 \end{figure}
+
+\subsection{Discussion and Winning Model}
+
+The three tree‑based classifiers all achieve high overall accuracy and macro‑averaged F1 scores, but their per‑class behaviour reveals important differences in how they handle the most challenging fault categories.
+
+\textbf{LightGBM} delivers strong performance on Degradation (F1 0.9098, PR‑AUC 0.9875) and near‑perfect metrics for Open‑Circuit and Shadowing. However, the Short‑Circuit class remains the hardest to separate: the PR‑AUC of 0.9357 and F1 of 0.8945 indicate that the histogram‑based boosting model occasionally confuses short‑circuit signatures with other faults. While the balanced class‑weighting policy prevents catastrophic minority neglect, the ranking quality for this safety‑critical class is the weakest among the three candidates.
+
+\textbf{ExtraTrees} attains the highest macro‑averaged F1 (0.9611) and perfect recall/precision for Open‑Circuit. Its extremely randomised splits yield robust probability estimates, and the F1 for Short‑Circuit (0.9520) is slightly above that of CatBoost. Nevertheless, the PR‑AUC for Short‑Circuit (0.9483) is lower than CatBoost’s, suggesting that the randomised ensemble produces a less reliable ordering of the predicted probabilities for the minority fault. In a diagnosis setting where a missed short‑circuit has severe operational consequences, a higher PR‑AUC for that class is often more valuable than a marginal gain in macro F1.
+
+\textbf{CatBoost} stands out by achieving the highest PR‑AUC for Short‑Circuit (0.9632), a clear improvement over both LightGBM (0.9357) and ExtraTrees (0.9483). This reflects the symmetric‑tree ordered‑boosting strategy, which reduces prediction shift and yields well‑calibrated scores that separate short‑circuit examples from other classes more effectively. At the same time, CatBoost maintains perfect recall for Short‑Circuit and Open‑Circuit, ensuring that no true fault of those types is missed. The per‑class F1 values are highly competitive (Short‑Circuit 0.9509, Open‑Circuit 0.9979, Shadowing 0.9957) and the weighted OvR PR‑AUC ties with ExtraTrees at 0.9979. The only noticeable drop occurs for Degradation, where the PR‑AUC (0.9586) is lower than LightGBM’s; however, the superior ranking on the most safety‑critical class compensates for this, and the macro F1 of 0.9565 remains very close to the best value.
+
+Table~\ref{tab:diag-summary-per-class} consolidates the per‑class PR‑AUC and F1 of all models for a direct comparison.
+
+\begin{table}[H]
+\centering
+\caption{Per‑class F1‑score for all diagnosis models.\label{tab:diag-summary-per-class}}
+\begin{tabular}{llc}
+\toprule
+\textbf{Model} & \textbf{Fault Class} & \textbf{F1} \\
+\midrule
+\multirow{4}{*}{LightGBM} & Short‑Circuit & 0.8945 \\
+                          & Degradation   & 0.9098 \\
+                          & Open‑Circuit  & 0.9996 \\
+                          & Shadowing     & 0.9945 \\
+\midrule
+\multirow{4}{*}{CatBoost} & Short‑Circuit & 0.9509 \\
+                          & Degradation   & 0.8814 \\
+                          & Open‑Circuit  & 0.9979 \\
+                          & Shadowing     & 0.9957 \\
+\midrule
+\multirow{4}{*}{ExtraTrees} & Short‑Circuit & 0.9520 \\
+                            & Degradation   & 0.8961 \\
+                            & Open‑Circuit  & 1.0000 \\
+                            & Shadowing     & 0.9962 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Winning Model: CatBoost}
+While ExtraTrees offers a slightly higher macro F1 and LightGBM excels on Degradation, \textbf{CatBoost is selected as the winning diagnosis model}. Its key advantage lies in the best ranking quality for the most safety‑critical fault class—Short‑Circuit—as measured by PR‑AUC. A higher PR‑AUC guarantees that the model’s predicted probability order is more trustworthy for that minority class, reducing the risk of missing a short‑circuit event in an operational setting. Combined with perfect recall on Short‑Circuit and Open‑Circuit, competitive macro F1 (0.9565), and well‑calibrated probabilities from the symmetric‑tree ordered boosting, CatBoost provides the most reliable and balanced fault diagnosis solution for the PV dataset.
+
+
+\section{Conclusion}
+This chapter implemented and evaluated a two-stage Fault Detection and Diagnosis (FDD) pipeline on the Costa PV dataset. For anomaly detection, the \textbf{Physics-Conditioned Autoencoder (PC-AE)} was selected as the winning model because it delivers consistently high ranking quality across all fault classes (per-class PR-AUC >= 0.9501), ensuring reliable anomaly scoring regardless of the chosen threshold. For fault diagnosis, \textbf{CatBoost} emerged as the preferred classifier, offering the best PR-AUC for the safety-critical Short-Circuit class while maintaining perfect recall on that class and near-perfect metrics overall (macro F1 0.9565). Together, PC-AE and CatBoost form a coherent FDD pipeline: PC-AE provides sensitive, well-ordered anomaly alarms, and CatBoost gives precise, trustworthy fault identification once an alarm is raised. Both models are fully reproducible under the versioned experimental infrastructure, and their selection prioritises operational safety and per-class reliability over aggregate metrics alone.
 
 
 

@@ -1,27 +1,26 @@
-\chapter{Design of a Fault Detection and Diagnosis System for Photovoltaic Systems}
+\chapter{Design of a Fault Detection and Diagnosis System}
 \label{ch:conception}
 
 \section{Introduction}
 
-The process of designing a FDD system for photovoltaic systems involves several parts, including system architecture, dataset selection, data preprocessing, feature engineering, model selection and evaluation.
-Each of these steps is cruicial to build a robust and effective FDD solution. The following sections will detail the design choices made for each step.
+This chapter specifies the design of the proposed photovoltaic Fault Detection and Diagnosis (FDD) system. It introduces the overall architecture and motivates the choice of field datasets used for development and evaluation. Based on exploratory analyses, it then defines a staged, reproducible pipeline (ingestion, splitting, preprocessing, feature engineering, and training) together with leakage-prevention safeguards, calibration policies, and the evaluation methodology used throughout the experimental chapters.
 
-\section{FDD System Formulation}
+% \section{FDD System Formulation}
 
-The monitoring system responds to fault conditions through a 2-stage diagnostic cascade illustrated in Figure~\ref{fig:monitoring-system}. The first stage, \emph{fault detection}, processes a window $\mathbf{X}(t) = [\mathbf{x}(t-w+1), \ldots, \mathbf{x}(t)] \in \mathbb{R}^{w \times d}$ of the $w$ most recent measurement vectors and returns a binary decision:
-\[
-    d(t) \;=\; \begin{cases} 1 & \text{if a fault condition is detected,} \\ 0 & \text{otherwise.} \end{cases}
-\]
-This stage is formulated as a semi-supervised anomaly detection problem. The detector learns a statistical characterization of normal operation from historical normal-class data and flags any window whose anomaly score exceeds a calibrated threshold, without requiring labeled fault examples at training time. This formulation also constitutes the structural response to class imbalance in Task~A: by training exclusively on the normal class, the heavy imbalance between normal and fault observations is not present during model fitting and affects only threshold calibration and evaluation.
+% The monitoring system responds to fault conditions through a 2-stage diagnostic cascade illustrated in Figure~\ref{fig:monitoring-system}. The first stage, \emph{fault detection}, processes a window $\mathbf{X}(t) = [\mathbf{x}(t-w+1), \ldots, \mathbf{x}(t)] \in \mathbb{R}^{w \times d}$ of the $w$ most recent measurement vectors and returns a binary decision:
+% \[
+%     d(t) \;=\; \begin{cases} 1 & \text{if a fault condition is detected,} \\ 0 & \text{otherwise.} \end{cases}
+% \]
+% This stage is formulated as a semi-supervised anomaly detection problem. The detector learns a statistical characterization of normal operation from historical normal-class data and flags any window whose anomaly score exceeds a calibrated threshold, without requiring labeled fault examples at training time. This formulation also constitutes the structural response to class imbalance in Task~A: by training exclusively on the normal class, the heavy imbalance between normal and fault observations is not present during model fitting and affects only threshold calibration and evaluation.
 
-The second stage, \emph{fault classification}, is triggered only when $d(t) = 1$ and assigns the anomalous window to one of $K$ fault classes, producing a label $\hat{y}(t) \in \{1, \ldots, K\}$. Class imbalance in Task~B is addressed at the training level through native class weighting in the gradient boosting models: the per-sample gradient contribution is scaled in inverse proportion to class frequency, ensuring that rare fault classes receive proportional influence during learning without requiring external resampling. The classification result, together with its confidence score and timestamp, is presented to the plant operator through the monitoring interface described in Chapter~\ref{ch:deployment}.
+% The second stage, \emph{fault classification}, is triggered only when $d(t) = 1$ and assigns the anomalous window to one of $K$ fault classes, producing a label $\hat{y}(t) \in \{1, \ldots, K\}$. Class imbalance in Task~B is addressed at the training level through native class weighting in the gradient boosting models: the per-sample gradient contribution is scaled in inverse proportion to class frequency, ensuring that rare fault classes receive proportional influence during learning without requiring external resampling. The classification result, together with its confidence score and timestamp, is presented to the plant operator through the monitoring interface.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{{figures/monitoring system formulation}.png}
-\caption{High-level architecture of the proposed 2-stage fault monitoring system.}
-\label{fig:monitoring-system}
-\end{figure}
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=\textwidth]{{figures/monitoring system formulation}.png}
+% \caption{High-level architecture of the proposed 2-stage fault monitoring system.}
+% \label{fig:monitoring-system}
+% \end{figure}
 
 \section{System Architecture}
 The overall architecture includes 4 main components, as illustrated in figure \ref{fig:system_architecture}:
@@ -100,111 +99,70 @@ and the presence of a large number of data points which allows for robust model 
 \label{sec:eda}
 % ────────────────────────────────────────────────────────────
 
-The exploratory data analysis was structured as an 11-check audit applied independently to both field datasets before any modeling decision was made. Each check follows the same protocol: define the check, run it, record the finding, and record the explicit downstream consequence for the preprocessing or feature engineering described in Sections~\ref{sec:preprocessing} and~\ref{sec:feature-engineering}. This traceable structure is the basis for claiming that every pipeline design choice is data-driven rather than assumed.
+The exploratory data analysis was structured as a series of checks applied to the Costa dataset before any modeling decision was made. Each check follows the same protocol: define the check, run it, record the finding, and record the explicit downstream consequence for the preprocessing or feature engineering described in Sections~\ref{sec:preprocessing} and~\ref{sec:feature-engineering}. This traceable structure is the basis for claiming that every pipeline design choice is data-driven rather than assumed.
 
-\textbf{Schema validation and basic statistics.} The first check confirmed data types, row counts, and channel completeness. Costa yields 515,958 daytime rows across 16 recording days over 9 sensor channels (\texttt{vdc1}, \texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{pdc1}, \texttt{pdc2}, \texttt{pdc}, \texttt{irr}, \texttt{pvt}), with 0 missing values after ingestion-time irradiance trimming. La~Réunion yields 2,988,808 rows over a 19-month recording period across 9 channels (\texttt{Pg}, \texttt{Vg}, \texttt{Ig}, \texttt{Eg}, \texttt{Fg}, \texttt{Ia}, \texttt{GTI}, \texttt{TA}, \texttt{TPV}). Both datasets expose all labeled classes without gaps in the label column.
+\textbf{Schema validation and basic statistics.} The first check confirmed data types, row counts, and channel completeness. Costa yields 515,958 daytime rows over 9 sensor channels (\texttt{vdc1}, \texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{pdc1}, \texttt{pdc2}, \texttt{pdc}, \texttt{irr}, \texttt{pvt}), with 0 missing values after ingestion-time irradiance trimming. The dataset exposes all labeled classes without gaps in the label column.
 
-\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. Figures~\ref{fig:eda-sampling-costa} and~\ref{fig:eda-sampling-reunion} show the distributions for both datasets. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence. Among all 515,942 consecutive pairs that fall within the same calendar day, only 20 exceed 30~s. For La~Réunion, intervals concentrate at 6~s (the dominant mode, $\approx$\,2.1 million occurrences) with a secondary cluster near 8~s; across the full 19-month recording, 528 consecutive pairs exceed 30~s with a tail that extends to multi-hour outages. This asymmetry is the primary driver of the dataset-specific imputation policies in Section~\ref{sec:preprocessing}; the 300-second gap threshold used for episode segmentation in Section~\ref{sec:splitting} was set from this distribution.
-
-% \begin{figure}[H]
-%   \centering
-%   \includegraphics[width=0.8\textwidth]{eda/costa_sampling_intervals.png}
-%   \caption{Sampling interval distributions for Costa. Left: histogram zoomed to the 0.6--1.4\,s range, showing a single spike at 1\,s. Right: the complete interval distribution on a log-count axis, exposing the rare gaps above 30\,s.}
-%   \label{fig:eda-sampling-costa}
-% \end{figure}
+\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence with only 20 consecutive pairs exceeding 30~s. This near-perfect regularity means that no imputation step is required and that the 300-second gap threshold for episode segmentation (Section~\ref{sec:splitting}) is a very conservative boundary.
 
 \begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{eda/reunion_sampling_intervals.png}
-  \caption{Sampling interval distributions for La~Réunion. Left: intervals up to 30\,s; the dominant mode is 6\,s. Right: frequency of gaps exceeding 1\,minute (x-axis in hours), with 528 such events across the 19-month recording.}
-  \label{fig:eda-sampling-reunion}
+\centering
+\includegraphics[width=\textwidth]{eda/costa_sampling_intervals.png}
+\caption{Costa sampling interval distribution. Left: histogram zoomed to the 0.6--1.4\,s range, showing a single spike at 1\,s. Right: the complete interval distribution on a log-count axis, exposing the rare gaps above 30\,s.}
+\label{fig:eda-sampling}
 \end{figure}
 
-\textbf{Missing value analysis.} A field time series can exhibit 3 structurally distinct missingness regimes: Missing Completely At Random (MCAR), where absent values are independent of all observed and unobserved variables; Missing At Random (MAR), where the probability of missingness depends on observed variables; and Missing Not At Random (MNAR), where it depends on the missing value itself. The distinction matters because MCAR and MAR permit principled imputation, while MNAR invalidates it. The null-value share was computed per column and per calendar day, and temporal clustering was assessed to assign each dataset to one of these regimes. For Costa, the irradiance-filtered ingestion frame contains 0 missing values across all 9 channels; the question does not arise. For La~Réunion, Figure~\ref{fig:eda-nulls} shows that missingness in the meteorological channels is sharply concentrated in October--November 2021, converging to near-zero by early 2022. Missingness that is bounded in time, absent from fault-labeled periods, and non-recurrent after the initial deployment window is consistent with an MCAR pattern attributable to sensor commissioning rather than to operating conditions. The tiered imputation in Section~\ref{sec:preprocessing} is therefore applied only to La~Réunion and only to non-fault segments, with a strict prohibition on look-ahead across partition boundaries.
+\textbf{Missing value analysis.} Costa contains 0 missing values across all 9 channels after ingestion-time irradiance trimming. The missing-value analysis therefore required no intervention for this dataset.
 
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[b]{\textwidth}
-    \includegraphics[width=\textwidth]{eda/reunion_null_temporal.png}
-    \caption{Meteorological channels.}
-  \end{subfigure}
-  \vspace{0.4em}
-  \begin{subfigure}[b]{\textwidth}
-    \includegraphics[width=\textwidth]{eda/reunion_null_electrical_temporal.png}
-    \caption{Electrical channels.}
-  \end{subfigure}
-  \caption{Temporal distribution of missing values — La~Réunion.}
-  \label{fig:eda-nulls}
-\end{figure}
-
-\textbf{Target distribution and fault temporal structure.} The class distribution was examined at 2 levels of granularity: row count and episode count. Figure~\ref{fig:eda-imbalance} shows the row-share versus episode-share for Costa. At the row level, the normal class accounts for 59.9\% and the naturally-occurring shadowing class (label~4) for 35.7\%; the 3 electrically induced fault classes together account for 4.4\%. At the episode level, shadowing occupies 48.9\% of episodes despite its 35.7\% row share, because shadowing episodes are numerous but short (p90 duration $\approx$~91~s), while induced fault episodes are few but long (median $\approx$~590~s for short circuit and open circuit). For La~Réunion, the normal class accounts for 97.2\% of rows, with all fault sub-classes combined below 2.8\%.
+\textbf{Target distribution and fault temporal structure.} The class distribution was examined at 2 levels of granularity: row count and episode count. Figure~\ref{fig:eda-imbalance} shows the row-share versus episode-share for Costa. At the row level, the normal class accounts for 59.9\% and the naturally-occurring shadowing class (label~4) for 35.7\%; the 3 electrically induced fault classes together account for 4.4\%. At the episode level, shadowing occupies 48.9\% of episodes despite its 35.7\% row share, because shadowing episodes are numerous but short (p90 duration $\approx$~91~s), while induced fault episodes are few but long (median $\approx$~590~s for short circuit and open circuit).
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.80\textwidth]{eda/costa_class_imbalance.png}
-  \caption{Class imbalance in Costa at row level versus episode level.}
+  \caption{Row-level versus episode-level class distribution in Costa. Shadowing episodes are numerous but short; induced fault episodes are few but long.}
   \label{fig:eda-imbalance}
 \end{figure}
 
-\textbf{Univariate distributions: normal versus fault.} Mann-Whitney U tests were applied in 2 configurations --- binary (normal versus all faults pooled) and per-class (normal versus each fault class individually) --- with Benjamini-Hochberg false discovery rate correction applied to all $p$-values. Figures~\ref{fig:eda-boxplots-costa} and~\ref{fig:eda-boxplots-reunion} show the distributional contrast for the highest-ranked channels. For Costa, all 9 channels produced $p$-values at the numerical floor of zero in both configurations, with FDR correction confirmed for every class combination. The per-class rank-biserial correlations reveal qualitatively distinct signatures: short circuit (label~1) depresses vdc2 toward near-total voltage collapse ($r_{\mathrm{rb}}$ approaching $-1.00$) while elevating idc1; open circuit (label~3) collapses both strings' voltage and current simultaneously (vdc1 at $r_{\mathrm{rb}} = -0.73$); shadowing (label~4) uniformly suppresses current and power in both strings with no corresponding voltage elevation ($r_{\mathrm{rb}}$ between $-0.64$ and $-0.79$). Kruskal-Wallis effect sizes range from $\varepsilon^2 = 0.14$ (vdc2) to $\varepsilon^2 = 0.45$ (idc2), indicating that class membership alone explains up to 45\% of the variance in the DC current channels. For La~Réunion, grid power Pg ($p = 0.15$) and grid current Ig ($p = 0.20$) are not significant under BH-FDR: shading faults reduce irradiance proportionally, so fault-period power values overlap with normal-period values at lower irradiance conditions. These 2 non-significant channels are also those with the highest VIF (Ig = 3,539; Pg = 3,438), so the univariate and collinearity checks converge on the same redundancy.
+\textbf{Univariate distributions: normal versus fault.} Mann-Whitney U tests were applied in 2 configurations, binary (normal versus all faults pooled) and per-class (normal versus each fault class individually), with Benjamini-Hochberg false discovery rate correction applied to all $p$-values. Figure~\ref{fig:eda-boxplots} shows the distributional contrast for the highest-ranked channels. All 9 channels produced $p$-values at the numerical floor of zero in both configurations, with FDR correction confirmed for every class combination. The per-class rank-biserial correlations reveal qualitatively distinct signatures: short circuit (label~1) depresses vdc2 toward near-total voltage collapse ($r_{\mathrm{rb}}$ approaching $-1.00$) while elevating idc1; open circuit (label~3) collapses both strings' voltage and current simultaneously (vdc1 at $r_{\mathrm{rb}} = -0.73$); shadowing (label~4) uniformly suppresses current and power in both strings with no corresponding voltage elevation ($r_{\mathrm{rb}}$ between $-0.64$ and $-0.79$). Kruskal-Wallis effect sizes range from $\varepsilon^2 = 0.14$ (vdc2) to $\varepsilon^2 = 0.45$ (idc2), indicating that class membership alone explains up to 45\% of the variance in the DC current channels.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.8\textwidth]{eda/costa_boxplots.png}
-  \caption{Normal versus fault distributional contrast for Costa}
-  % : top 5 binary-MI channels. Fault distributions show wider spread and shifted medians. The high-MI power channels exhibit strongly overlapping interquartile ranges at the aggregate level; per-class rank-biserial analysis (discussed in the text) is required to expose the fault-type-specific signatures hidden within this overlap.
-  \label{fig:eda-boxplots-costa}
+  \includegraphics[width=0.80\textwidth]{eda/costa_boxplots.png}
+  \caption{Normal versus fault distributions for the top 5 binary-MI channels (Costa). Fault classes show shifted medians and wider spread relative to normal operation.}
+  \label{fig:eda-boxplots}
 \end{figure}
+
+\textbf{Irradiance filtering and the production regime.} A 100~W/m$^2$ irradiance floor is applied during ingestion. Rows below this threshold correspond to night-time or pre-sunrise conditions where all electrical channels are near zero and the class label is uniformly normal by construction. Including these rows would inflate the apparent separability of the normal class from fault classes, creating a spurious detection advantage. All subsequent analysis and modeling operates exclusively on the production regime.
+
+\textbf{Correlation, collinearity, and spurious relationship detection.} Spearman rank correlation was computed in 3 contexts: across all rows, restricted to normal-class rows, and stratified by irradiance quartile within the normal class. Figure~\ref{fig:eda-correlation} shows the full normal-class Spearman heatmap and the irradiance-stratified profiles. The normal-class context exposes 2 classes of alias. The first class arises from additive identities: Spearman $\rho$(pdc1, pdc) = 0.999 and $\rho$(pdc2, pdc) = 0.999, empirically confirming $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$. The second class arises from the multiplicative physical relationship $P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$ at approximately constant voltage, making per-string current a near-proxy for per-string power ($\rho = 0.976$ for idc1--pdc1). VIF quantifies the regression-based consequence: VIF(\texttt{idc1}) = 187.8. These aliases are the direct targets of the hygiene pruning stage in Section~\ref{sec:feature-engineering}. The irradiance-stratified analysis reveals an additional, non-trivial pattern: while the pdc1--pdc2 correlation remains above 0.95 across all 4 irradiance quartiles, the idc1--idc2 correlation drops to 0.82 in the third quartile (830--885~W/m$^2$) before recovering at peak irradiance. This regime-dependent inter-string divergence is invisible in an aggregate correlation and is preserved as evidence of non-uniform string behavior under high thermal loading, motivating the per-string imbalance features in Section~\ref{sec:feature-engineering}.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.8\textwidth]{eda/reunion_boxplots.png}
-  \caption{Normal versus fault distributional contrast for La~Réunion}
-  % : irradiance-independent channels (Vg, TA, TPV) provide the clearest separation.
-  \label{fig:eda-boxplots-reunion}
+  \begin{subfigure}[b]{0.44\textwidth}
+    \includegraphics[width=\textwidth]{eda/costa_correlation.png}
+    \caption{Normal-class Spearman heatmap. The current--power block is strongly correlated; the voltage block is largely independent.}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.54\textwidth}
+    \includegraphics[width=\textwidth]{eda/costa_regime_correlations.png}
+    \caption{Irradiance-quartile-stratified profiles. The idc1--idc2 pair diverges at the 3rd quartile, revealing per-string mismatch invisible in aggregate.}
+  \end{subfigure}
+  \caption{Spearman correlation analysis for Costa. The aggregate heatmap (left) identifies algebraic aliases targeted by hygiene pruning; the irradiance-stratified profiles (right) distinguish those aliases from physically meaningful inter-string divergence that must be preserved.}
+  \label{fig:eda-correlation}
 \end{figure}
 
-\textbf{Irradiance filtering and the production regime.} A 100~W/m$^2$ irradiance floor is applied during Costa ingestion; a GTI-based daytime filter is applied to La~Réunion at the same stage. Rows below these thresholds correspond to night-time or pre-sunrise conditions where all electrical channels are near zero and the class label is uniformly normal by construction. Including these rows would inflate the apparent separability of the normal class from fault classes, creating a spurious detection advantage. All subsequent analysis and modeling operates exclusively on the production regime.
-
-\textbf{Correlation, collinearity, and spurious relationship detection.} Spearman rank correlation was computed in 3 contexts: across all rows, restricted to normal-class rows, and stratified by irradiance quartile within the normal class. Figures~\ref{fig:eda-correlation-heatmap} and~\ref{fig:eda-correlation-regime} show the full normal-class Spearman heatmap and the irradiance-stratified profiles. The normal-class context exposes 2 classes of alias. The first class arises from additive identities: Spearman $\rho$(pdc1, pdc) = 0.999 and $\rho$(pdc2, pdc) = 0.999, empirically confirming $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$; for La~Réunion, $\rho$(Pg, Ig) = 0.9995. The second class arises from the multiplicative physical relationship $P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$ at approximately constant voltage, making per-string current a near-proxy for per-string power ($\rho = 0.976$ for idc1--pdc1). Variance Inflation Factor (VIF) quantifies the regression-based consequence: VIF(\texttt{idc1}) = 187.8 for Costa and VIF(\texttt{Ig}) = 3,539 for La~Réunion. These aliases are the direct targets of the hygiene pruning stage in Section~\ref{sec:feature-engineering}. The irradiance-stratified analysis reveals an additional, non-trivial pattern: while the pdc1--pdc2 correlation remains above 0.95 across all 4 irradiance quartiles, the idc1--idc2 correlation drops to 0.82 in the third quartile (830--885~W/m$^2$) before recovering at peak irradiance. This regime-dependent inter-string divergence is invisible in an aggregate correlation; it is not treated as a data quality artifact but preserved as evidence of non-uniform string behavior under high thermal loading, motivating the per-string imbalance features in Section~\ref{sec:feature-engineering}.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{eda/costa_correlation.png}
-  \caption{Spearman correlation analysis for Costa}
-  \label{fig:eda-correlation-heatmap}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.8\textwidth]{eda/costa_regime_correlations.png}
-  \caption{Spearman correlation analysis for Costa}
-  \label{fig:eda-correlation-regime}
-\end{figure}
-
-\textbf{Mutual information with target.} Mutual information (MI) was estimated for each raw channel against both the binary fault label and the multi-class label, using a subsampled frame of 100,000 rows. Figure~\ref{fig:eda-mi} shows the comparison for Costa. Multi-class MI is consistently and substantially higher than binary MI across every channel: pdc2 increases from 0.275 to 0.425 bits (a 54\% gap), and idc2 from 0.270 to 0.417 bits. This systematic gap means that feature selection based solely on a binary anomaly label would systematically undervalue channels critical for fault classification. The result motivated the mRMR selection criterion in Section~\ref{sec:feature-engineering} to operate on the multi-class label. For La~Réunion, Vg achieves the highest binary MI (0.026~bits) while Pg achieves only 0.006~bits, providing information-theoretic confirmation of the Mann-Whitney non-significance result: grid power carries negligible discriminative information for shading fault detection.
+\textbf{Mutual information with target.} Mutual information (MI) was estimated for each raw channel against both the binary fault label and the multi-class label, using a subsampled frame of 100,000 rows. Figure~\ref{fig:eda-mi} shows the comparison. Multi-class MI is consistently and substantially higher than binary MI across every channel: pdc2 increases from 0.275 to 0.425 bits (a 54\% gap), and idc2 from 0.270 to 0.417 bits. This systematic gap means that feature selection based solely on a binary anomaly label would systematically undervalue channels critical for fault classification. The result motivated the mRMR selection criterion in Section~\ref{sec:feature-engineering} to operate on the multi-class label.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{eda/costa_mutual_info.png}
-  \caption{Mutual information against binary (left) and multi-class (right) targets for all Costa channels.}
+  \caption{Mutual information of Costa channels against binary (left) and multi-class (right) fault labels. Multi-class MI is consistently higher across all channels, motivating the use of the multi-class label for feature selection.}
   \label{fig:eda-mi}
 \end{figure}
 
-\textbf{Outlier analysis.} A $3\times\mathrm{IQR}$ criterion was applied exclusively to normal-class rows; bounds were computed from the normal-class IQR and any row falling outside those bounds was flagged. For Costa, the result is strongly channel-asymmetric: idc1, idc2, pdc1, pdc2, pdc, irr, and pvt exhibit 0 outlier rows, while vdc1 yields 1.4\% (4,430 rows). Localizing these vdc1 outliers by date and by hour of day reveals that they are concentrated in the first 3 recording days (2020-04-06 to 2020-04-09) within the 9--12~UTC morning window --- a pattern consistent with system warm-up behavior at the start of the recording rather than with sensor malfunction or any recurring fault. Fault-labeled rows that exceed the same vdc1 bounds are not removed; their extreme voltage values are meaningful fault signatures. This label-aware treatment is the direct specification for the IQR-based preprocessing in Section~\ref{sec:preprocessing}.
+\textbf{Outlier analysis.} A $3\times\mathrm{IQR}$ criterion was applied exclusively to normal-class rows; bounds were computed from the normal-class IQR and any row falling outside those bounds was flagged. The result is strongly channel-asymmetric: idc1, idc2, pdc1, pdc2, pdc, irr, and pvt exhibit 0 outlier rows, while vdc1 yields 1.4\% (4,430 rows). Localizing these vdc1 outliers by date and by hour of day reveals that they are concentrated in the first 3 recording days (2020-04-06 to 2020-04-09) within the 9--12~UTC morning window, a pattern consistent with system warm-up behavior at the start of the recording. Fault-labeled rows that exceed the same vdc1 bounds are not removed; their extreme voltage values are meaningful fault signatures. This label-aware treatment is the direct specification for the IQR-based preprocessing in Section~\ref{sec:preprocessing}.
 
-\textbf{Stationarity diagnostics.} Augmented Dickey-Fuller (ADF) and KPSS tests were applied to the 5 longest normal-class episodes in each dataset, using a subsampled series to maintain tractable lag selection. The autocorrelation function (ACF) was additionally computed to bound the minimum inter-partition gap needed for temporal independence. Figure~\ref{fig:eda-acf} shows the ACF plots for La~Réunion. The consensus stationarity criterion required ADF rejection of the unit-root null and KPSS non-rejection of the stationarity null simultaneously. Channels including Pg, Ig, GTI, TA, and TPV exhibit ACF values above 0.5 at lag~200 ($\approx$\,23~minutes at 7-second sampling), confirming persistent autocorrelation and non-stationarity within intra-day episodes. This finding has 2 consequences: first, the absolute level of these channels is not a reliable anomaly indicator across episodes recorded at different times of day; second, the minimum inter-partition embargo must span at least 21~minutes to suppress leakage through long rolling features. Both constraints are enforced in Section~\ref{sec:splitting} (21-minute embargo) and Section~\ref{sec:feature-engineering} (first-order temporal derivatives as stationary alternatives to trending raw levels).
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{eda/reunion_autocorrelation.png}
-  \caption{Autocorrelation functions for 6 La~Réunion channels computed on the largest contiguous normal-class segment.}
-  %  Channels with ACF above 0.5 at lag~200 (orange dashed line, $\approx$\,23~min) are non-stationary within intra-day episodes. This analysis set the minimum train-to-validation embargo at 21~minutes and motivated first-order derivative features as stationary alternatives to the trending raw levels.
-  \label{fig:eda-acf}
-\end{figure}
-
-\textbf{Sensor health: stuck-at detection and long-term drift.} A rolling variance check was applied across all channels in both datasets: no 30-sample window exhibits zero variance for any electrical channel, confirming that no sensor had frozen at a fixed value. Long-term drift was assessed by computing monthly median values for primary channels over the 19-month La~Réunion recording. PV module temperature (TPV) exhibits a clear seasonal cycle consistent with the Indian Ocean climate; no abrupt calibration jump was detected in any channel. The absence of stuck-at events confirms that no dedicated removal step is required. The smooth seasonal drift is documented as the motivating observation for the drift detection module described in Chapter~\ref{ch:deployment}.
-
+\textbf{Sensor health: stuck-at detection.} A rolling variance check was applied across all channels: no 30-sample window exhibits zero variance for any electrical channel. The ingested data is free of frozen-sensor artifacts and is clean on this criterion.
 
 
 % ────────────────────────────────────────────────────────────
@@ -539,5 +497,5 @@ The 5-fold scheme serves as the variance estimator for reported metrics: mean $\
 \section{Conclusion}
 % ────────────────────────────────────────────────────────────
 
-This chapter defined the design of the proposed photovoltaic FDD system, including its overall architecture, the selected field datasets, and the data-driven constraints that shape the pipeline. The resulting workflow is organized as a staged process (from ingestion to model training) to ensure reproducible experiments and reliable evaluation. The next chapter details the concrete implementation of these design choices.
+This chapter defined the design of the proposed PV FDD system, from the high-level architecture and dataset selection to a staged, leakage-aware data pipeline and feature-profile ablation strategy. It also specified the calibration and evaluation protocols that are used consistently in the implementation chapter.
 
