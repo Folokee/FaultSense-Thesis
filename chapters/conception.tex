@@ -33,7 +33,7 @@ to make it suitable for input to the next stage of the system.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.8\textwidth]{figures/chap3/fdd-arch.png}
+    \includegraphics[width=0.8\textwidth]{figures/chap3/FDD_arch.png}
     \caption{FDD System Architecture.}
     \label{fig:system_architecture}
 \end{figure}
@@ -132,23 +132,31 @@ The exploratory data analysis was structured as a series of checks applied to th
   \label{fig:eda-boxplots}
 \end{figure}
 
-\textbf{Irradiance filtering and the production regime.} A 100~W/m$^2$ irradiance floor is applied during ingestion. Rows below this threshold correspond to night-time or pre-sunrise conditions where all electrical channels are near zero and the class label is uniformly normal by construction. Including these rows would inflate the apparent separability of the normal class from fault classes, creating a spurious detection advantage. All subsequent analysis and modeling operates exclusively on the production regime.
 
-\textbf{Correlation, collinearity, and spurious relationship detection.} Spearman rank correlation was computed in 3 contexts: across all rows, restricted to normal-class rows, and stratified by irradiance quartile within the normal class. Figure~\ref{fig:eda-correlation} shows the full normal-class Spearman heatmap and the irradiance-stratified profiles. The normal-class context exposes 2 classes of alias. The first class arises from additive identities: Spearman $\rho$(pdc1, pdc) = 0.999 and $\rho$(pdc2, pdc) = 0.999, empirically confirming $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$. The second class arises from the multiplicative physical relationship $P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$ at approximately constant voltage, making per-string current a near-proxy for per-string power ($\rho = 0.976$ for idc1--pdc1). VIF quantifies the regression-based consequence: VIF(\texttt{idc1}) = 187.8. These aliases are the direct targets of the hygiene pruning stage in Section~\ref{sec:feature-engineering}. The irradiance-stratified analysis reveals an additional, non-trivial pattern: while the pdc1--pdc2 correlation remains above 0.95 across all 4 irradiance quartiles, the idc1--idc2 correlation drops to 0.82 in the third quartile (830--885~W/m$^2$) before recovering at peak irradiance. This regime-dependent inter-string divergence is invisible in an aggregate correlation and is preserved as evidence of non-uniform string behavior under high thermal loading, motivating the per-string imbalance features in Section~\ref{sec:feature-engineering}.
+\textbf{Correlation, collinearity, and spurious relationship detection.} 
+Spearman rank correlation was computed in 3 contexts: across all rows, restricted to normal-class rows, and stratified by irradiance quartile within the normal class. 
+Figure~\ref{fig:eda-correlation-heatmap} shows the full normal-class Spearman heatmap and Figure~\ref{fig:eda-correlation-stratified} shows the irradiance-stratified profiles. 
+The normal-class context exposes 2 classes of alias. 
+The first class arises from additive identities: Spearman $\rho$(pdc1, pdc) = 0.999 and $\rho$(pdc2, pdc) = 0.999, empirically confirming $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$. 
+The second class arises from the multiplicative physical relationship $P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$ at approximately constant voltage, making per-string current a near-proxy for per-string power ($\rho = 0.976$ for idc1--pdc1). 
+VIF quantifies the regression-based consequence: VIF(\texttt{idc1}) = 187.8. 
+These aliases are the direct targets of the hygiene pruning stage in Section~\ref{sec:feature-engineering}. 
+The irradiance-stratified analysis reveals an additional, non-trivial pattern: while the pdc1--pdc2 correlation remains above 0.95 across all 4 irradiance quartiles, the idc1--idc2 correlation drops to 0.82 in the third quartile (830--885~W/m$^2$) before recovering at peak irradiance. 
+This regime-dependent inter-string divergence is invisible in an aggregate correlation and is preserved as evidence of non-uniform string behavior under high thermal loading, motivating the per-string imbalance features in Section~\ref{sec:feature-engineering}. 
+The aggregate heatmap identifies the algebraic aliases targeted by hygiene pruning, while the irradiance-stratified profiles distinguish those aliases from physically meaningful inter-string divergence that must be preserved.
 
 \begin{figure}[H]
   \centering
-  \begin{subfigure}[b]{0.44\textwidth}
-    \includegraphics[width=\textwidth]{eda/costa_correlation.png}
-    \caption{Normal-class Spearman heatmap. The current--power block is strongly correlated; the voltage block is largely independent.}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}[b]{0.54\textwidth}
-    \includegraphics[width=\textwidth]{eda/costa_regime_correlations.png}
-    \caption{Irradiance-quartile-stratified profiles. The idc1--idc2 pair diverges at the 3rd quartile, revealing per-string mismatch invisible in aggregate.}
-  \end{subfigure}
-  \caption{Spearman correlation analysis for Costa. The aggregate heatmap (left) identifies algebraic aliases targeted by hygiene pruning; the irradiance-stratified profiles (right) distinguish those aliases from physically meaningful inter-string divergence that must be preserved.}
-  \label{fig:eda-correlation}
+  \includegraphics[width=0.8\textwidth]{eda/costa_correlation.png}
+  \caption{Normal-class Spearman correlation heatmap.}
+  \label{fig:eda-correlation-heatmap}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{eda/costa_regime_correlations.png}
+  \caption{Irradiance-quartile-stratified correlation profiles.}
+  \label{fig:eda-correlation-stratified}
 \end{figure}
 
 \textbf{Mutual information with target.} Mutual information (MI) was estimated for each raw channel against both the binary fault label and the multi-class label, using a subsampled frame of 100,000 rows. Figure~\ref{fig:eda-mi} shows the comparison. Multi-class MI is consistently and substantially higher than binary MI across every channel: pdc2 increases from 0.275 to 0.425 bits (a 54\% gap), and idc2 from 0.270 to 0.417 bits. This systematic gap means that feature selection based solely on a binary anomaly label would systematically undervalue channels critical for fault classification. The result motivated the mRMR selection criterion in Section~\ref{sec:feature-engineering} to operate on the multi-class label.
@@ -190,11 +198,9 @@ The pipeline is constructed as a Directed Acyclic Graph (DAG) of processing stag
 \section{Data Ingestion}
 This step involves loading the raw data from the Costa dataset, then applying a series of transformations to output a unified table ready for the next stage.
 These transformations include:
-\paragraph{Costa}
 \begin{itemize}
     \item \textbf{Converting:} Convert original raw MAT files to Numpy arrays.
     \item \textbf{Filtering:} Remove negative irradiance values to resolve wrong sensor readings.
-    \item \textbf{Timestamp Generation:} Creates a fake synthetic 1 Hz index in microseconds. It anchors the first sample to a specific UTC epoch to align the recorded irradiance curve with local solar noon in Brazil, increasing the time by 1,000,000 microseconds (1 second) per row. 
     \item \textbf{Daytime Trimming:} Filter out nighttime samples by setting a minimum irradiance threshold of 100 W/m².
     \item \textbf{Serializing:} Save the resulting table in a Parquet file and generates a JSON schema manifest.
 \end{itemize}
@@ -354,15 +360,6 @@ The candidate feature pool is pruned by a 2-stage train-only selector stack befo
 The second stage applies minimum-redundancy maximum-relevance (mRMR) feature selection under the mutual information difference (MID) criterion \citep{peng2005mrmr}, with a target retained pool of 32 features after hygiene. The relevance term scores each candidate by its mutual information with the task label; the redundancy term penalizes mutual information against already-retained features; the greedy selection proceeds until the target size is reached or the pool is exhausted. All mutual information estimates are computed from the training partition only. For large training partitions, estimation is performed on a stratified, group-aware subset of up to 30\,000 rows, which preserves the statistical structure of the label distribution and the temporal grouping while keeping the selection step tractable within the project's computational budget.
 
 
-\section{Threshold Calibration Policy}
-\label{sec:threshold-calibration}
-
-The primary evaluation metric for Task~A, PR-AUC, is a \emph{threshold-free} measure: it summarizes the quality of the score ranking across the entire precision-recall trade-off curve and is insensitive to the choice of any single operating threshold. A model with high PR-AUC produces a ranking in which fault samples tend to receive higher anomaly scores than normal samples, regardless of where the decision boundary is placed. However, deployment requires choosing one operating point on this curve: the threshold at which the continuous score is converted into a binary alarm. The quality of this operating point determines the actual precision and recall of the deployed system, and a poorly calibrated threshold can substantially degrade operational performance even when ranking quality is high.
-
-The calibration challenge is that the threshold must be set entirely from training-normal scores, without access to fault-labeled data, to remain consistent with the semi-supervised formulation. A naive approach based on an empirical score percentile implicitly assumes a parametric tail shape that may not hold in practice. To address this, the calibration procedure applies Extreme Value Theory: the upper tail of the normal-class score distribution is modeled by fitting a Generalized Pareto Distribution (GPD) to the exceedances above a high quantile of training-normal scores, using the Peaks-Over-Threshold (POT) method \citep{pickands1975statistical, coles2001extreme}. The GPD fit extrapolates the tail rather than reading off an empirical count, and the calibrated threshold is derived as the GPD quantile corresponding to a target false-positive rate. This procedure is applied uniformly across all Task~A detectors, so cross-model comparisons reflect architectural differences in ranking quality rather than differences in threshold policy.
-
-Beyond a single operating point, the evaluation reports a suite of operating points covering the full precision-recall trade-off, from conservative to sensitive configurations, including conformal prediction-based thresholds \citep{vovk2005algorithmic} that provide distribution-free false-alarm rate guarantees, and sequential change-detection rules based on the CUSUM statistic \citep{page1954cusum} that exploit temporal structure to reduce spurious alarms. This suite constitutes the tiered alerting system described in Chapter~\ref{ch:deployment}; at the evaluation stage it serves to characterize how each model behaves across the entire deployable operating range, not only at one chosen point.
-
 % ────────────────────────────────────────────────────────────
 \section{Evaluation Methodology}
 \label{sec:evaluation-methodology}
@@ -372,11 +369,11 @@ This section defines the evaluation protocols applied uniformly across all exper
 
 \subsection{Headline Metrics}
 
-For Anomaly Detection two headline metrics are tracked: the area under the precision--recall curve (PR-AUC) and the macro-averaged F1 score (macro F1). On field datasets where normal-operation samples constitute the overwhelming majority of the recorded sequence, the area under the receiver-operating-characteristic curve (ROC-AUC) is structurally misleading: a classifier that assigns the negative label to every sample achieves near-perfect accuracy and an ROC-AUC approaching 1.0, neither of which conveys operational meaning. The precision--recall curve measures directly the trade-off between the fraction of raised alarms that correspond to true faults and the fraction of true faults that are caught \citep{saito2015pr}. A random baseline on this curve achieves an area equal to the positive class prevalence, so any reported PR-AUC must significantly exceed that floor to be informative.
+For Task~A the primary metric is the area under the precision-recall curve (PR-AUC). On field datasets where normal-operation samples constitute the overwhelming majority of the recorded sequence, the area under the receiver-operating-characteristic curve (ROC-AUC) is structurally misleading: a classifier that assigns the negative label to every sample achieves near-perfect accuracy and an ROC-AUC approaching 1.0, neither of which conveys operational meaning. The precision-recall curve measures directly the trade-off between the fraction of raised alarms that correspond to true faults and the fraction of true faults that are caught \citep{saito2015pr}. A random baseline on this curve achieves an area equal to the positive class prevalence, so any reported PR-AUC must significantly exceed that floor to be informative.
 
-Macro-averaged F1 is selected to ensure that detection performance remains consistently strong across the different fault types present in the dataset rather than being driven by the easiest or most frequent fault. The macro averaging assigns equal weight to each fault class, which prevents class imbalance from dominating the aggregate F1 score and masking poor per-class behavior. Precision and recall at the calibrated operating threshold are reported alongside these headline metrics.
+The primary PR-AUC figure is the \textbf{macro per-class PR-AUC}: for each fault class, the PR-AUC of that class versus normal is computed independently, and the macro average across all classes is the headline figure. The worst-class PR-AUC is reported alongside it, because a high macro average can conceal failure on a single subtle class. This per-class discipline is essential on Costa, where the resistive degradation class (label~2) has a subtler electrical signature than the short-circuit or open-circuit classes. A complementary set of secondary metrics (F1 score, precision, and recall at a calibrated operating threshold) is tracked because the area is a ranking quantity and does not by itself characterize the deployment behavior at a single chosen operating point.
 
-For Fault Diagnosis the primary metric is the weighted F1 score, which balances per-class precision and recall while accounting for per-class support in the weighting. The macro-averaged F1 score and the full per-class precision-recall-F1 triplet are also computed and reported alongside the weighted average, because a support-weighted mean can mask the failure of a minority class when one class dominates the evaluation set. The confusion matrix is treated as a primary diagnostic artifact in every Task~B comparison rather than as an appendix detail.
+For Task~B the primary metric is the \textbf{macro-averaged F1 score}, which assigns equal weight to each fault class irrespective of its support. A support-weighted average would be dominated by the shadowing class (label~4, 35.7\% of fault-labeled rows), concealing failures on the three rare electrically induced fault classes in the same way that ROC-AUC is misleading for Task~A under severe prevalence imbalance. The weighted F1 score and the full per-class precision-recall-F1 triplet are reported alongside the macro average as secondary figures. The confusion matrix is treated as a primary diagnostic artifact in every Task~B comparison.
 
 \subsection{Leakage Validation Suite}
 
@@ -408,7 +405,20 @@ The two tasks impose structurally different fold constructions:
     \item \textbf{Task~B (supervised).} All labeled classes are present in the training partition of each fold, with temporal-stratified assignment ensuring that each fault class has evaluation coverage in every fold while respecting chronological ordering within each class.
 \end{itemize}
 
-\subsection{Probability Calibration}
+
+
+
+\section{Threshold Calibration Policy}
+\label{sec:threshold-calibration}
+
+The primary evaluation metric for Task~A, PR-AUC, is a \emph{threshold-free} measure: it summarizes the quality of the score ranking across the entire precision-recall trade-off curve and is insensitive to the choice of any single operating threshold. A model with high PR-AUC produces a ranking in which fault samples tend to receive higher anomaly scores than normal samples, regardless of where the decision boundary is placed. However, deployment requires choosing one operating point on this curve: the threshold at which the continuous score is converted into a binary alarm. The quality of this operating point determines the actual precision and recall of the deployed system, and a poorly calibrated threshold can substantially degrade operational performance even when ranking quality is high.
+
+The calibration challenge is that the threshold must be set entirely from training-normal scores, without access to fault-labeled data, to remain consistent with the semi-supervised formulation. A naive approach based on an empirical score percentile implicitly assumes a parametric tail shape that may not hold in practice. To address this, the calibration procedure applies Extreme Value Theory: the upper tail of the normal-class score distribution is modeled by fitting a Generalized Pareto Distribution (GPD) to the exceedances above a high quantile of training-normal scores, using the Peaks-Over-Threshold (POT) method \citep{pickands1975statistical, coles2001extreme}. The GPD fit extrapolates the tail rather than reading off an empirical count, and the calibrated threshold is derived as the GPD quantile corresponding to a target false-positive rate. This procedure is applied uniformly across all Task~A detectors, so cross-model comparisons reflect architectural differences in ranking quality rather than differences in threshold policy.
+
+Beyond a single operating point, the evaluation reports a suite of operating points covering the full precision-recall trade-off, from conservative to sensitive configurations, including conformal prediction-based thresholds \citep{vovk2005algorithmic} that provide distribution-free false-alarm rate guarantees, and sequential change-detection rules based on the CUSUM statistic \citep{page1954cusum} that exploit temporal structure to reduce spurious alarms. This suite constitutes the tiered alerting system described in Chapter~\ref{ch:deployment}; at the evaluation stage it serves to characterize how each model behaves across the entire deployable operating range, not only at one chosen point.
+
+
+\section{Probability Calibration}
 
 Gradient boosting classifiers produce a vector of class scores that sum to one and are conventionally interpreted as class probabilities. However, these scores are not guaranteed to be calibrated: a model may assign a confidence of 0.9 to a fault class while being correct only 60\% of the time at that confidence level. This miscalibration is invisible to discrimination metrics such as macro F1, which measure ranking quality rather than probabilistic accuracy. In the context of this work it matters because the monitoring interface presents the fault class confidence alongside the diagnostic label; miscalibrated scores degrade the operator's ability to triage alerts proportionally to their actual reliability.
 

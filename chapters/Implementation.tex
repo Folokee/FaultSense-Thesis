@@ -9,18 +9,18 @@ obtained from the evaluation on the Costa dataset.
 \subsection{Software and Libraries}
 The implementation relies on a small set of libraries and services, grouped by their role in the end-to-end pipeline.
 
-\paragraph{ML/DL core.}
+\subsubsection{ML/DL core}
 \par\noindent\textbf{Python:} The primary programming language used for data processing, model development, and evaluation.
 \par\noindent\textbf{PyTorch:} The deep learning framework used for implementing and training the neural models.
 \par\noindent\textbf{Scikit-learn:} Used for preprocessing, classical baselines, and evaluation metrics.
 \par\noindent\textbf{SciPy:} Scientific computing utilities used for numerical routines and statistical operations required by parts of the pipeline.
 \par\noindent\textbf{Optuna:} Hyperparameter optimization framework used to tune model configurations under a shared HPO protocol.
 
-\paragraph{Data engineering and visualisation.}
+\subsubsection{Data engineering and visualisation}
 \par\noindent\textbf{Polars:} A high-performance DataFrame library used for efficient tabular data transformations in the preprocessing and feature engineering stages.
 \par\noindent\textbf{Matplotlib:} Used to generate diagnostic plots and result figures (e.g., curves and confusion matrices).
 
-\paragraph{Experiment tracking and reproducibility.}
+\subsubsection{Experiment tracking and reproducibility}
 \par\noindent\textbf{GitHub:} Used for version control and collaborative code management.
 \par\noindent\textbf{Data Version Control (DVC):} Used to version datasets and large artifacts, and to encode the multi-stage pipeline as reproducible dependency graphs.
 \par\noindent\textbf{MLflow:} Free software used for experiment tracking, metrics logging, and model versioning.
@@ -43,13 +43,19 @@ Large artifacts (raw data, processed tables, and selected model checkpoints) are
 Two execution environments are used depending on workload characteristics. CPU-oriented stages, including ingestion, exploratory analysis, and the classical machine learning baselines, are executed on a local machine. Deep learning training and HPO are executed on Google Colab with GPU acceleration (typically NVIDIA T4 or A100). In Colab sessions, a persistent Google Drive workspace is mounted and used as an artifacts root directory, so that Optuna studies, checkpoints, metrics, and plots survive runtime disconnections. This split avoids wasting GPU resources on CPU-bound data manipulation and focuses accelerated compute on the training loops that benefit from it.
 
 \paragraph{Hyperparameter optimization protocol.}
-Model selection is conducted with Optuna using the Tree-structured Parzen Estimator (TPE) sampler. Classical models are tuned with fixed trial budgets, where each trial is fast and therefore pruning is not required. Deep learning models use the same Optuna interface but can additionally enable early stopping and pruning strategies, because training a single trial can span multiple epochs. For all tasks, the validation partition is the only split used for HPO decisions (metric optimization and threshold selection), while the test partition is reserved for final reporting.
+% Model selection is conducted with Optuna using the Tree-structured Parzen Estimator (TPE) sampler. Classical models are tuned with fixed trial budgets, where each trial is fast and therefore pruning is not required. Deep learning models use the same Optuna interface but can additionally enable early stopping and pruning strategies, because training a single trial can span multiple epochs. For all tasks, the validation partition is the only split used for HPO decisions (metric optimization and threshold selection), while the test partition is reserved for final reporting.
+Each model evaluated in this work exposes a set of parameters that govern its capacity and training dynamics (learning rate, regularization coefficients, architectural dimensions) but that training itself cannot determine. These must be selected through a separate optimization process driven by a held-out validation signal. A systematic, automated search is necessary: the number of candidate configurations is too large for manual exploration, and deep learning models in particular carry non-trivial trial costs that penalize exhaustive strategies.
+
+Optimization is performed using Optuna \citep{akiba2019optuna} with the Tree-structured Parzen Estimator (TPE) sampler. Rather than enumerating a predefined grid of configurations as grid search does \citep{bergstra2012random}, or evolving a population of candidates as genetic algorithms require, TPE builds a probabilistic model of the objective from the history of completed trials and focuses subsequent sampling on the regions associated with good outcomes. This sequential, model-guided search reaches competitive configurations in far fewer trials than either exhaustive or population-based alternatives, which is decisive when individual trials involve full training runs of deep architectures.
+
+Each HPO study runs on the fixed original train/val split and completes before the K-fold cross-validation begins, so the winning configuration is fixed for all folds. The test partition is invisible throughout. The optimization objective is the validation macro per-class PR-AUC for Task~A and the validation macro F1 for Task~B, consistent with the headline metrics of Section~\ref{sec:evaluation-methodology}. Among configurations whose scores fall within one standard deviation of each other, the simpler configuration is preferred as a tiebreaker.
+
+The pruning strategy is adapted to trial cost. For classical ML models, no pruner is applied: trials are inexpensive and no intermediate epoch-level signal is available. For deep learning models, a Median pruner is added: a trial is terminated when its intermediate validation score falls below the median of all completed trials at the same epoch, after a warmup period during which pruning is suspended. Within-trial early stopping patience scales with the trial epoch budget, preventing premature termination on short trial budgets.
+
 
 \paragraph{Experiment tracking and artifacts.}
 All runs are tracked with MLflow and logged to a centralized DagsHub tracking server. Each run records the active dataset and split identifier, the selected feature profile, the final HPO parameters, and the computed validation and test metrics. In addition, lightweight artifacts are stored alongside metrics, including serialized preprocessing objects (e.g., scalers), model files (\texttt{.joblib} for classical models and checkpoints for deep learning), and diagnostic figures such as PR curves, score histograms, and confusion matrices. This tracking discipline supports direct comparison across the anomaly detection (Task~A) and fault classification (Task~B) experiments.
 
-\paragraph{Random seeds and repeated runs.}
-To control stochasticity, experiments are executed with predefined random seeds. A canonical single-run seed is used for rapid iteration, while a small multi-seed suite is used when estimating the stability of reported metrics. Unless stated otherwise, training and evaluation follow the leakage-aware splitting protocol described in Section~\ref{sec:splitting}.
 
 \section{Anomaly Detection Implementation and Results}
 % \subsection{Introduction}

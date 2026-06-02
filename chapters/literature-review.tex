@@ -4,6 +4,8 @@
 \chapter{Related Work}
 \label{ch:related-work}
 
+\section{Introduction}
+
 The field of fault detection and diagnosis in photovoltaic systems has attracted growing research interest over the past decade, driven by the rapid expansion of solar installations and the corresponding need for reliable automated monitoring solutions. This chapter reviews the existing literature with the objective of situating the contributions of this work within the current state of the art. The review is organized around three distinct families of diagnostic approaches, differentiated by the type of input data they exploit: thermographic imaging, current-voltage characteristic curve analysis, and operational electrical and meteorological measurements. Before examining these methodological families, it is necessary to characterize the datasets available in the field, as the nature of the training data fundamentally conditions the validity of performance claims and the generalizability of the proposed models. The chapter closes with a critical synthesis of the identified limitations and a statement of the research gaps that motivate the contributions of this thesis.
 
 % ────────────────────────────────────────────────────────────
@@ -90,9 +92,44 @@ Graph-based methods represent a more recent direction in this domain. \citet{yan
 
 The preceding review reveals a landscape of considerable methodological diversity, where each input modality and model family presents distinct strengths and limitations. Table~\ref{tab:synthesis} consolidates a representative selection of reviewed works along the dimensions most relevant to practical deployment assessment.
 
+% \begin{table}[H]
+% \centering
+% \caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter. R: data from real field or laboratory installations; S: data from circuit-level simulation; R+S: mixed sources. The Deployment column marks works that explicitly deploy and validate their pipeline on embedded hardware (\emph{Edge}), works that report an explicit footprint or compute reduction without on-device validation (\emph{Lightweight}), or neither (``\textemdash'').}
+% \label{tab:synthesis}
+% \footnotesize
+% \setlength{\tabcolsep}{4pt}
+% \begin{tabular}{p{3.4cm}llp{4.5cm}cc}
+% \toprule
+% \textbf{Author(s)} & \textbf{Year} & \textbf{Modality} & \textbf{Method} & \textbf{Data} & \textbf{Deployment} \\
+% \midrule
+% Manno et al.            & 2021 & Thermal      & Binary CNN (operative vs hotspot)            & R   & \textemdash \\
+% Akram et al.            & 2020 & Thermal      & EL$\rightarrow$IR transfer learning          & R   & \textemdash \\
+% Korkmaz \& Acikgoz      & 2022 & Thermal      & Multi-scale CNN (AlexNet backbone)           & R   & \textemdash \\
+% Xie et al.              & 2024 & Thermal      & ST-YOLO (YOLOv8 + attention)                 & R   & Lightweight \\
+% Dhimish                 & 2025 & Thermal      & HOTSPOT-YOLO (lightweight attention)         & R   & Lightweight \\
+% \midrule
+% Chen et al.             & 2017 & I-V curve    & Kernel extreme learning machine              & S   & \textemdash \\
+% Qu et al.               & 2024 & I-V curve    & CNN-CBAM on curve images                     & R+S & \textemdash \\
+% Gong et al.             & 2024 & I-V/P-V      & MIFNet (3D I/V/P feature map)                & S   & \textemdash \\
+% \midrule
+% Costa et al.            & 2020 & Electrical   & Embedded monitoring system + classifier      & R   & Edge \\
+% Garoudja et al.         & 2017 & Electrical   & Probabilistic neural network                 & S   & \textemdash \\
+% Amiri et al.            & 2024 & Electrical   & RF (two-stage, MGWO-fitted ODM)              & S   & \textemdash \\
+% Suliman et al.          & 2024 & Electrical   & SVM vs BA-XGBoost benchmark                  & S   & \textemdash \\
+% Kull et al.             & 2025 & Electrical   & DBN + LightGBM (QASP SCADA)                  & R   & \textemdash \\
+% Zwirtes et al.          & 2025 & Electrical   & Cross-installation ML benchmark              & R   & \textemdash \\
+% Amiri et al.            & 2024 & Electrical   & CNN + Bi-GRU                                  & R+S & \textemdash \\
+% Titouni et al.          & 2025 & Electrical   & Hybrid CNN-Autoencoder (GPVS-Faults)         & R   & \textemdash \\
+% Attouri et al.          & 2026 & Electrical   & Adaptive PolyKAN + AE compression            & R+S & Lightweight \\
+% Yan et al.              & 2025 & Electrical   & SOM-DBTGNet (graph)                          & N/S & \textemdash \\
+% Cai \& Wai              & 2022 & Electrical   & VMD + PSO-SVM (arc fault)                    & R   & \textemdash \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
 \begin{table}[H]
 \centering
-\caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter. R: data from real field or laboratory installations; S: data from circuit-level simulation; R+S: mixed sources. The Deployment column marks works that explicitly deploy and validate their pipeline on embedded hardware (\emph{Edge}), works that report an explicit footprint or compute reduction without on-device validation (\emph{Lightweight}), or neither (``\textemdash'').}
+\caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter.}
 \label{tab:synthesis}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
@@ -123,8 +160,11 @@ Yan et al.              & 2025 & Electrical   & SOM-DBTGNet (graph)             
 Cai \& Wai              & 2022 & Electrical   & VMD + PSO-SVM (arc fault)                    & R   & \textemdash \\
 \bottomrule
 \end{tabular}
-\end{table}
 
+\vspace{4pt}
+\footnotesize
+\textbf{Data sources:} R = real field/laboratory installations; S = circuit-level simulation; R+S = mixed sources. \textbf{Deployment:} \emph{Edge} = pipeline deployed and validated on embedded hardware; \emph{Lightweight} = explicit footprint or compute reduction reported, no on-device validation; \textemdash{} = neither.
+\end{table}
 Three patterns emerge from this synthesis. First, reported accuracies are consistently high across all modalities and method families, frequently in the 90 to 99\% band and occasionally approaching 100\%; these figures must nevertheless be interpreted with caution because a substantial fraction of the reviewed studies rely on circuit-level simulation rather than field measurements, or evaluate on small or artificially class-balanced test sets. Second, the electrical and meteorological modality is the most extensively represented in the literature, consistent with the observation that operational electrical measurements are the most readily available data type in real PV installations. Third, although several recent contributions explicitly pursue computationally efficient designs, ranging from the model-size reduction of ST-YOLO \citep{xie2024styolo} to the lightweight attention architecture of HOTSPOT-YOLO \citep{dhimish2025hotspot} and the 88\% execution-time and 40\% memory reduction reported for the PolyKAN-AE pipeline \citep{attouri_adaptive_2026}, efficiency in the reviewed literature is most often expressed through proxy metrics computed on workstation-class hardware, such as parameter count, floating-point operations, or theoretical inference time. End-to-end deployment on a representative embedded platform, with measured inference latency, memory footprint, and power consumption obtained on the target device under realistic operational conditions, has been reported only by a small number of works, notably the embedded monitoring system of \citet{costa2020sensors}.
 
 % ────────────────────────────────────────────────────────────
@@ -136,7 +176,7 @@ The preceding review, combined with the dataset landscape analyzed in Section~\r
 
 \textbf{The operational profile of imaging-based and sweep-based modalities.} Thermographic approaches inspect modules through dedicated infrared cameras carried by unmanned aerial vehicles, with per-campaign costs in the range of 0.5 to 3.0 euros per module \citep{herz2021} and a cadence that is inherently event-driven rather than continuous. I-V curve methods rely on an active sweep of the module or string operating point; recent inverter-integrated solutions have considerably reduced the operational overhead of this sweep, but the procedure remains a discrete diagnostic event and depends on vendor-specific hardware. The operational electrical and meteorological measurements continuously produced by standard inverters and meteo sensors, by contrast, are already part of the instrumentation deployed for plant performance monitoring and do not require any fault-detection-specific hardware. This motivates anchoring the proposed approach on these continuously available channels, which together form the data type that any grid-connected installation already supplies.
 
-\textbf{The under-representation of real-world data and the resulting generalization risk.} As Table~\ref{tab:synthesis} and the data survey of Section~\ref{sec:data-survey} jointly make visible, a substantial fraction of the published methods is trained and evaluated on circuit-level simulated data, which does not capture the sensor noise, missing samples, and weather-driven nonlinearity of real plants. \citet{zwirtes_fault_2025} provided direct evidence of this gap by showing that a classifier trained on one real PV system can fail substantially when applied to another with different module characteristics. The reported accuracy figures on clean simulated datasets are therefore an imperfect proxy for real-world performance, and the limited number of publicly available field-collected datasets restricts the empirical basis on which generalization claims can be made. This motivates building the entire experimental pipeline on real-world datasets, specifically the Costa dataset identified in Section~\ref{sec:data-survey}.
+\textbf{The under-representation of real-world data and the resulting generalization risk.} As Table~\ref{tab:synthesis} and the data survey of Section~\ref{sec:data-survey} jointly make visible, a substantial fraction of the published methods is trained and evaluated on circuit-level simulated data, which does not capture the sensor noise, missing samples, and weather-driven nonlinearity of real plants. \citet{zwirtes_fault_2025} provided direct evidence of this gap by showing that a classifier trained on one real PV system can fail substantially when applied to another with different module characteristics. The reported accuracy figures on clean simulated datasets are therefore an imperfect proxy for real-world performance, and the limited number of publicly available field-collected datasets restricts the empirical basis on which generalization claims can be made.
 
 \textbf{Aggregate metrics that conceal the difficulty of subtle fault classes.} Many studies summarise their results through aggregate metrics, such as overall accuracy or weighted F1-score, which can be dominated by majority classes or by faults with clearly discriminative signatures. Faults with subtle electrical signatures, in particular the resistive degradation class, manifest as a gradual reduction in module current under conditions otherwise indistinguishable from normal operation and can be under-detected without this being apparent from the headline figure. Reconstruction-based anomaly detectors are particularly exposed to this risk, since they learn to reproduce the normal operating manifold and may reproduce mild degradation accurately enough to assign it a low anomaly score. This motivates a per-class evaluation discipline, with explicit attention to the most challenging fault categories, rather than reliance on aggregate accuracy alone.
 
