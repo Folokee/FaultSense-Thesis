@@ -1,0 +1,8 @@
+{
+  "learning_rate": 0.000771281194715635,
+  "weight_decay": 2.6100256506134754e-05,
+  "n_coupling_layers": 5,
+  "hidden_dim": 64,
+  "dropout": 0.09875911927287816,
+  "spline_bins": 4
+}

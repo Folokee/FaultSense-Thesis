@@ -1,0 +1,24 @@
+{
+  "confidence_is_calibrated": true,
+  "calibration_method": "sigmoid",
+  "fit_split": "validation",
+  "test_not_used_for_calibration": true,
+  "probability_output": "calibrated_predict_proba",
+  "n_calibration_samples": 23016,
+  "n_classes": 4,
+  "classes": [
+    "1.0",
+    "2.0",
+    "3.0",
+    "4.0"
+  ],
+  "metrics_split": "test",
+  "metrics": {
+    "log_loss": 0.058525402202370715,
+    "brier_score_multiclass": 0.008311865158634052,
+    "expected_calibration_error": 0.018899135465283937,
+    "maximum_calibration_error": 0.7542641503470284,
+    "mean_confidence": 0.9948279981748441,
+    "accuracy_confidence_gap": 0.018899135465283656
+  }
+}

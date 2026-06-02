@@ -1,0 +1,61 @@
+2026-06-02 23:05:21.919 | INFO     | __main__:main:550 - === Step 6: Anomaly Detection Evaluation ===
+2026-06-02 23:05:29.191 | INFO     | __main__:main:558 -   Anomaly threshold (95.0th pctl): 0.000378
+2026-06-02 23:05:29.989 | INFO     | __main__:main:564 -   Test (healthy): FP=389/30926 (1.26%)
+2026-06-02 23:05:30.155 | INFO     | __main__:main:601 -   ShortCircuit   Precision=1.0000 Recall=0.9997 F1=0.9998 PR-AUC=0.9999 TP=5997 FP=0 FN=2 N=5999
+2026-06-02 23:05:30.429 | INFO     | __main__:main:601 -   Degradation    Precision=1.0000 Recall=1.0000 F1=1.0000 PR-AUC=0.9879 TP=10371 FP=0 FN=0 N=10371
+2026-06-02 23:05:30.592 | INFO     | __main__:main:601 -   OpenCircuit    Precision=1.0000 Recall=1.0000 F1=1.0000 PR-AUC=1.0000 TP=6024 FP=0 FN=0 N=6024
+2026-06-02 23:05:35.370 | INFO     | __main__:main:601 -   Shadowing      Precision=1.0000 Recall=0.7201 F1=0.8373 PR-AUC=0.9974 TP=132718 FP=0 FN=51593 N=184311
+2026-06-02 23:05:40.748 | INFO     | __main__:main:630 -   OVERALL        Precision=0.9975 Recall=0.7504 F1=0.8565 PR-AUC=0.9979 TP=155110 FP=389 FN=51595
+2026-06-02 23:05:40.748 | INFO     | __main__:main:659 -   ── Macro Averages ──
+2026-06-02 23:05:40.748 | INFO     | __main__:main:661 -     macro_pr_auc: 0.9963
+2026-06-02 23:05:40.748 | INFO     | __main__:main:661 -     macro_f1: 0.9593
+2026-06-02 23:05:40.749 | INFO     | __main__:main:661 -     macro_recall: 0.9299
+2026-06-02 23:05:40.749 | INFO     | __main__:main:661 -     macro_precision: 1.0000
+2026-06-02 23:05:40.862 | INFO     | __main__:main:686 -   Worst-class PR-AUC: 0.9879
+2026-06-02 23:05:40.863 | INFO     | __main__:main:687 -   ── Per-Class (contract) ──
+2026-06-02 23:05:40.863 | INFO     | __main__:main:689 -     ShortCircuit   PR-AUC=0.9999470244097153 F1@thr=0.9684295518772709 Prec@thr=0.9390854995302224 Rec@thr=0.9996666111018503 support=5999
+2026-06-02 23:05:40.863 | INFO     | __main__:main:689 -     Degradation    PR-AUC=0.9879410328160586 F1@thr=0.9815910274005016 Prec@thr=0.9638475836431227 Rec@thr=1.0 support=10371
+2026-06-02 23:05:40.863 | INFO     | __main__:main:689 -     OpenCircuit    PR-AUC=1.0 F1@thr=0.9687223606979175 Prec@thr=0.9393419616404179 Rec@thr=1.0 support=6024
+2026-06-02 23:05:40.863 | INFO     | __main__:main:689 -     Shadowing      PR-AUC=0.997369873876935 F1@thr=0.8362348701081854 Prec@thr=0.9970775391226607 Rec@thr=0.7200763926189973 support=184311
+2026-06-02 23:05:41.343 | INFO     | __main__:main:717 -   Test Episode Macro F1: 0.4029
+2026-06-02 23:05:41.344 | INFO     | __main__:main:718 -   Test Episode PR-AUC:  0.9878
+2026-06-02 23:05:41.344 | INFO     | __main__:main:723 - === Step 7: Operating Points & Per-Method Evaluation ===
+2026-06-02 23:05:41.365 | INFO     | src.modeling.common.threshold_calibration:calibrate_threshold_gpd:94 - GPD calibration: u=0.0002 (q0.90, 3093 exceedances) | ξ=1.0869 σ=0.0001 | target P>0.0500=0.0500 → threshold=0.0003
+2026-06-02 23:05:41.385 | INFO     | src.modeling.common.threshold_calibration:calibrate_threshold_gpd:94 - GPD calibration: u=0.0002 (q0.90, 3093 exceedances) | ξ=1.0869 σ=0.0001 | target P>0.2000=0.2000 → threshold=0.0001
+2026-06-02 23:05:44.823 | INFO     | __main__:main:821 -   ── Per Calibration Method ──
+2026-06-02 23:05:44.823 | INFO     | __main__:main:822 -   Method                 F1   PR-AUC     Prec      Rec    Ep-F1    Ep-PR Worst-PR
+2026-06-02 23:05:44.824 | INFO     | __main__:main:824 -   Percentile         0.8565   0.9979   0.9975   0.7504   0.4029   0.9878 0.987941
+2026-06-02 23:05:44.824 | INFO     | __main__:main:824 -   P3 Advisory        0.9667   0.9979   0.9892   0.9453   0.2119   0.9878 0.987941
+2026-06-02 23:05:44.824 | INFO     | __main__:main:824 -   P2 High            0.8722   0.9979   0.9972   0.7751   0.4333   0.9878 0.987941
+2026-06-02 23:05:44.824 | INFO     | __main__:main:824 -   P1 Critical        0.8689   0.9979   1.0000   0.7682   0.1428   0.9878 0.987941
+2026-06-02 23:05:44.824 | INFO     | __main__:main:835 - === Step 8: 5-Fold Evaluation ===
+2026-06-02 23:05:53.215 | INFO     | __main__:main:877 -   ── 5-Fold Summary (mean ± std) ──
+2026-06-02 23:05:53.215 | INFO     | __main__:main:878 -   Method                         F1           PR-AUC            Ep-F1            Ep-PR
+2026-06-02 23:05:53.215 | INFO     | __main__:main:896 -   Percentile          0.8563±0.0068     0.9979±0.0007     0.4029±0.0045     0.9878±0.0014
+2026-06-02 23:05:53.215 | INFO     | __main__:main:896 -   P3 Advisory         0.9667±0.0029     0.9979±0.0007     0.2119±0.0022     0.9878±0.0014
+2026-06-02 23:05:53.216 | INFO     | __main__:main:896 -   P2 High             0.8722±0.0056     0.9979±0.0007     0.4333±0.0063     0.9878±0.0014
+2026-06-02 23:05:53.216 | INFO     | __main__:main:896 -   P1 Critical         0.8682±0.0132     0.9979±0.0007     0.1428±0.0060     0.9878±0.0014
+2026-06-02 23:05:53.218 | SUCCESS  | __main__:main:939 -   Contract artifacts saved → C:\Users\rayan\OneDrive\Bureau\PFE\PFE_Experiments\experiments\metrics
+2026-06-02 23:05:53.224 | SUCCESS  | __main__:main:992 -   Results saved → C:\Users\rayan\OneDrive\Bureau\PFE\PFE_Experiments\experiments\metrics\gtbad_results.json
+2026-06-02 23:05:53.224 | SUCCESS  | __main__:main:995 - ============================================================
+2026-06-02 23:05:53.224 | SUCCESS  | __main__:main:996 - GTBAD Training & Evaluation Complete
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:998 -   Overall F1: 0.8565
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:999 -   Overall Precision: 0.9975
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1000 -   Overall Recall: 0.7504
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1001 -   Overall PR-AUC: 0.9979
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1003 -   Worst-class PR-AUC: 0.9879
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1004 -   Test Episode Macro F1: 0.4029
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1005 -   Test Episode PR-AUC:  0.9878
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1007 -   Macro PR-AUC: 0.9963
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1008 -   Macro F1: 0.9593
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1009 -   Macro Recall: 0.9299
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1010 -   Macro Precision: 1.0000
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1011 -   ── Per-Method F1 / PR-AUC ──
+2026-06-02 23:05:53.225 | SUCCESS  | __main__:main:1019 -     Percentile       F1=0.8565 PR-AUC=0.9979  (kfold F1=0.8563±0.0068 PR=0.9979±0.0007)
+2026-06-02 23:05:53.226 | SUCCESS  | __main__:main:1019 -     P3 Advisory      F1=0.9667 PR-AUC=0.9979  (kfold F1=0.9667±0.0029 PR=0.9979±0.0007)
+2026-06-02 23:05:53.226 | SUCCESS  | __main__:main:1019 -     P2 High          F1=0.8722 PR-AUC=0.9979  (kfold F1=0.8722±0.0056 PR=0.9979±0.0007)
+2026-06-02 23:05:53.226 | SUCCESS  | __main__:main:1019 -     P1 Critical      F1=0.8689 PR-AUC=0.9979  (kfold F1=0.8682±0.0132 PR=0.9979±0.0007)
+2026-06-02 23:05:53.226 | SUCCESS  | __main__:main:1020 -   Checkpoint: C:\Users\rayan\OneDrive\Bureau\PFE\PFE_Experiments\experiments\checkpoints\gtbad\gtbad_best.pt
+2026-06-02 23:05:53.226 | SUCCESS  | __main__:main:1021 -   Metrics: C:\Users\rayan\OneDrive\Bureau\PFE\PFE_Experiments\experiments\metrics\gtbad_results.json
+2026-06-02 23:05:53.226 | SUCCESS  | __main__:main:1022 - ============================================================
+Parameters: 869,769 total | 869,769 trainable

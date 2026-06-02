@@ -1,0 +1,51 @@
+{
+  "accuracy": 0.9759288627095605,
+  "balanced_accuracy": 0.8684683604985618,
+  "f1_weighted": 0.9736748857915911,
+  "f1_macro": 0.874107634313085,
+  "precision_weighted": 0.9748389772449365,
+  "precision_macro": 0.9072738752744556,
+  "recall_weighted": 0.9759288627095605,
+  "recall_macro": 0.8684683604985618,
+  "pr_auc_weighted": 0.9958683939226646,
+  "log_loss": 0.058525402202370715,
+  "brier_score_multiclass": 0.008311865158634052,
+  "expected_calibration_error": 0.018899135465283937,
+  "maximum_calibration_error": 0.7542641503470284,
+  "mean_confidence": 0.9948279981748441,
+  "accuracy_confidence_gap": 0.018899135465283656,
+  "calibration_impact": {
+    "uncalibrated": {
+      "f1_macro": 0.9548867154893859,
+      "f1_weighted": 0.9921662730155615,
+      "log_loss": 0.06269029901444227,
+      "expected_calibration_error": 0.01028436463417248
+    },
+    "calibrated": {
+      "f1_macro": 0.874107634313085,
+      "f1_weighted": 0.9736748857915911,
+      "log_loss": 0.058525402202370715,
+      "expected_calibration_error": 0.018899135465283937
+    },
+    "delta": {
+      "f1_macro": -0.08077908117630084,
+      "f1_weighted": -0.018491387223970368,
+      "log_loss": -0.004164896812071557,
+      "expected_calibration_error": 0.008614770831111456
+    },
+    "delta_interpretation": {
+      "f1_macro": "higher_is_better",
+      "f1_weighted": "higher_is_better",
+      "log_loss": "lower_is_better",
+      "expected_calibration_error": "lower_is_better"
+    },
+    "calibrated_calibration_metrics": {
+      "log_loss": 0.058525402202370715,
+      "brier_score_multiclass": 0.008311865158634052,
+      "expected_calibration_error": 0.018899135465283937,
+      "maximum_calibration_error": 0.7542641503470284,
+      "mean_confidence": 0.9948279981748441,
+      "accuracy_confidence_gap": 0.018899135465283656
+    }
+  }
+}

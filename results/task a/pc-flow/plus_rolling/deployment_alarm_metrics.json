@@ -1,0 +1,72 @@
+{
+  "headline": {
+    "selection_metric": "val_macro_per_class_pr_auc",
+    "macro_per_class_pr_auc": 0.9692824466544498,
+    "worst_class_pr_auc": 0.9274411656743189,
+    "worst_class": "4",
+    "worst_class_support": 33242,
+    "note": "Threshold-free; this is the model-selection / tournament metric. PR-AUC baseline equals class prevalence, which differs per class \u2014 report per-class support alongside."
+  },
+  "tiers": {
+    "P3_advisory": {
+      "policy": "gpd_pot0.9_fpr0.2_hyst10",
+      "sample_precision": 0.9371719213589385,
+      "sample_recall": 0.6871951802620254,
+      "sample_f1": 0.7929488682602519,
+      "episode_recall": 0.16037735849056603,
+      "median_detection_delay_samples": 9.0,
+      "p90_detection_delay_samples": 366.2,
+      "mean_detection_delay_samples": 88.6470588235294,
+      "n_fault_episodes": 212,
+      "n_detected_episodes": 34,
+      "episode_detection_rate": 0.16037735849056603,
+      "false_alarm_rate": 0.05824743826134268,
+      "arl0_samples": 1067.1935483870968,
+      "n_false_alarm_onsets": 31,
+      "n_normal_samples": 33083,
+      "threshold": 76.04524591974263,
+      "hysteresis_n": 10
+    },
+    "P2_high": {
+      "policy": "conformal_p<=0.05",
+      "sample_precision": 0.9627942293090357,
+      "sample_recall": 0.6062924356890121,
+      "sample_f1": 0.7440441262762587,
+      "episode_recall": 0.3160377358490566,
+      "median_detection_delay_samples": 0.0,
+      "p90_detection_delay_samples": 327.99999999999994,
+      "mean_detection_delay_samples": 70.8955223880597,
+      "n_fault_episodes": 212,
+      "n_detected_episodes": 67,
+      "episode_detection_rate": 0.3160377358490566,
+      "false_alarm_rate": 0.029622464709971888,
+      "arl0_samples": 1033.84375,
+      "n_false_alarm_onsets": 32,
+      "n_normal_samples": 33083,
+      "conformal_alpha": 0.05,
+      "fpr_guarantee": 0.05
+    },
+    "P1_critical": {
+      "policy": "cusum_k0.5_fpr0.05",
+      "cusum_k": 0.5,
+      "cusum_h": 4920.838525824223,
+      "episode_escalation_rate": 0.04245283018867924,
+      "median_detection_delay_samples": 45.0,
+      "p90_detection_delay_samples": 1372.0,
+      "mean_detection_delay_samples": 445.1111111111111,
+      "n_fault_episodes": 212,
+      "n_detected_episodes": 9,
+      "episode_detection_rate": 0.04245283018867924,
+      "false_alarm_rate": 0.0,
+      "arl0_samples": null,
+      "n_false_alarm_onsets": 0,
+      "n_normal_samples": 33083,
+      "sample_precision": 1.0
+    }
+  },
+  "notes": {
+    "tiers_are_sequential": "P3 -> P2 -> P1 is one escalating system, not competing detectors. Tier metrics are a characterization and must not be averaged.",
+    "cusum_metric_choice": "CUSUM is a stateful sequential detector; per-sample F1 is not reported. Detection delay (ARL1 proxy), ARL0 (mean samples between false-alarm onsets), and episode escalation rate are the literature-standard characterization.",
+    "sample_f1_caveat": "Sample precision/recall/F1 reflect the artificial test-set fault prevalence under a ~97% normal class; lead with episode recall."
+  }
+}
