@@ -48,13 +48,13 @@ Each model evaluated in this work exposes a set of parameters that govern its ca
 
 Optimization is performed using Optuna \citep{akiba2019optuna} with the Tree-structured Parzen Estimator (TPE) sampler. Rather than enumerating a predefined grid of configurations as grid search does \citep{bergstra2012random}, or evolving a population of candidates as genetic algorithms require, TPE builds a probabilistic model of the objective from the history of completed trials and focuses subsequent sampling on the regions associated with good outcomes. This sequential, model-guided search reaches competitive configurations in far fewer trials than either exhaustive or population-based alternatives, which is decisive when individual trials involve full training runs of deep architectures.
 
-Each HPO study runs on the fixed original train/val split and completes before the K-fold cross-validation begins, so the winning configuration is fixed for all folds. The test partition is invisible throughout. The optimization objective is the validation macro per-class PR-AUC for Task~A and the validation macro F1 for Task~B, consistent with the headline metrics of Section~\ref{sec:evaluation-methodology}. Among configurations whose scores fall within one standard deviation of each other, the simpler configuration is preferred as a tiebreaker.
+Each HPO study runs on the fixed original train/val split and completes before the K-fold cross-validation begins, so the winning configuration is fixed for all folds. The test partition is invisible throughout. The optimization objective is the validation macro per-class PR-AUC for anomaly detection and the validation macro F1 for fault classification, consistent with the headline metrics of Section~\ref{sec:evaluation-methodology}. Among configurations whose scores fall within one standard deviation of each other, the simpler configuration is preferred as a tiebreaker.
 
 The pruning strategy is adapted to trial cost. For classical ML models, no pruner is applied: trials are inexpensive and no intermediate epoch-level signal is available. For deep learning models, a Median pruner is added: a trial is terminated when its intermediate validation score falls below the median of all completed trials at the same epoch, after a warmup period during which pruning is suspended. Within-trial early stopping patience scales with the trial epoch budget, preventing premature termination on short trial budgets.
 
 
 \paragraph{Experiment tracking and artifacts.}
-All runs are tracked with MLflow and logged to a centralized DagsHub tracking server. Each run records the active dataset and split identifier, the selected feature profile, the final HPO parameters, and the computed validation and test metrics. In addition, lightweight artifacts are stored alongside metrics, including serialized preprocessing objects (e.g., scalers), model files (\texttt{.joblib} for classical models and checkpoints for deep learning), and diagnostic figures such as PR curves, score histograms, and confusion matrices. This tracking discipline supports direct comparison across the anomaly detection (Task~A) and fault classification (Task~B) experiments.
+All runs are tracked with MLflow and logged to a centralized DagsHub tracking server. Each run records the active dataset and split identifier, the selected feature profile, the final HPO parameters, and the computed validation and test metrics. In addition, lightweight artifacts are stored alongside metrics, including serialized preprocessing objects (e.g., scalers), model files (\texttt{.joblib} for classical models and checkpoints for deep learning), and diagnostic figures such as PR curves, score histograms, and confusion matrices. This tracking discipline supports direct comparison across the anomaly detection and fault classification experiments.
 
 
 \section{Anomaly Detection Implementation and Results}
@@ -247,8 +247,8 @@ dimension $d_{\text{model}} = 64$, a fixed sinusoidal positional encoding is add
 \begin{figure}
     \centering
     \includegraphics[width=0.9\textwidth]{figures/detection/gtbad-arch.png}
-    \caption{GTBAD architecture \citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}}
-    \label{fig:gtbad_architecture}
+     \caption{GTBAD architecture.}
+     \label{fig:gtbad_architecture}
 \end{figure}
 
 Hyper‑parameters are tuned using the Good‑point‑set Vectorised Snow Ablation Optimiser (GVSAO), an improved variant of the snow ablation algorithm proposed by ~\cite{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}. GVSAO searches the two‑dimensional continuous space of learning rate (log‑scale) and batch size, combining good‑point‑set initialisation, a dual‑population 

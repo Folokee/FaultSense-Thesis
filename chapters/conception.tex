@@ -45,8 +45,8 @@ running the Maximum Power Poin Tracking (MPPT) algorithm. The system may yeild 5
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/chap3/costa-shema.png}
-    \caption{Costa Photovoltaic Plant Electrical Diagram \citep{MonitoringSystemOnline2020}.}
-    \label{fig:costa_circuit}
+     \caption{Costa Photovoltaic Plant Electrical Diagram.}
+     \label{fig:costa_circuit}
 \end{figure}
 
 This dataset contains 4 fault types: \textbf{Shadowing}, \textbf{Degradation}, \textbf{Open-Circuit} and \textbf{Short-Circuit}. The full detail is illustrated in Table~\ref{tab:costa_label_counts}.
@@ -63,9 +63,9 @@ This dataset contains 4 fault types: \textbf{Shadowing}, \textbf{Degradation}, \
         Short-circuit & 5,999 \\
         Open-circuit & 6,024 \\
         Partial shadowing & 184,311 \\
-        No fault introduced & 309,253 \\
+        No fault introduced & 1,162,931 \\
         \midrule
-        Total & 515,958 \\
+        Total &  1,373,798 \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -103,7 +103,7 @@ The exploratory data analysis was structured as a series of checks applied to th
 
 \textbf{Schema validation and basic statistics.} The first check confirmed data types, row counts, and channel completeness. Costa yields 515,958 daytime rows over 9 sensor channels (\texttt{vdc1}, \texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{pdc1}, \texttt{pdc2}, \texttt{pdc}, \texttt{irr}, \texttt{pvt}), with 0 missing values after ingestion-time irradiance trimming. The dataset exposes all labeled classes without gaps in the label column.
 
-\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence with only 20 consecutive pairs exceeding 30~s. This near-perfect regularity means that no imputation step is required and that the 300-second gap threshold for episode segmentation (Section~\ref{sec:splitting}) is a very conservative boundary.
+\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence with only 20 consecutive pairs exceeding 30~s. This near-perfect regularity means that no imputation step is required and that the 300-second gap threshold for episode segmentation (Section~\ref{sec:splitting}) is a very conservative boundary. The sampling interval distribution is shown in Figure~\ref{fig:eda-sampling}.
 
 \begin{figure}[H]
 \centering
@@ -119,7 +119,7 @@ The exploratory data analysis was structured as a series of checks applied to th
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.80\textwidth]{eda/costa_class_imbalance.png}
-  \caption{Row-level versus episode-level class distribution in Costa. Shadowing episodes are numerous but short; induced fault episodes are few but long.}
+  \caption{Row-level versus episode-level class distribution in Costa.}
   \label{fig:eda-imbalance}
 \end{figure}
 
@@ -128,7 +128,7 @@ The exploratory data analysis was structured as a series of checks applied to th
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.80\textwidth]{eda/costa_boxplots.png}
-  \caption{Normal versus fault distributions for the top 5 binary-MI channels (Costa). Fault classes show shifted medians and wider spread relative to normal operation.}
+  \caption{Normal versus fault distributions for the top 5 binary-MI channels.}
   \label{fig:eda-boxplots}
 \end{figure}
 
@@ -164,7 +164,7 @@ The aggregate heatmap identifies the algebraic aliases targeted by hygiene pruni
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{eda/costa_mutual_info.png}
-  \caption{Mutual information of Costa channels against binary (left) and multi-class (right) fault labels. Multi-class MI is consistently higher across all channels, motivating the use of the multi-class label for feature selection.}
+  \caption{Mutual information of Costa channels against binary (left) and multi-class (right) fault labels.}
   \label{fig:eda-mi}
 \end{figure}
 
@@ -269,7 +269,7 @@ Splitting is the stage at which the conditions for honest evaluation are either 
 
 \textbf{Principle 3: Post-split windowing.} Sliding windows are constructed strictly within the boundaries of each partition, never across them. Window construction before splitting would allow overlapping windows to share samples from multiple partitions, creating a leakage channel that cannot be repaired retroactively. By deferring windowing to after the partition boundaries have been fixed, no 2 windows in different partitions ever share an underlying sample.
 
-The partition ratios are 70 / 15 / 15 for training, validation, and test respectively. For Task~A (anomaly detection), the training partition contains only normal-class atomic units, reflecting the semi-supervised assumption that labeled fault patterns are not available at training time; validation and test partitions contain the full label range and represent the realistic deployment scenario. For Task~B (fault classification), atomic units are distributed across all 3 partitions with temporal-stratified assignment per fault class, so that each class has representation in all partitions while temporal ordering is preserved within each class.
+The partition ratios are 70 / 15 / 15 for training, validation, and test respectively. For anomaly detection, the training partition contains only normal-class atomic units, reflecting the semi-supervised assumption that labeled fault patterns are not available at training time; validation and test partitions contain the full label range and represent the realistic deployment scenario. For fault classification, atomic units are distributed across all 3 partitions with temporal-stratified assignment per fault class, so that each class has representation in all partitions while temporal ordering is preserved within each class.
 
 % ────────────────────────────────────────────────────────────
 \section{Preprocessing}
@@ -323,7 +323,6 @@ Discrete first differences of the primary channels expose rapid transients chara
     \delta V_{\mathrm{dc},s}(t) = V_{\mathrm{dc},s}(t) - V_{\mathrm{dc},s}(t-1), \quad
     \delta I_{\mathrm{dc},s}(t) = I_{\mathrm{dc},s}(t) - I_{\mathrm{dc},s}(t-1).
 \]
-These features also serve as stationary alternatives to the trending raw levels identified during the stationarity analysis of Section~\ref{sec:eda}.
 
 Together, the 4 families yield approximately 17 engineered features after the selection stack described below has pruned the candidate pool. This feature set defines the profile \texttt{plus\_physics}, which serves as the principal representation for the headline experiments in Chapter~\ref{ch:implementation}.
 
@@ -369,11 +368,11 @@ This section defines the evaluation protocols applied uniformly across all exper
 
 \subsection{Headline Metrics}
 
-For Task~A the primary metric is the area under the precision-recall curve (PR-AUC). On field datasets where normal-operation samples constitute the overwhelming majority of the recorded sequence, the area under the receiver-operating-characteristic curve (ROC-AUC) is structurally misleading: a classifier that assigns the negative label to every sample achieves near-perfect accuracy and an ROC-AUC approaching 1.0, neither of which conveys operational meaning. The precision-recall curve measures directly the trade-off between the fraction of raised alarms that correspond to true faults and the fraction of true faults that are caught \citep{saito2015pr}. A random baseline on this curve achieves an area equal to the positive class prevalence, so any reported PR-AUC must significantly exceed that floor to be informative.
+For anomaly detection the primary metric is the area under the precision-recall curve (PR-AUC). On field datasets where normal-operation samples constitute the overwhelming majority of the recorded sequence, the area under the receiver-operating-characteristic curve (ROC-AUC) is structurally misleading: a classifier that assigns the negative label to every sample achieves near-perfect accuracy and an ROC-AUC approaching 1.0, neither of which conveys operational meaning. The precision-recall curve measures directly the trade-off between the fraction of raised alarms that correspond to true faults and the fraction of true faults that are caught \citep{saito2015pr}. A random baseline on this curve achieves an area equal to the positive class prevalence, so any reported PR-AUC must significantly exceed that floor to be informative.
 
 The primary PR-AUC figure is the \textbf{macro per-class PR-AUC}: for each fault class, the PR-AUC of that class versus normal is computed independently, and the macro average across all classes is the headline figure. The worst-class PR-AUC is reported alongside it, because a high macro average can conceal failure on a single subtle class. This per-class discipline is essential on Costa, where the resistive degradation class (label~2) has a subtler electrical signature than the short-circuit or open-circuit classes. A complementary set of secondary metrics (F1 score, precision, and recall at a calibrated operating threshold) is tracked because the area is a ranking quantity and does not by itself characterize the deployment behavior at a single chosen operating point.
 
-For Task~B the primary metric is the \textbf{macro-averaged F1 score}, which assigns equal weight to each fault class irrespective of its support. A support-weighted average would be dominated by the shadowing class (label~4, 35.7\% of fault-labeled rows), concealing failures on the three rare electrically induced fault classes in the same way that ROC-AUC is misleading for Task~A under severe prevalence imbalance. The weighted F1 score and the full per-class precision-recall-F1 triplet are reported alongside the macro average as secondary figures. The confusion matrix is treated as a primary diagnostic artifact in every Task~B comparison.
+For fault classification the primary metric is the \textbf{macro-averaged F1 score}, which assigns equal weight to each fault class irrespective of its support. A support-weighted average would be dominated by the shadowing class (label~4, 35.7\% of fault-labeled rows), concealing failures on the three rare electrically induced fault classes in the same way that ROC-AUC is misleading for anomaly detection under severe prevalence imbalance. The weighted F1 score and the full per-class precision-recall-F1 triplet are reported alongside the macro average as secondary figures. The confusion matrix is treated as a primary diagnostic artifact in every fault classification comparison.
 
 \subsection{Leakage Validation Suite}
 
@@ -387,7 +386,7 @@ Leakage checks fall into two categories: checks that are \emph{guaranteed by pip
 
 \paragraph{Post-training checks.}
 \begin{itemize}
-    \item \textbf{Label shuffle test.} The check is implemented differently for the two tasks because their training paradigms differ structurally. For Task~B, the model is retrained on randomly permuted training labels; validation performance must collapse to the chance level; retained performance is a symptom of target leakage through features that encode label information by construction. For Task~A, the model is never retrained: it was trained without any labels. Instead, the anomaly scores are held fixed and the evaluation labels (validation and test) are permuted; the resulting PR-AUC must collapse to the positive-class base rate. If shuffled PR-AUC remains materially above the base rate, the metric computation is artifactual rather than the model being discriminative.
+    \item \textbf{Label shuffle test.} The check is implemented differently for the two tasks because their training paradigms differ structurally. For fault classification, the model is retrained on randomly permuted training labels; validation performance must collapse to the chance level; retained performance is a symptom of target leakage through features that encode label information by construction. For anomaly detection, the model is never retrained: it was trained without any labels. Instead, the anomaly scores are held fixed and the evaluation labels (validation and test) are permuted; the resulting PR-AUC must collapse to the positive-class base rate. If shuffled PR-AUC remains materially above the base rate, the metric computation is artifactual rather than the model being discriminative.
     \item \textbf{Feature importance audit.} A single-feature classifier is trained on each feature independently; any feature whose standalone score approaches the full-model score is flagged as a potential proxy label, indicating that it may have been inadvertently derived from or correlated with the target.
     \item \textbf{Performance sanity check.} Reported metrics are compared against the floor (random baseline at class prevalence) and an approximate ceiling derived from the dataset's class separability. Values that exceed any published baseline by an unexplained margin are flagged for investigation.
 \end{itemize}
@@ -401,8 +400,8 @@ All experiments use a \textbf{5-fold episode-stratified cross-validation} scheme
 The two tasks impose structurally different fold constructions:
 
 \begin{itemize}
-    \item \textbf{Task~A (semi-supervised).} The training partition of each fold contains exclusively normal-class episodes; fault episodes are distributed only across the validation and test splits. This preserves the one-class learning assumption across all folds: the detector is never exposed to labeled fault data during training, and the full fault episode set rotates through evaluation across folds.
-    \item \textbf{Task~B (supervised).} All labeled classes are present in the training partition of each fold, with temporal-stratified assignment ensuring that each fault class has evaluation coverage in every fold while respecting chronological ordering within each class.
+    \item \textbf{Anomaly detection.} The training partition of each fold contains exclusively normal-class episodes; fault episodes are distributed only across the validation and test splits. This preserves the one-class learning assumption across all folds: the detector is never exposed to labeled fault data during training, and the full fault episode set rotates through evaluation across folds.
+    \item \textbf{Fault classification.} All labeled classes are present in the training partition of each fold, with temporal-stratified assignment ensuring that each fault class has evaluation coverage in every fold while respecting chronological ordering within each class.
 \end{itemize}
 
 
@@ -411,9 +410,9 @@ The two tasks impose structurally different fold constructions:
 \section{Threshold Calibration Policy}
 \label{sec:threshold-calibration}
 
-The primary evaluation metric for Task~A, PR-AUC, is a \emph{threshold-free} measure: it summarizes the quality of the score ranking across the entire precision-recall trade-off curve and is insensitive to the choice of any single operating threshold. A model with high PR-AUC produces a ranking in which fault samples tend to receive higher anomaly scores than normal samples, regardless of where the decision boundary is placed. However, deployment requires choosing one operating point on this curve: the threshold at which the continuous score is converted into a binary alarm. The quality of this operating point determines the actual precision and recall of the deployed system, and a poorly calibrated threshold can substantially degrade operational performance even when ranking quality is high.
+The primary evaluation metric for anomaly detection, PR-AUC, is a \emph{threshold-free} measure: it summarizes the quality of the score ranking across the entire precision-recall trade-off curve and is insensitive to the choice of any single operating threshold. A model with high PR-AUC produces a ranking in which fault samples tend to receive higher anomaly scores than normal samples, regardless of where the decision boundary is placed. However, deployment requires choosing one operating point on this curve: the threshold at which the continuous score is converted into a binary alarm. The quality of this operating point determines the actual precision and recall of the deployed system, and a poorly calibrated threshold can substantially degrade operational performance even when ranking quality is high.
 
-The calibration challenge is that the threshold must be set entirely from training-normal scores, without access to fault-labeled data, to remain consistent with the semi-supervised formulation. A naive approach based on an empirical score percentile implicitly assumes a parametric tail shape that may not hold in practice. To address this, the calibration procedure applies Extreme Value Theory: the upper tail of the normal-class score distribution is modeled by fitting a Generalized Pareto Distribution (GPD) to the exceedances above a high quantile of training-normal scores, using the Peaks-Over-Threshold (POT) method \citep{pickands1975statistical, coles2001extreme}. The GPD fit extrapolates the tail rather than reading off an empirical count, and the calibrated threshold is derived as the GPD quantile corresponding to a target false-positive rate. This procedure is applied uniformly across all Task~A detectors, so cross-model comparisons reflect architectural differences in ranking quality rather than differences in threshold policy.
+The calibration challenge is that the threshold must be set entirely from training-normal scores, without access to fault-labeled data, to remain consistent with the semi-supervised formulation. A naive approach based on an empirical score percentile implicitly assumes a parametric tail shape that may not hold in practice. To address this, the calibration procedure applies Extreme Value Theory: the upper tail of the normal-class score distribution is modeled by fitting a Generalized Pareto Distribution (GPD) to the exceedances above a high quantile of training-normal scores, using the Peaks-Over-Threshold (POT) method \citep{pickands1975statistical, coles2001extreme}. The GPD fit extrapolates the tail rather than reading off an empirical count, and the calibrated threshold is derived as the GPD quantile corresponding to a target false-positive rate. This procedure is applied uniformly across all detectors, so cross-model comparisons reflect architectural differences in ranking quality rather than differences in threshold policy.
 
 Beyond a single operating point, the evaluation reports a suite of operating points covering the full precision-recall trade-off, from conservative to sensitive configurations, including conformal prediction-based thresholds \citep{vovk2005algorithmic} that provide distribution-free false-alarm rate guarantees, and sequential change-detection rules based on the CUSUM statistic \citep{page1954cusum} that exploit temporal structure to reduce spurious alarms. This suite constitutes the tiered alerting system described in Chapter~\ref{ch:deployment}; at the evaluation stage it serves to characterize how each model behaves across the entire deployable operating range, not only at one chosen point.
 
@@ -422,7 +421,7 @@ Beyond a single operating point, the evaluation reports a suite of operating poi
 
 Gradient boosting classifiers produce a vector of class scores that sum to one and are conventionally interpreted as class probabilities. However, these scores are not guaranteed to be calibrated: a model may assign a confidence of 0.9 to a fault class while being correct only 60\% of the time at that confidence level. This miscalibration is invisible to discrimination metrics such as macro F1, which measure ranking quality rather than probabilistic accuracy. In the context of this work it matters because the monitoring interface presents the fault class confidence alongside the diagnostic label; miscalibrated scores degrade the operator's ability to triage alerts proportionally to their actual reliability.
 
-Post-hoc probability calibration applies to Task~B only. In Task~A, the semi-supervised formulation precludes it: fitting a calibrator requires binary fault/normal labels at training time, which are unavailable by design, and the anomaly score is an unbounded continuous quantity rather than a class probability. Task~A instead derives probabilistic operating points through conformal p-values, which provide finite-sample false-alarm guarantees without requiring fault-labeled calibration data. For Task~B, labeled data are available across all classes and gradient boosting models already output probability-like class scores that can be meaningfully recalibrated.
+Post-hoc probability calibration applies to fault classification only. In anomaly detection, the semi-supervised formulation precludes it: fitting a calibrator requires binary fault/normal labels at training time, which are unavailable by design, and the anomaly score is an unbounded continuous quantity rather than a class probability. Anomaly detection instead derives probabilistic operating points through conformal p-values, which provide finite-sample false-alarm guarantees without requiring fault-labeled calibration data. For fault classification, labeled data are available across all classes and gradient boosting models already output probability-like class scores that can be meaningfully recalibrated.
 
 Platt scaling \citep{platt1999probabilistic} fits a sigmoid function to the model's raw output scores using the validation set, mapping them to better-calibrated probability estimates without modifying the underlying model or its discrimination performance. Fitting on the validation set, rather than the training set, prevents the calibrator from exploiting the same distribution the base model was optimized on.
 

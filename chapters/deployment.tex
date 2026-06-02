@@ -199,7 +199,7 @@ The monitoring module involves two actors: the \textbf{Plant Operator}, who inte
 
 Three activity diagrams capture the principal runtime flows.
 
-\paragraph{System initialisation.} On startup the system loads and contract-validates the artifact bundle, initialises the streaming inference pipeline, starts both WebSocket servers, and enters the ready state. A contract validation failure halts the system before any inference is permitted.
+\paragraph{System initialisation.} On startup the system loads and contract-validates the artifact bundle, initialises the streaming inference pipeline, starts both WebSocket servers, and enters the ready state. A contract validation failure halts the system before any inference is permitted. Figure~\ref{fig:deployment-activity-init} presents the initialisation flow.
 
 \begin{figure}[H]
 \centering
@@ -234,7 +234,7 @@ Three activity diagrams capture the principal runtime flows.
 \label{fig:deployment-activity-init}
 \end{figure}
 
-\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming sensor row. The pipeline dequeues it, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the CatBoost classifier when the tier is P3 or above. The inference result is forwarded to the drift monitor and broadcast to all connected dashboard clients.
+\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming sensor row. The pipeline dequeues it, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the CatBoost classifier when the tier is P3 or above. The inference result is forwarded to the drift monitor and broadcast to all connected dashboard clients. Figure~\ref{fig:deployment-activity-inference} details this loop.
 
 \begin{figure}[H]
 \centering
@@ -273,7 +273,7 @@ Three activity diagrams capture the principal runtime flows.
 \label{fig:deployment-activity-inference}
 \end{figure}
 
-\paragraph{Drift detection and model update flow.} The drift monitor feeds the physics channel value to a Page-Hinkley detector each sample. After a sustained advisory window the dashboard raises a drift indicator; after a longer action window the operator can initiate a retraining request. Retraining is performed in the cloud; the operator explicitly approves or rejects the resulting artifact before any model swap occurs. A 1-hour cooldown prevents repeated drift events after an action.
+\paragraph{Drift detection and model update flow.} The drift monitor feeds the physics channel value to a Page-Hinkley detector each sample. After a sustained advisory window the dashboard raises a drift indicator; after a longer action window the operator can initiate a retraining request. Retraining is performed in the cloud; the operator explicitly approves or rejects the resulting artifact before any model swap occurs. A 1-hour cooldown prevents repeated drift events after an action. This workflow is illustrated in Figure~\ref{fig:deployment-activity-drift}.
 
 \begin{figure}[H]
 \centering
