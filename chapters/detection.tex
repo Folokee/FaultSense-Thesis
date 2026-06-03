@@ -342,16 +342,16 @@ The model is trained on normal-only data by minimising the mean squared reconstr
 where $\hat{x}$ is the reconstructed output. A high reconstruction error indicates that the input deviates from the normal manifold learned during training.
 
 \paragraph{Hyperparameter search space.}
-The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations per candidate. Table~\ref{tab:gtbad-hpo} reports the search space.
+The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser), a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations per candidate. Table~\ref{tab:gtbad-hpo} reports the search space.
 \begin{table}[H]
 \centering
 \caption{GTBAD hyperparameter search space.\label{tab:gtbad-hpo}}
-\begin{tabular}{lll}
+\begin{tabular}{llll}
 \toprule
-\textbf{Parameter} & \textbf{Range} & \textbf{Generations} \\
+\textbf{Parameter} & \textbf{Range} & \textbf{Winning Value} & \textbf{Generations} \\
 \midrule
-\texttt{learning\_rate} & $[10^{-5},\,10^{-1}]$ log-uniform & \multirow{2}{*}{5} \\
-\texttt{batch\_size}    & $[16,\,128]$ integer               & \\
+\texttt{learning\_rate} & $[10^{-5},\,10^{-1}]$ log-uniform & 0.000295 & \multirow{2}{*}{5} \\
+\texttt{batch\_size}    & $[16,\,128]$ integer               & 58   \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -362,13 +362,14 @@ GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad
 \begin{table}[H]
 \centering
 \caption{GTBAD evaluation results.\label{tab:gtbad-results}}
-\begin{tabular}{lcc}
+\begin{tabular}{lccc}
 \toprule
-\textbf{Metric} & \textbf{Value} & \textbf{Level} \\
+\textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.9963            & sample \\
-Worst-class PR-AUC     & 0.9879            & sample \\
-Binary PR-AUC          & $0.9979\pm0.0007$ & sample (5-fold) \\
+Macro per-class PR-AUC & 0.9963 &     0.0026       & sample \\
+Worst-class PR-AUC     & 0.9879 &    0.017        & sample \\
+Binary PR-AUC          & 0.9979 & 0.0007 & sample \\
+Macro per-class PR-AUC & 0.9878 & 0.0014 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -476,7 +477,7 @@ Shadowing     (cls~4) & 0.962 & 0.021 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Leakage Audit}\label{sec:ad-leakage}
 
-Before comparing models, Table~\ref{tab:leakage-audit} confirms that every fold of every model passes the label-shuffle test described in Section~\ref{sec:ad-shared-infra}. The shuffle PR-AUC values are consistent with the positive class prevalence ($\sim$0.64), providing evidence that no data-ordering artefact is inflating any model's scores.
+Before comparing models, Table~\ref{tab:leakage-audit} confirms that every fold of every model passes the label-shuffle test described in Section~\ref{sec:evaluation-methodology}. The shuffle PR-AUC values are consistent with the positive class prevalence ($\sim$0.64), providing evidence that no data-ordering artefact is inflating any model's scores.
 
 \begin{table}[H]
 \centering
