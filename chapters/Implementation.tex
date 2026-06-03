@@ -233,7 +233,7 @@ The Mamba Adaptive Anomaly Transformer (MAAT) is a semi‑supervised anomaly det
 MAAT is trained with a minimax loss that balances the reconstruction mean squared error against a signed Kullback–Leibler divergence between the learned and prior associations, forcing the series association to deviate from local continuity on normal data. At inference, anomaly scores combine the association discrepancy and reconstruction error through temperature‑weighted summation; the window‑level score is the maximum over time, ensuring that anomalies are flagged only when both temporal dynamics and reconstruction quality break down.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{figures/detection/maat-architecture.png}
+    \includegraphics[width=\textwidth]{figures/detection/maat_architecture.png}
     \caption{Overall architecture of the proposed MAAT model combining sparse anomaly attention and Mamba state-space modeling.}
     \label{impl:fig:maat_architecture}
 \end{figure}
