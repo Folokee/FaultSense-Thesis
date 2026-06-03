@@ -221,13 +221,11 @@ Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
 
-The implemented model is a variant of the MAAT architecture proposed by \citet{sellam2025maat}. The core design is preserved: series and prior association mechanisms, the minimax training objective, and the association-discrepancy anomaly score. Three structural modifications were introduced for the multivariate PV setting:
+The implemented model is a variant of the MAAT architecture proposed by \citet{sellam2025maat}. The core design is preserved: the \texttt{DataEmbedding} block (linear token projection + sinusoidal positional encoding + dropout), the series and prior association mechanisms, the minimax training objective, and the association-discrepancy anomaly score. Two structural modifications were introduced:
 \begin{itemize}
-    \item \textbf{Embedding}: a \texttt{DataEmbedding} block (linear token projection + sinusoidal positional encoding + dropout) replaces the original embedding, making temporal position explicit from the first layer.
-    \item \textbf{Parallel branch structure}: in the original MAAT, the Mamba-SSM is integrated into the reconstruction module and combined with the attention output via a skip connection and gated attention. In our variant, the Mamba branch runs \emph{in parallel} with the anomaly-attention branch at every encoder layer, so both operate on the same encoder input rather than sequentially.
-    \item \textbf{Gating}: the skip-connection + gated-attention fusion of the original is replaced by a learned sigmoid gate applied to the concatenated branch outputs, allowing per-position, per-channel selection between the two temporal modelling strategies.
+    \item \textbf{Parallel branch structure}: in the original, the Mamba-SSM is applied \emph{after} the attention layer as a sequential skip connection ($\text{Mamba}(x) + x$). In our variant, the Mamba branch runs \emph{in parallel} with the anomaly-attention branch at every encoder layer, so both receive the same input representation independently.
+    \item \textbf{Gating}: the additive skip-connection fusion of the original is replaced by a learned sigmoid gate on the concatenated branch outputs, giving the model explicit per-position control over which temporal modelling strategy to emphasise.
 \end{itemize}
-These modifications are surgical: the association-discrepancy semantics and the minimax training objective are preserved unchanged from \citet{sellam2025maat}; only the structural wiring is adapted.
 
 \paragraph{Architecture.}
 The overall structure is illustrated in Figure~\ref{fig:maat_architecture}. The model receives an input window $x \in \mathbb{R}^{B \times W \times F}$ and projects it through the \texttt{DataEmbedding} module. An $L$-layer encoder then processes the representation; each layer contains two parallel branches:
