@@ -425,7 +425,7 @@ where $s$ and $t$ are outputs of a small two-layer MLP, and the log-determinant 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/detection/pcflow_architecture.pdf}
-    \caption{PC-Flow architecture. \emph{Top}: the full conditional RealNVP pipeline mapping input $x$ to a standard Gaussian latent code $z$ through $L$ coupling blocks, each receiving the physics context $c=[\text{irr},T_{\text{PV}}]$ via dashed orange arrows. \emph{Bottom}: detail of one coupling block; the orange MLP computes scale $s_k$ and shift $t_k$ conditioned on the pass-through partition $x_a$ and the physics context $c$, while the green transform applies the affine mapping to $x_b$.}
+    \caption{PC-Flow architecture: conditional RealNVP with physics context $c=[\text{irr},T_{\text{PV}}]$ injected at every coupling block. Top: pipeline overview. Bottom: coupling block detail.}
     \label{fig:pcflow_architecture}
 \end{figure}
 
@@ -520,18 +520,19 @@ Table~\ref{tab:ad-tournament} summarises all detectors on the primary threshold-
 \begin{table}[H]
 \centering
 \caption{Task~A tournament ranking.\label{tab:ad-tournament}}
-\begin{tabular}{lcccc}
+\small
+\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\raggedright\arraybackslash}X}
 \toprule
 \textbf{Model} & \textbf{Macro PC PR-AUC} & \textbf{Worst-class PR-AUC} & \textbf{Binary PR-AUC} & \textbf{Size} \\
 \midrule
-BOCD             & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4 \times F$ NIG params$^{\dag}$ \\
+BOCD             & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4F$ NIG params$^{\dag}$ \\
 Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees $\times$ 1024 \\
-OC-SVM           & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280~SVs \\
-MAAT             & \multicolumn{3}{c}{\textit{(rerunning)}} & $\approx$\,340k \\
-GTBAD            & 0.9963$^{\ddag}$  & 0.9879$^{\ddag}$  & $0.9979\pm0.0007$ & 869\,769~params \\
-\textbf{PC-Flow (raw)} & \textbf{0.990~$\pm$~0.005} & \textbf{0.962~$\pm$~0.021} & 0.972~$\pm$~0.013 & 20\,124~params \\
+OC-SVM           & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280 SVs \\
+MAAT             & \multicolumn{3}{c}{\textit{(rerunning)}} & $\approx$340k \\
+GTBAD            & 0.9963$^{\ddag}$  & 0.9879$^{\ddag}$  & $0.9979\pm0.0007$ & 869\,769 params \\
+\textbf{PC-Flow (raw)} & \textbf{0.990~$\pm$~0.005} & \textbf{0.962~$\pm$~0.021} & 0.972~$\pm$~0.013 & 20\,124 params \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 $^{\dag}$~BOCD stores 4 Normal-Inverse-Gamma hyperparameters per feature $F$; the model is nearly non-parametric.
