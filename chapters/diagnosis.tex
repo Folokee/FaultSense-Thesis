@@ -9,7 +9,7 @@ After an anomalous state is detected, the next step in an FDD workflow is to ide
 Let $x \in \mathbb{R}^F$ be a feature vector computed from a PV time segment, and $y \in \{1,2,3,4\}$ the corresponding fault label. The diagnosis task learns $f_\theta: x \mapsto \hat{p}(y \mid x)$ and predicts $\hat{y} = \arg\max_c \hat{p}(c \mid x)$.
 
 \paragraph{Evaluation protocol.}
-Because fault classes are imbalanced in realistic PV logs (class~4 Shadowing: 1\,000 episodes; classes~1--3: 15--23 episodes), the primary evaluation metric is \textbf{macro-averaged F1-score} (macro F1), which assigns equal weight to each class. Per-class F1 and per-class PR-AUC are also reported. To obtain robust uncertainty estimates, hyperparameters are optimised \emph{once} on the original temporal holdout, then the winning configuration is retrained across $K=5$ \texttt{StratifiedGroupKFold} folds (grouped by \texttt{segment\_id} so no fault event crosses train/test boundaries). All metrics are reported as mean~$\pm$~std over the five folds.
+Because fault classes are imbalanced in realistic PV logs (class~4 Shadowing: 1\,000 episodes; classes~1--3: 15--23 episodes), the primary evaluation metric is \textbf{macro-averaged F1-score} (macro F1), which assigns equal weight to each class regardless of how many samples it contains; this prevents the dominant Shadowing class from masking poor performance on minority faults. Per-class F1 and per-class PR-AUC are also reported. To obtain robust uncertainty estimates, hyperparameters are optimised \emph{once} on the original temporal holdout, then the winning configuration is retrained across $K=5$ folds using \texttt{StratifiedGroupKFold}: a cross-validation strategy that (i) keeps the class-proportion ratio roughly equal across folds (\emph{stratified}) and (ii) ensures that all time-series samples belonging to the same fault episode (\emph{group}) always fall in the same fold — preventing data leakage from an episode spanning the train/test boundary. All metrics are reported as mean~$\pm$~std over the five folds.
 
 \paragraph{Feature profile.}
 Diagnosis is performed on the \texttt{plus\_physics} feature profile (15 engineered features: raw electrical + physics-derived indicators). In contrast to Task~A, where a normalizing flow learns its own representations and hand-crafted features are redundant, tree ensembles cannot perform representation learning: they partition the input feature space directly. The discriminative power of the engineered features is therefore critical — as confirmed by the feature-importance analysis in Section~\ref{sec:diag-winner}.
@@ -17,7 +17,15 @@ Diagnosis is performed on the \texttt{plus\_physics} feature profile (15 enginee
 \section{Shared Experimental Infrastructure}\label{sec:diag-shared-infra}
 
 \paragraph{Probability calibration.}
-After fitting the base classifier on the training partition, a sigmoid calibrator (Platt scaling) is fitted on the validation partition. Both uncalibrated and calibrated probabilities are evaluated. Calibration quality is reported via log-loss, multiclass Brier score, Expected Calibration Error (ECE), and Maximum Calibration Error (MCE).
+A tree classifier's raw probability outputs are often overconfident (probabilities near 0 or 1) or underconfident. To make the output probabilities reliable for the confidence-based alerting logic of the operator dashboard, a calibration step is applied: after fitting the base classifier on the training partition, a \emph{sigmoid calibrator} (Platt scaling) is fitted on the held-out validation partition. Platt scaling fits a logistic (sigmoid) function on top of the raw model scores to align predicted probabilities with empirical frequencies — for example, ensuring that among samples assigned a 70\% confidence, approximately 70\% are truly of that class.
+
+Calibration quality is quantified by four metrics, all computed on the held-out test set:
+\begin{itemize}
+    \item \textbf{Log-loss} (cross-entropy): the average $-\log \hat{p}(y)$ where $\hat{p}(y)$ is the predicted probability for the true class; lower is better, with 0 being perfect.
+    \item \textbf{Brier score} (multiclass): the mean squared error between predicted probability vectors and one-hot true labels, averaged over classes; lower is better.
+    \item \textbf{Expected Calibration Error (ECE)}: the confidence axis is divided into bins; for each bin, the gap between mean predicted confidence and mean actual accuracy is measured; ECE is the weighted average of these gaps. A perfectly calibrated model has ECE~=~0.
+    \item \textbf{Maximum Calibration Error (MCE)}: the largest gap across all bins, capturing worst-case miscalibration.
+\end{itemize}
 
 \paragraph{Leakage checks.}
 Before and after training, automated checks verify that no identical feature rows appear across train and validation partitions, and a full leakage report is run on the test partition.

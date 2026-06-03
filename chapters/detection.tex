@@ -23,18 +23,26 @@ DL detectors operate on fixed-length windows of size $W$ with stride $s$. A shar
 Thresholds are calibrated exclusively on held-out normal validation scores using a Peaks-Over-Threshold (POT) Generalised Pareto Distribution (GPD) fit with quantile $q=0.90$, targeting a false-alarm rate of 5\% on normal data. When the tail fit is numerically unstable a quantile fallback (95th percentile of normal scores) is used.
 
 \paragraph{Evaluation metric.}
-Because the normal class dominates recordings ($\sim$97\%), binary PR-AUC is a misleading headline metric: a model that globally confuses fault classes can still report a high binary score. The primary metric is therefore \textbf{macro per-class PR-AUC}: the macro-average of four one-vs-normal PR-AUC values (one per fault class). The worst-class PR-AUC and binary PR-AUC are reported alongside. All three are threshold-free and computed at both the \emph{sample/window} level and the \emph{episode} level (P95-aggregated per fault episode).
+Because the normal class dominates recordings ($\sim$97\%), binary PR-AUC is a misleading headline metric: a model that globally confuses fault classes can still report a high binary score. The primary metric is therefore \textbf{macro per-class PR-AUC}: for each fault class $c$, a one-vs-normal subset is formed by keeping only samples of class $c$ and the normal class; the area under the precision-recall curve (PR-AUC) is computed on that subset, giving a score that reflects how well the model separates that specific fault from normal operation. The macro per-class PR-AUC is the unweighted average of these four values. The worst-class PR-AUC (the minimum of the four) is also reported as a pessimistic safety bound. All three are threshold-free and computed at both the \emph{sample/window} level and the \emph{episode} level. The episode-level variant aggregates the per-sample scores within each fault episode to a single episode score (using the 95th percentile of scores within the episode), then computes PR-AUC over episode-level predictions; this is a more operationally relevant view because a detector only needs to fire once per fault event.
+
+\paragraph{Leakage validation.}
+After each fold, an automated leakage audit runs a \emph{label-shuffle test}: the test labels are randomly permuted and the PR-AUC is recomputed; if the model's performance collapses to the level expected from a random permutation (approximately the positive class prevalence), this confirms that the performance depends on true label structure and not on data-ordering artefacts. A fold is marked clean (\texttt{leakage\_is\_clean}~=~1) when this test passes.
 
 \section{Model Lineup}
 
 \subsection{One-Class Support Vector Machine (OC-SVM)}
 
-OC-SVM is a kernel-based boundary method that finds the tightest hyperplane enclosing the normal training data in a high-dimensional feature space. At inference time, points outside the boundary (negative decision function) are flagged as anomalous. Two kernels were explored: RBF and cubic polynomial.
+OC-SVM is a kernel-based boundary method that maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$, which measures Gaussian similarity, and a cubic polynomial kernel.
 
 \paragraph{Scoring function.}
-The anomaly score is the negated decision function $s(x) = -f_{\text{OCSVM}}(x)$, so that higher values correspond to greater deviations from the normal boundary.
+The raw decision function assigns high values to inliers and low (negative) values to anomalies. To align with the project-wide convention that higher scores indicate greater anomaly likelihood, the score is negated:
+\begin{equation}
+    s(x) = -f_{\text{OCSVM}}(x),
+\end{equation}
+so that points far outside the learned boundary score high and are more likely to trigger an alarm.
 
 \paragraph{Hyperparameter search space and winning configuration.}
+The two key parameters are: \texttt{nu}, which sets an upper bound on the fraction of training samples that can be treated as outliers (controlling boundary tightness); and \texttt{gamma}, which controls the width of the RBF kernel (a small gamma makes the kernel broader and the boundary smoother).
 \begin{table}[H]
 \centering
 \caption{OC-SVM HPO search space (RBF kernel, 35 Optuna TPE trials).\label{tab:ocsvm-hpo}}
@@ -42,8 +50,8 @@ The anomaly score is the negated decision function $s(x) = -f_{\text{OCSVM}}(x)$
 \toprule
 \textbf{Parameter} & \textbf{Range} & \textbf{Winning value} \\
 \midrule
-\texttt{nu}    & $[0.03,\,0.10]$ log-uniform & 0.0308 \\
-\texttt{gamma} & $[0.01,\,0.08]$ log-uniform & 0.0751 \\
+\texttt{nu} (outlier fraction bound)    & $[0.03,\,0.10]$ log-uniform & 0.0308 \\
+\texttt{gamma} (RBF kernel width)       & $[0.01,\,0.08]$ log-uniform & 0.0751 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -84,7 +92,7 @@ Shadowing     (cls~4) & 0.983 & ---   & 1000 \\
 \end{table}
 
 \paragraph{Leakage check.}
-All five folds pass the automated leakage audit (\texttt{leakage\_is\_clean}~=~1.0). The label-shuffle PR-AUC (mean 0.644) confirms that model performance depends on true label structure, not on data-ordering artefacts.
+All five folds pass the automated leakage audit (\texttt{leakage\_is\_clean}~=~1.0). The label-shuffle PR-AUC (mean 0.644, see Section~\ref{sec:ad-shared-infra} for the test definition) confirms that the model's performance depends on true label structure and not on data-ordering artefacts.
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Isolation Forest}
@@ -92,7 +100,10 @@ All five folds pass the automated leakage audit (\texttt{leakage\_is\_clean}~=~1
 Isolation Forest is an ensemble of random partitioning trees that isolates anomalies by the number of splits needed to separate a sample from the rest: anomalous points require fewer splits and therefore have shorter average path lengths.
 
 \paragraph{Scoring function.}
-$s(x) = -\text{score\_samples}(x)$, negating the sklearn output to align with the convention that higher scores indicate higher anomaly likelihood.
+The sklearn \texttt{score\_samples} method returns the raw anomaly score: negative values indicate anomalies, positive values indicate inliers (it is proportional to $-\mathbb{E}[\text{path length}]$). To align with the project-wide convention that higher values indicate greater anomaly likelihood, the output is negated:
+\begin{equation}
+    s(x) = -\texttt{score\_samples}(x).
+\end{equation}
 
 \paragraph{Hyperparameter search space and winning configuration.}
 \begin{table}[H]
@@ -147,13 +158,16 @@ The binary PR-AUC (0.974) is deceptively high: the per-class breakdown reveals s
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Bayesian Online Change-Point Detection (BOCD)}
 
-BOCD models each feature independently with a Normal-Inverse-Gamma (NIG) conjugate prior and forms the joint multivariate predictive density as the product of univariate Student-$t$ predictives. A sequential run-length distribution with a geometric hazard parameter $h=1/\lambda$ detects distributional shifts.
+BOCD is a sequential Bayesian method that tracks a \emph{run-length} distribution — the probability that the current time step is $r$ steps into the present stationary segment. When the run-length posterior concentrates near zero, a change point (and hence an anomaly) is likely.
+
+Each feature is modelled independently using a Normal-Inverse-Gamma (NIG) conjugate prior, a probabilistic model that places a prior over both the mean and variance of a Gaussian; using this prior allows exact Bayesian updates in closed form. The joint multivariate predictive density at each time step is formed as the product of the four univariate Student-$t$ predictive distributions (one per feature). A geometric hazard parameter $\lambda$ controls the expected run length between change points: the probability of a change point at any given step is $h = 1/\lambda$.
 
 \paragraph{Scoring function.}
+At each time step $t$, the predictive likelihood of the observation $x_t$ is computed as a mixture over all possible run lengths, weighted by their posterior probability:
 \begin{equation}
     s_t = -\log\!\left(\sum_{r=0}^{R_{\max}} R_t(r)\, p(x_t \mid r)\right),
 \end{equation}
-where $R_t(r)$ is the run-length posterior at time $t$ and $R_{\max}=200$ is the truncation depth. The run-length distribution is reset at each segment boundary to prevent state carryover across operational gaps.
+where $R_t(r) = P(\text{run length} = r \text{ at time } t)$ is the run-length posterior, $p(x_t \mid r)$ is the Student-$t$ predictive density under a run of length $r$, and $R_{\max}=200$ is a truncation limit to keep memory bounded. A low predictive likelihood (high score) indicates that $x_t$ is unlikely under any of the learned run-length models, signalling an anomaly. The run-length distribution is reset at each segment boundary — for example, between different operating days — to prevent stale state from a previous episode contaminating the current one.
 
 \paragraph{Hyperparameter search space and winning configuration.}
 \begin{table}[H]
@@ -214,7 +228,12 @@ The model receives an input window $x \in \mathbb{R}^{B \times W \times F}$ and 
     \item \textbf{Anomaly-attention branch}: computes a data-driven \emph{series association} $S$ via block-local sparse self-attention and a Gaussian-kernel \emph{prior association} $P$.
     \item \textbf{Mamba branch}: a selective state-space model (SSM) providing linear-complexity long-range mixing.
 \end{itemize}
-The outputs are fused by a learned gating mechanism $G = \sigma(W_g[H_{\text{mamba}} \| H_{\text{attn}}])$, after which residual + LayerNorm + feedforward layers project back to the input dimension.
+The outputs of the two branches are fused by a learned gating mechanism. Let $H_{\text{mamba}}$ and $H_{\text{attn}}$ be the outputs of the Mamba and attention branches respectively; they are concatenated (written $[\cdot \| \cdot]$), linearly projected by a weight matrix $W_g$, and passed through a sigmoid $\sigma(\cdot)$ to produce a gate $G \in (0,1)^{B \times W \times d}$:
+\begin{equation}
+    G = \sigma\!\left(W_g[H_{\text{mamba}} \| H_{\text{attn}}]\right), \qquad
+    H_{\text{fused}} = G \odot H_{\text{mamba}} + (1-G) \odot H_{\text{attn}},
+\end{equation}
+where $\odot$ denotes element-wise multiplication. A gate value near 1 selects the Mamba output; near 0 selects the attention output. This allows the model to choose, position by position, which temporal modelling strategy is more informative. The fused representation is then processed through residual connections, Layer Normalisation, and a position-wise feed-forward network before the next encoder layer.
 
 \begin{figure}[H]
     \centering
@@ -224,16 +243,26 @@ The outputs are fused by a learned gating mechanism $G = \sigma(W_g[H_{\text{mam
 \end{figure}
 
 \paragraph{Training objective.}
+MAAT is trained with a minimax objective that combines reconstruction error with an association-discrepancy term. The Kullback–Leibler (KL) divergence $\mathrm{KL}(A \| B)$ measures how much distribution $A$ differs from $B$: a large value means the two distributions are very different. The objective is:
 \begin{equation}
     \mathcal{L} = 2\mathcal{L}_{\text{rec}} + k\bigl[\mathrm{KL}(P \| S) - \mathrm{KL}(S \| P)\bigr],
 \end{equation}
-where $\mathcal{L}_{\text{rec}}$ is the window reconstruction MSE and $k$ controls the association-discrepancy weight. The minimax formulation encourages series associations to diverge from the prior on normal data, amplifying deviations during faults.
+where $\mathcal{L}_{\text{rec}}$ is the per-window mean squared reconstruction error (how accurately the model reconstructs the input), $k$ controls the relative weight of the association term, and the two KL terms form a minimax objective: the prior association $P$ is pushed towards the series association $S$ while $S$ is simultaneously pushed away from $P$. On normal data this creates a characteristic divergence pattern; faults disrupt this pattern, making them detectable.
 
 \paragraph{Scoring function.}
+At inference time, the anomaly score for each time step $t$ combines reconstruction error with how much the temporal association pattern has deviated from the learned normal pattern. Let $\hat{x}_t$ be the model's reconstruction of input $x_t$. The association discrepancy at step $t$ is:
 \begin{equation}
-    A_t = w_t \cdot \|x_t - \hat{x}_t\|^2, \qquad w_t = \mathrm{Softmax}(-T D_t),
+    D_t = \mathrm{KL}(S \| P) + \mathrm{KL}(P \| S).
 \end{equation}
-where $D_t = \mathrm{KL}(S \| P) + \mathrm{KL}(P \| S)$ is the association discrepancy and $T$ the temperature. Window scores are reduced by taking the maximum over the temporal dimension.
+Steps with high discrepancy (unusual temporal patterns) receive higher weight. The weights are computed via a temperature-scaled softmax (which converts a vector of values into a probability distribution, amplified by temperature $T$):
+\begin{equation}
+    w_t = \mathrm{Softmax}(-T \cdot D_t),
+\end{equation}
+and the final per-step anomaly score is the discrepancy-weighted reconstruction error:
+\begin{equation}
+    A_t = w_t \cdot \|x_t - \hat{x}_t\|^2.
+\end{equation}
+The window-level score is the maximum of $A_t$ over all time steps in the window: a single highly anomalous time step is sufficient to flag the window.
 
 \paragraph{Hyperparameter search space and winning configuration.}
 MAAT uses a two-stage HPO protocol. Stage~1 tunes training parameters; stage~2 is disabled (architecture uses config defaults). The winning stage-1 configuration is:
@@ -263,11 +292,11 @@ Architecture defaults: \texttt{win\_size}~=~30, \texttt{block\_size}~=~10, \text
 \subsection{Physics-Conditioned Normalizing Flow (PC-Flow)}\label{sec:ad-pcflow}
 
 \paragraph{Idea.}
-PC-Flow is a physics-conditioned normalizing flow: a family of models that combines the strengths of autoregressive models (tractable likelihoods) and variational autoencoders (representation learning)~\citep{rezende2015variational}. Unlike both, a normalizing flow $f_\theta : \mathbb{R}^n \to \mathbb{R}^n$ is \emph{deterministic and invertible}, providing exact marginal likelihood via the change-of-variables formula:
+PC-Flow is a physics-conditioned normalizing flow: a family of generative models that combines the strengths of autoregressive models (tractable likelihoods) and variational autoencoders (representation learning)~\citep{rezende2015variational}. Unlike both, a normalizing flow $f_\theta : \mathbb{R}^n \to \mathbb{R}^n$ is \emph{deterministic and invertible}: given an input $x$ it produces a latent code $z = f_\theta^{-1}(x)$, and this transformation can be perfectly reversed. Because the transformation is invertible, the exact density of any input $x$ can be computed from the density of its latent code $z$ using the change-of-variables formula:
 \begin{equation}
-    \log p(x;\theta) = \log p_Z(f_\theta^{-1}(x)) + \log\left|\det\!\left(\frac{\partial f_\theta^{-1}(x)}{\partial x}\right)\right|.
+    \log p(x;\theta) = \underbrace{\log p_Z(f_\theta^{-1}(x))}_{\text{log-density of the latent code}} + \underbrace{\log\left|\det\!\left(\frac{\partial f_\theta^{-1}(x)}{\partial x}\right)\right|}_{\text{log volume change of the transformation}},
 \end{equation}
-This means a normalizing flow \textbf{simultaneously learns a latent representation and yields a tractable likelihood}, which is exactly the "best of both worlds" property needed for anomaly scoring: the model learns its own compact representation of normal PV operation without requiring manually engineered features beyond the raw signals.
+where $p_Z$ is a simple base distribution (here a standard Gaussian) whose density is easy to evaluate, and the second term (the log absolute determinant of the Jacobian matrix of partial derivatives) corrects for how the transformation stretches or compresses volume in different regions. This means a normalizing flow \textbf{simultaneously learns a latent representation and yields a tractable, exact likelihood} — the "best of both worlds" property: the model learns its own compact internal representation of normal PV operation without requiring manually engineered features beyond the raw signals.
 
 \paragraph{Architecture.}
 The flow consists of $L$ affine coupling layers (RealNVP style). Each layer splits the input, applies a scale-and-shift network conditioned on the first partition, and uses the inverse for tractable likelihood. The physics conditioning enters through an irradiance and temperature context vector appended to the coupling network inputs, allowing the model to factor out the operating-point effect on the measured signals.
@@ -350,8 +379,8 @@ Table~\ref{tab:ad-tournament} summarises all detectors on the primary threshold-
 \textbf{PC-Flow (raw)} & \textbf{0.990~$\pm$~0.005} & \textbf{0.962~$\pm$~0.021} & 0.972~$\pm$~0.013 & 20\,124~params \\
 OC-SVM       & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280~SVs \\
 MAAT         & \multicolumn{3}{c}{\textit{(rerunning — to be inserted)}} & $\approx$\,340k \\
-Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & $400 \times 1024$ \\
-BOCD         & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4F$ NIG \\
+Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees $\times$ 1024 samples \\
+BOCD         & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4 \times F$ NIG params\tablefootnote{BOCD stores 4 Normal-Inverse-Gamma hyperparameters per feature $F$; the model is nearly non-parametric.} \\
 \bottomrule
 \end{tabular}
 \end{table}
