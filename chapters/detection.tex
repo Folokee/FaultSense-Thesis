@@ -98,7 +98,13 @@ Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 Isolation Forest builds an ensemble of random partitioning trees. Anomalous points require fewer splits to be isolated and therefore have shorter average path lengths from the root.
 
 \paragraph{Scoring function.}
-The \texttt{score\_samples} method returns a value proportional to $-\mathbb{E}[\text{path length}]$, where lower (more negative) values indicate anomalies. Negating aligns with the shared convention:
+Each isolation tree is built by recursively selecting a random feature and a random split threshold until a point is isolated in its own leaf. The \emph{path length} $h(x)$ is the number of splits needed to isolate sample $x$ in one tree. Anomalous points, being rare and far from the bulk of the data, are separated in very few splits; normal points, densely packed with similar neighbours, require many more. The raw anomaly score in the original formulation~\citep{liu2008isolation} is:
+\begin{equation}
+    s(x,\psi) = 2^{-\,\mathbb{E}[h(x)]\,/\,c(\psi)},
+\end{equation}
+where $\mathbb{E}[h(x)]$ is the average path length over all trees and $c(\psi) = 2H(\psi-1) - 2(\psi-1)/\psi$ is a normalisation constant equal to the expected path length of an unsuccessful binary search over $\psi$ samples ($H$ denotes the harmonic number). This normalisation makes the score comparable across different subsample sizes. A score near 1 signals an anomaly (short average path); a score near 0 signals a normal point.
+
+Sklearn's \texttt{score\_samples} returns the negative normalised average path length directly, so lower (more negative) values indicate anomalies. Negating aligns with the project-wide convention that higher values indicate greater anomaly likelihood:
 \begin{equation}
     s(x) = -\texttt{score\_samples}(x).
 \end{equation}
