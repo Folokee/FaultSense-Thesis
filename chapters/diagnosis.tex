@@ -1,9 +1,9 @@
-\chapter{Fault Diagnosis}\label{ch:fault-diagnosis}
+\section{Fault Diagnosis}\label{sec:fault-diagnosis}
 
-\section{Introduction}
+\subsection{Introduction}
 After an anomalous state is detected, the next step in an FDD workflow is to identify the most likely fault type. In this project, diagnosis is formulated as a supervised multi-class classification task over engineered features extracted from PV system measurements. Unlike the anomaly detection stage, labeled fault categories are available for training; the objective is to output a discrete fault class among $C=4$ predefined types.
 
-\section{Task Formulation and Methodology}
+\subsection{Task Formulation and Methodology}
 
 \paragraph{Problem definition.}
 Let $x \in \mathbb{R}^F$ be a feature vector computed from a PV time segment, and $y \in \{1,2,3,4\}$ the corresponding fault label. The diagnosis task learns $f_\theta: x \mapsto \hat{p}(y \mid x)$ and predicts $\hat{y} = \arg\max_c \hat{p}(c \mid x)$.
@@ -14,7 +14,7 @@ Because fault classes are imbalanced in realistic PV logs (class~4 Shadowing: 1\
 \paragraph{Feature profile.}
 Diagnosis is performed on the \texttt{plus\_physics} feature profile (15 engineered features: raw electrical + physics-derived indicators). In contrast to Task~A, where a normalizing flow learns its own representations and hand-crafted features are redundant, tree ensembles cannot perform representation learning: they partition the input feature space directly. The discriminative power of the engineered features is therefore critical — as confirmed by the feature-importance analysis in Section~\ref{sec:diag-winner}.
 
-\section{Shared Experimental Infrastructure}\label{sec:diag-shared-infra}
+\subsection{Shared Experimental Infrastructure}\label{sec:diag-shared-infra}
 
 \paragraph{Probability calibration.}
 A tree classifier's raw probability outputs are often overconfident (probabilities near 0 or 1) or underconfident. To make the output probabilities reliable for the confidence-based alerting logic of the operator dashboard, a calibration step is applied: after fitting the base classifier on the training partition, a \emph{sigmoid calibrator} (Platt scaling) is fitted on the held-out validation partition. Platt scaling fits a logistic (sigmoid) function on top of the raw model scores to align predicted probabilities with empirical frequencies — for example, ensuring that among samples assigned a 70\% confidence, approximately 70\% are truly of that class.
@@ -30,9 +30,9 @@ Calibration quality is quantified by four metrics, all computed on the held-out 
 \paragraph{Leakage checks.}
 Before and after training, automated checks verify that no identical feature rows appear across train and validation partitions, and a full leakage report is run on the test partition.
 
-\section{Model Lineup}
+\subsection{Model Lineup}
 
-\subsection{LightGBM Classifier}
+\subsubsection{LightGBM Classifier}
 
 LightGBM builds gradient-boosted decision trees sequentially, where each tree corrects the residuals of the current ensemble. It applies histogram-based binning for efficient split search. Class imbalance is handled through balanced class weights.
 
@@ -88,7 +88,7 @@ Shadowing     (cls~4) & 0.994 & 0.995 & 1000 \\
 \end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
-\subsection{CatBoost Classifier}
+\subsubsection{CatBoost Classifier}
 
 CatBoost uses symmetric trees with an ordered boosting strategy that reduces prediction shift during training. It applies native balanced class weighting.
 
@@ -143,7 +143,7 @@ Shadowing     (cls~4) & 0.995 & 1.000 & 1000 \\
 \end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
-\subsection{ExtraTrees Classifier}
+\subsubsection{ExtraTrees Classifier}
 
 ExtraTrees builds an ensemble of trees where both the split variable and threshold are selected at random; the best among $k$ candidates is chosen. This extra randomness regularises the ensemble and tends to reduce variance relative to standard random forests. Class imbalance is handled through balanced class weights.
 
@@ -198,7 +198,7 @@ Shadowing     (cls~4) & 0.995 & 1.000 & 1000 \\
 \end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
-\section{Tournament Comparison}\label{sec:diag-tournament}
+\subsection{Tournament Comparison}\label{sec:diag-tournament}
 
 Table~\ref{tab:diag-tournament} ranks all three classifiers on the primary metric.
 \begin{table}[H]
@@ -218,9 +218,9 @@ LightGBM            & 0.934~$\pm$~0.098          & 0.925~$\pm$~0.131          & 
 The three models are statistically close — the error bars overlap heavily, and the cross-fold variance is dominated by a single structurally hard fold (fold~3), as discussed in Section~\ref{sec:diag-discussion}. ExtraTrees leads on all headline metrics and has the lowest variance, making it the most reliable choice for deployment.
 
 % ────────────────────────────────────────────────────────────────────────────
-\section{Winner Analysis: ExtraTrees}\label{sec:diag-winner}
+\subsection{Winner Analysis: ExtraTrees}\label{sec:diag-winner}
 
-\subsection{Deployed Model Results (Full-Train, Calibrated)}
+\subsubsection{Deployed Model Results (Full-Train, Calibrated)}
 
 The deployed ExtraTrees instance is trained on the \emph{full} training split (not a fold) and calibrated on the held-out validation partition. Results on the held-out test partition are given in Table~\ref{tab:et-deployed}.
 
@@ -256,7 +256,7 @@ Shadowing     (cls~4) & 0.982 & 0.992 & 0.987 & 32\,333 \\
 
 Table~\ref{tab:et-deployed-per-class} gives the per-fault-class breakdown. The single-holdout macro F1 (0.874) is lower than the k-fold mean (0.959): the k-fold mean pools over five different splits, while the holdout reflects one specific train set; the deployed model is more representative of production behaviour.
 
-\subsection{Probability Calibration}
+\subsubsection{Probability Calibration}
 
 Table~\ref{tab:et-calibration} compares uncalibrated and calibrated outputs. After sigmoid calibration, the model produces well-calibrated probabilities suitable for confidence-based alerting.
 
@@ -279,7 +279,7 @@ $^{\dag}$~Brier score was not computed for the uncalibrated output; it is report
 
 Calibration reduces log-loss (0.063 → 0.059) and yields a Brier score of 0.008, confirming well-calibrated probabilities. The ECE increase (0.010 → 0.019) reflects a small recalibration cost on the test set; the MCE (0.754) captures a tail bin effect in the high-confidence region. Reliability and confidence histogram plots are included in Appendix~\ref{app:calibration}.
 
-\subsection{Feature Importance: Handcrafted Features Are Discriminative}\label{sec:diag-feat-importance}
+\subsubsection{Feature Importance: Handcrafted Features Are Discriminative}\label{sec:diag-feat-importance}
 
 Figure~\ref{fig:et-feat-importance} shows the top-20 ExtraTrees feature importances.
 \begin{figure}[H]
@@ -292,7 +292,7 @@ Figure~\ref{fig:et-feat-importance} shows the top-20 ExtraTrees feature importan
 The feature importance ranking confirms the value of the \texttt{plus\_physics} feature profile. The physics-derived indicators (efficiency ratio, normalised irradiance residual, string current deviation) rank among the top features, alongside raw electrical measurements. This result validates the domain-informed feature engineering strategy: the model leverages physically meaningful inter-variable relationships that would be invisible to a model operating on a single raw sensor stream. This stands in contrast to Task~A (Section~\ref{sec:abl-profile}), where the normalizing flow's internal representation learning made the same engineered features unnecessary.
 
 % ────────────────────────────────────────────────────────────────────────────
-\section{Discussion}\label{sec:diag-discussion}
+\subsection{Discussion}\label{sec:diag-discussion}
 
 \paragraph{The fold-3 hard split.}
 All three classifiers exhibit a consistent performance drop on fold~3 (ExtraTrees: 0.820, CatBoost: 0.788, LightGBM: 0.766 vs $\sim$0.99 on the other four folds). The fold-3 test partition contains only 2 episodes from class~1 and 1 episode from class~2 — the smallest minority-class test representation across all folds. This drop is therefore a \textbf{data-structural artefact}, not a model instability: with $<$2 fault episodes in a class, even a perfect classifier is penalised by macro F1 if it correctly predicts the one episode but is scored against a two-episode baseline. The consistent drop across all three model families (gradient-boosting variants and a randomised tree ensemble) is precisely the evidence that this is a data-partition issue rather than a model deficiency. This motivates reporting mean~$\pm$~std over all five folds rather than cherry-picking a single split.
@@ -310,4 +310,4 @@ Degradation is the hardest fault for both Task~A (anomaly detection) and Task~B 
 The Task~A and Task~B results together illustrate an important principle: \emph{the value of feature engineering depends on whether the model can learn its own representations}. Normalizing flows learn representations as part of density estimation; adding features hurts. Tree ensembles partition a fixed feature space; adding informative features helps. The \texttt{plus\_physics} feature profile is therefore the right choice for Task~B, and \texttt{baseline\_raw} is the right choice for Task~A — for complementary, model-family-driven reasons.
 
 \paragraph{Calibration and deployment.}
-Sigmoid calibration improves log-loss (0.063 → 0.059) with a negligible impact on macro F1 on the held-out test. The resulting probability outputs are suitable for the confidence-based tiered alerting logic of the operator dashboard (Chapter~\ref{ch:deployment}).
+Sigmoid calibration improves log-loss (0.063 → 0.059) with a negligible impact on macro F1 on the held-out test. The resulting probability outputs are suitable for the confidence-based tiered alerting logic of the operator dashboard (Section~\ref{ch:deployment}).
