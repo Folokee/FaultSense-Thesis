@@ -297,10 +297,10 @@ The model is trained with AdamW and a warmup cosine learning-rate schedule. A tw
 
 \begin{table}[H]
 \centering
-\caption{MAAT stage-2 architecture search space and fixed configuration.\label{tab:maat-s2}}
+\caption{MAAT stage-2 architecture search space and configuration.\label{tab:maat-s2}}
 \begin{tabular}{lll}
 \toprule
-\textbf{Parameter} & \textbf{Range} & \textbf{Config value (used)} \\
+\textbf{Parameter} & \textbf{Range} & \textbf{Config value} \\
 \midrule
 \texttt{win\_size}   & $\{30,60,90,120\}$   & 30  \\
 \texttt{block\_size} & $\{5,10,15,30\}$     & 10  \\
@@ -318,7 +318,7 @@ The model is trained with AdamW and a warmup cosine learning-rate schedule. A tw
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{GTBAD: Gated Transformer-BiLSTM Anomaly Detector}\label{sec:ad-gtbad}
 
-GTBAD is a reconstruction-based deep anomaly detector that combines a Transformer encoder with a bidirectional LSTM (BiLSTM) decoder. An input projection maps each time step to $d_{\text{model}}=64$; sinusoidal positional encodings are added; a 3-layer Transformer encoder with 2 attention heads captures temporal dependencies; a single-layer BiLSTM with hidden size 32 decodes the representation; and a linear projection reconstructs the original input. With window size 1, each time step is processed independently. The architecture is shown in Figure~\ref{fig:gtbad_architecture}.
+GTBAD is a reconstruction-based deep anomaly detector that combines a Transformer encoder with a bidirectional LSTM (BiLSTM) decoder. With window size set to 1, each time step is processed independently as a feature vector; the model learns to reconstruct normal operating patterns and flags anomalies through reconstruction error. The architecture is shown in Figure~\ref{fig:gtbad_architecture}.
 
 \begin{figure}[H]
     \centering
@@ -326,23 +326,49 @@ GTBAD is a reconstruction-based deep anomaly detector that combines a Transforme
     \caption{GTBAD architecture.\label{fig:gtbad_architecture}}
 \end{figure}
 
+The fixed architecture parameters are given in Table~\ref{tab:gtbad-arch}. An input projection maps each feature vector to $d_{\text{model}}$; sinusoidal positional encodings are added; the Transformer encoder captures cross-feature dependencies; the BiLSTM decoder produces a contextual representation; and a final linear layer reconstructs the original feature space.
+
+\begin{table}[H]
+\centering
+\caption{GTBAD fixed architecture.\label{tab:gtbad-arch}}
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Value} \\
+\midrule
+$d_{\text{model}}$           & 64 \\
+Transformer encoder layers   & 3 \\
+Attention heads              & 2 \\
+BiLSTM hidden size           & 32 \\
+Dropout                      & 0.1 \\
+Window size                  & 1 (pointwise) \\
+Total parameters             & 869\,769 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Training objective.}
+The model is trained on normal-only data by minimising the mean squared reconstruction error:
+\begin{equation}
+    \mathcal{L} = \frac{1}{N}\sum_{i=1}^{N}\|x_i - \hat{x}_i\|^2.
+\end{equation}
+
 \paragraph{Scoring function.}
 \begin{equation}
     s(x) = \|x - \hat{x}\|^2,
 \end{equation}
-where $\hat{x}$ is the model's reconstructed output.
+where $\hat{x}$ is the reconstructed output. A high reconstruction error indicates that the input deviates from the normal manifold learned during training.
 
 \paragraph{Hyperparameter search space.}
-The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations. Table~\ref{tab:gtbad-hpo} reports the search.
+The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations per candidate. Table~\ref{tab:gtbad-hpo} reports the search space; winning values are determined by GVSAO and not logged separately.
 \begin{table}[H]
 \centering
 \caption{GTBAD hyperparameter search space.\label{tab:gtbad-hpo}}
-\begin{tabular}{llll}
+\begin{tabular}{lll}
 \toprule
-\textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Generations} \\
+\textbf{Parameter} & \textbf{Range} & \textbf{Generations} \\
 \midrule
-\texttt{learning\_rate} & log-uniform & --- & \multirow{2}{*}{5} \\
-\texttt{batch\_size}    & integer     & --- & \\
+\texttt{learning\_rate} & $[10^{-5},\,10^{-1}]$ log-uniform & \multirow{2}{*}{5} \\
+\texttt{batch\_size}    & $[16,\,128]$ integer               & \\
 \bottomrule
 \end{tabular}
 \end{table}
