@@ -43,7 +43,7 @@ Each feature is modelled independently with a Normal-Inverse-Gamma (NIG) conjuga
 where $R_t(r)$ is the run-length posterior, $p(x_t \mid r)$ the Student-$t$ predictive density under run length $r$, and $R_{\max}=200$ a truncation limit. The run-length distribution is reset at each segment boundary to prevent state from a previous episode affecting the next.
 
 \paragraph{Hyperparameter search space.}
-The sole tuned parameter is \texttt{hazard\_lambda} (Table~\ref{tab:bocd-hpo}).
+BOCD is a closed-form Bayesian model; it has no gradient-based optimizer. The sole tuned parameter is \texttt{hazard\_lambda} (Table~\ref{tab:bocd-hpo}).
 \begin{table}[H]
 \centering
 \caption{BOCD hyperparameter search space.\label{tab:bocd-hpo}}
@@ -107,7 +107,7 @@ Sklearn's \texttt{score\_samples} returns the negative normalised average path l
 \end{equation}
 
 \paragraph{Hyperparameter search space.}
-\texttt{n\_estimators} controls the number of trees; \texttt{max\_samples} the number of points used to build each tree; \texttt{max\_features} the fraction of features sampled per split. Table~\ref{tab:iforest-hpo} summarises the search and winning configuration.
+Isolation Forest is a non-parametric ensemble fitted by greedy tree construction; it has no gradient-based optimizer. \texttt{n\_estimators} controls the number of trees; \texttt{max\_samples} the number of points used to build each tree; \texttt{max\_features} the fraction of features sampled per split. Table~\ref{tab:iforest-hpo} summarises the search and winning configuration.
 \begin{table}[H]
 \centering
 \caption{Isolation Forest hyperparameter search space.\label{tab:iforest-hpo}}
@@ -170,7 +170,7 @@ The full normal training set contains 183\,801 samples. Because fitting a kernel
 so that points outside the normal boundary score high.
 
 \paragraph{Hyperparameter search space.}
-\texttt{nu} sets an upper bound on the fraction of training points allowed outside the boundary; \texttt{gamma} is the inverse width of the Gaussian kernel. Table~\ref{tab:ocsvm-hpo} reports the search space and winning values.
+OC-SVM is fitted by solving a quadratic program; it has no gradient-based optimizer. \texttt{nu} sets an upper bound on the fraction of training points allowed outside the boundary; \texttt{gamma} is the inverse width of the Gaussian kernel. Table~\ref{tab:ocsvm-hpo} reports the search space and winning values.
 \begin{table}[H]
 \centering
 \caption{OC-SVM hyperparameter search space.\label{tab:ocsvm-hpo}}
@@ -275,7 +275,7 @@ and the final per-step anomaly score is the discrepancy-weighted reconstruction 
 The window-level score is the maximum of $A_t$ over all time steps in the window: a single highly anomalous time step is sufficient to flag the window.
 
 \paragraph{Hyperparameter search space and winning configuration.}
-MAAT uses a two-stage HPO protocol. Stage~1 tunes training parameters (Table~\ref{tab:maat-hpo-win}); stage~2 is disabled and the architecture uses config defaults.
+The model is trained with AdamW and a warmup cosine learning-rate schedule. MAAT uses a two-stage HPO protocol; stage~1 tunes training parameters (Table~\ref{tab:maat-hpo-win}) including \texttt{learning\_rate} and \texttt{weight\_decay}; stage~2 is disabled and the architecture uses config defaults.
 \begin{table}[H]
 \centering
 \caption{MAAT stage-1 HPO configuration.\label{tab:maat-hpo-win}}
@@ -316,7 +316,7 @@ GTBAD is a reconstruction-based deep anomaly detector that combines a Transforme
 where $\hat{x}$ is the model's reconstructed output.
 
 \paragraph{Hyperparameter search space.}
-Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations. Table~\ref{tab:gtbad-hpo} reports the search.
+The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations. Table~\ref{tab:gtbad-hpo} reports the search.
 \begin{table}[H]
 \centering
 \caption{GTBAD hyperparameter search space.\label{tab:gtbad-hpo}}
@@ -385,7 +385,7 @@ The model is trained by maximising the average negative log-likelihood (NLL) on 
 The anomaly score is the negative log-likelihood: $s(x) = -\log p(x;\theta)$. Under a well-trained flow, normal samples lie in the high-probability region and score low; anomalous samples deviate from the learnt manifold and score high.
 
 \paragraph{Hyperparameter search space.}
-Table~\ref{tab:pcflow-hpo} reports the search space and winning values for the baseline\_raw profile.
+The flow is trained with AdamW and a warmup cosine learning-rate schedule. Table~\ref{tab:pcflow-hpo} reports the search space and winning values for the baseline\_raw profile.
 \begin{table}[H]
 \centering
 \caption{PC-Flow hyperparameter search space.\label{tab:pcflow-hpo}}
