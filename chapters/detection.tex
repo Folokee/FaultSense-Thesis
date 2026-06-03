@@ -422,6 +422,13 @@ The flow is a conditional RealNVP~\citep{dinh2017realnvp}: a stack of $L$ affine
 \end{equation}
 where $s$ and $t$ are outputs of a small two-layer MLP, and the log-determinant contribution is $\sum_i s_i(x_a, c)$. The context vector $c = [\text{irradiance},\, T_{\text{PV}}]$ encodes the current operating point. By appending $c$ to the MLP inputs at every coupling block, the flow learns a \emph{conditional} density $p(x \mid c)$ rather than a marginal: the model factors out how irradiance and temperature normally drive the measured electrical signals, so deviations from this physics-informed manifold, not absolute signal levels, are penalised. An ablation with rational-quadratic spline coupling layers~\citep{durkan2019neural} (more expressive, non-linear per-dimension transforms) is also evaluated in Section~\ref{sec:abl-scoring}.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/detection/pcflow_architecture.pdf}
+    \caption{PC-Flow architecture. \emph{Top}: the full conditional RealNVP pipeline mapping input $x$ to a standard Gaussian latent code $z$ through $L$ coupling blocks, each receiving the physics context $c=[\text{irr},T_{\text{PV}}]$ via dashed orange arrows. \emph{Bottom}: detail of one coupling block; the orange MLP computes scale $s_k$ and shift $t_k$ conditioned on the pass-through partition $x_a$ and the physics context $c$, while the green transform applies the affine mapping to $x_b$.}
+    \label{fig:pcflow_architecture}
+\end{figure}
+
 \paragraph{Training objective.}
 The model is trained by maximising the average negative log-likelihood (NLL) on normal training windows:
 \begin{equation}
