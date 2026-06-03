@@ -34,32 +34,34 @@ Before and after training, automated checks verify that no identical feature row
 
 \subsection{LightGBM Classifier}
 
-LightGBM builds gradient-boosted decision trees sequentially, where each tree corrects the residuals of the current ensemble. It applies histogram-based binning for efficient split search, making it fast to train on tabular data. Class imbalance is handled through balanced class weights; HPO is performed with Optuna TPE over 35 trials maximising validation macro~F1.
+LightGBM builds gradient-boosted decision trees sequentially, where each tree corrects the residuals of the current ensemble. It applies histogram-based binning for efficient split search. Class imbalance is handled through balanced class weights.
 
-\paragraph{Hyperparameter search space and winning configuration.}
+\paragraph{Hyperparameter search space.}
+Table~\ref{tab:lgbm-hpo} reports the winning configuration (35 Optuna TPE trials, objective: macro F1 on the validation holdout).
 \begin{table}[H]
 \centering
-\caption{LightGBM HPO winning configuration.\label{tab:lgbm-hpo}}
-\begin{tabular}{ll}
+\caption{LightGBM winning configuration.\label{tab:lgbm-hpo}}
+\begin{tabular}{lll}
 \toprule
-\textbf{Parameter} & \textbf{Value} \\
+\textbf{Parameter} & \textbf{Value} & \textbf{Trials} \\
 \midrule
-\texttt{n\_estimators}     & 388 \\
-\texttt{learning\_rate}    & 0.0776 \\
-\texttt{num\_leaves}       & 43 \\
-\texttt{subsample}         & 0.854 \\
-\texttt{colsample\_bytree} & 0.879 \\
-\texttt{reg\_alpha}        & 3.470 \\
-\texttt{reg\_lambda}       & 2.623 \\
-\texttt{min\_child\_samples} & 38 \\
+\texttt{n\_estimators}       & 388   & \multirow{8}{*}{35} \\
+\texttt{learning\_rate}      & 0.078 & \\
+\texttt{num\_leaves}         & 43    & \\
+\texttt{subsample}           & 0.854 & \\
+\texttt{colsample\_bytree}   & 0.879 & \\
+\texttt{reg\_alpha}          & 3.470 & \\
+\texttt{reg\_lambda}         & 2.623 & \\
+\texttt{min\_child\_samples} & 38    & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Results.}
+Tables~\ref{tab:lgbm-results} and~\ref{tab:lgbm-per-class} report the 5-fold evaluation.
 \begin{table}[H]
 \centering
-\caption{LightGBM 5-fold results (mean~$\pm$~std).\label{tab:lgbm-results}}
+\caption{LightGBM evaluation results.\label{tab:lgbm-results}}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} \\
@@ -72,7 +74,7 @@ Balanced accuracy & 0.925 & 0.131 \\
 
 \begin{table}[H]
 \centering
-\caption{LightGBM per-fault-class results (mean, 5 folds).\label{tab:lgbm-per-class}}
+\caption{LightGBM per-fault-class results.\label{tab:lgbm-per-class}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Fault class} & \textbf{F1} & \textbf{PR-AUC} & \textbf{Episodes} \\
@@ -88,31 +90,33 @@ Shadowing     (cls~4) & 0.994 & 0.995 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{CatBoost Classifier}
 
-CatBoost uses symmetric trees with an ordered boosting strategy designed to reduce prediction shift during training. It applies native balanced class weighting and is known for stable optimisation behaviour on fully numerical feature sets.
+CatBoost uses symmetric trees with an ordered boosting strategy that reduces prediction shift during training. It applies native balanced class weighting.
 
-\paragraph{Hyperparameter search space and winning configuration.}
+\paragraph{Hyperparameter search space.}
+Table~\ref{tab:cat-hpo} reports the winning configuration (35 Optuna TPE trials, objective: macro F1).
 \begin{table}[H]
 \centering
-\caption{CatBoost HPO winning configuration.\label{tab:cat-hpo}}
-\begin{tabular}{ll}
+\caption{CatBoost winning configuration.\label{tab:cat-hpo}}
+\begin{tabular}{lll}
 \toprule
-\textbf{Parameter} & \textbf{Value} \\
+\textbf{Parameter} & \textbf{Value} & \textbf{Trials} \\
 \midrule
-\texttt{iterations}          & 600 \\
-\texttt{depth}               & 8 \\
-\texttt{learning\_rate}      & 0.0649 \\
-\texttt{l2\_leaf\_reg}       & 0.645 \\
-\texttt{random\_strength}    & 0.350 \\
-\texttt{bagging\_temperature} & 2.561 \\
-\texttt{border\_count}       & 128 \\
+\texttt{iterations}           & 600   & \multirow{7}{*}{35} \\
+\texttt{depth}                & 8     & \\
+\texttt{learning\_rate}       & 0.065 & \\
+\texttt{l2\_leaf\_reg}        & 0.645 & \\
+\texttt{random\_strength}     & 0.350 & \\
+\texttt{bagging\_temperature} & 2.561 & \\
+\texttt{border\_count}        & 128   & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Results.}
+Tables~\ref{tab:cat-results} and~\ref{tab:cat-per-class} report the 5-fold evaluation.
 \begin{table}[H]
 \centering
-\caption{CatBoost 5-fold results (mean~$\pm$~std).\label{tab:cat-results}}
+\caption{CatBoost evaluation results.\label{tab:cat-results}}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} \\
@@ -125,7 +129,7 @@ Balanced accuracy & 0.932 & 0.124 \\
 
 \begin{table}[H]
 \centering
-\caption{CatBoost per-fault-class results (mean, 5 folds).\label{tab:cat-per-class}}
+\caption{CatBoost per-fault-class results.\label{tab:cat-per-class}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Fault class} & \textbf{F1} & \textbf{PR-AUC} & \textbf{Episodes} \\
@@ -141,31 +145,33 @@ Shadowing     (cls~4) & 0.995 & 1.000 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{ExtraTrees Classifier}
 
-ExtraTrees (Extremely Randomised Trees) builds an ensemble of trees with strong randomisation: both the split variable and the split threshold are selected at random, then the best among $k$ candidates is chosen. This additional randomness acts as a regulariser, often yielding competitive performance with lower variance than standard random forests and without requiring complex hyperparameter tuning. Class imbalance is handled through balanced class weights.
+ExtraTrees builds an ensemble of trees where both the split variable and threshold are selected at random; the best among $k$ candidates is chosen. This extra randomness regularises the ensemble and tends to reduce variance relative to standard random forests. Class imbalance is handled through balanced class weights.
 
-\paragraph{Hyperparameter search space and winning configuration.}
+\paragraph{Hyperparameter search space.}
+Table~\ref{tab:et-hpo} reports the winning configuration (35 Optuna TPE trials, objective: macro F1).
 \begin{table}[H]
 \centering
-\caption{ExtraTrees HPO winning configuration.\label{tab:et-hpo}}
-\begin{tabular}{ll}
+\caption{ExtraTrees winning configuration.\label{tab:et-hpo}}
+\begin{tabular}{lll}
 \toprule
-\textbf{Parameter} & \textbf{Value} \\
+\textbf{Parameter} & \textbf{Value} & \textbf{Trials} \\
 \midrule
-\texttt{n\_estimators}      & 800 \\
-\texttt{criterion}          & entropy \\
-\texttt{max\_depth}         & 24 \\
-\texttt{min\_samples\_split} & 4 \\
-\texttt{min\_samples\_leaf} & 1 \\
-\texttt{max\_features}      & 0.8 \\
-\texttt{bootstrap}          & True \\
+\texttt{n\_estimators}       & 800     & \multirow{7}{*}{35} \\
+\texttt{criterion}           & entropy & \\
+\texttt{max\_depth}          & 24      & \\
+\texttt{min\_samples\_split} & 4       & \\
+\texttt{min\_samples\_leaf}  & 1       & \\
+\texttt{max\_features}       & 0.8     & \\
+\texttt{bootstrap}           & True    & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Results.}
+Tables~\ref{tab:et-results} and~\ref{tab:et-per-class} report the 5-fold evaluation.
 \begin{table}[H]
 \centering
-\caption{ExtraTrees 5-fold results (mean~$\pm$~std).\label{tab:et-results}}
+\caption{ExtraTrees evaluation results.\label{tab:et-results}}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} \\
@@ -178,7 +184,7 @@ Balanced accuracy & \textbf{0.943} & \textbf{0.113} \\
 
 \begin{table}[H]
 \centering
-\caption{ExtraTrees per-fault-class results (mean~$\pm$~std, 5 folds).\label{tab:et-per-class}}
+\caption{ExtraTrees per-fault-class results.\label{tab:et-per-class}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Fault class} & \textbf{F1} & \textbf{PR-AUC} & \textbf{Episodes} \\
@@ -194,9 +200,10 @@ Shadowing     (cls~4) & 0.995 & 1.000 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \section{Tournament Comparison}\label{sec:diag-tournament}
 
+Table~\ref{tab:diag-tournament} ranks all three classifiers on the primary metric.
 \begin{table}[H]
 \centering
-\caption{Task~B fault diagnosis tournament (5-fold mean~$\pm$~std).\label{tab:diag-tournament}}
+\caption{Task~B tournament ranking.\label{tab:diag-tournament}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Model} & \textbf{Macro F1} & \textbf{Balanced Acc.} & \textbf{Worst-class F1} \\
@@ -219,7 +226,7 @@ The deployed ExtraTrees instance is trained on the \emph{full} training split (n
 
 \begin{table}[H]
 \centering
-\caption{ExtraTrees deployed model (full-train, sigmoid-calibrated) on the held-out test set.\label{tab:et-deployed}}
+\caption{ExtraTrees deployed model results.\label{tab:et-deployed}}
 \begin{tabular}{lc}
 \toprule
 \textbf{Metric} & \textbf{Value} \\
@@ -234,7 +241,7 @@ PR-AUC (weighted) & 0.996 \\
 
 \begin{table}[H]
 \centering
-\caption{ExtraTrees deployed model: per-fault-class results on the held-out test set.\label{tab:et-deployed-per-class}}
+\caption{ExtraTrees deployed model per-fault-class results.\label{tab:et-deployed-per-class}}
 \begin{tabular}{lcccr}
 \toprule
 \textbf{Fault class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Support} \\
@@ -247,35 +254,38 @@ Shadowing     (cls~4) & 0.982 & 0.992 & 0.987 & 32\,333 \\
 \end{tabular}
 \end{table}
 
-The single-holdout macro F1 (0.874) is lower than the k-fold mean (0.959), which is expected: the k-fold mean pools over five different train/test splits, whereas the held-out result reflects one specific train set. The deployed model is more representative of production behaviour; the k-fold mean provides the uncertainty estimate.
+Table~\ref{tab:et-deployed-per-class} gives the per-fault-class breakdown. The single-holdout macro F1 (0.874) is lower than the k-fold mean (0.959): the k-fold mean pools over five different splits, while the holdout reflects one specific train set; the deployed model is more representative of production behaviour.
 
 \subsection{Probability Calibration}
 
-After sigmoid calibration, the deployed model produces well-calibrated probability outputs suitable for confidence-based alerting in the operator dashboard.
+Table~\ref{tab:et-calibration} compares uncalibrated and calibrated outputs. After sigmoid calibration, the model produces well-calibrated probabilities suitable for confidence-based alerting.
 
 \begin{table}[H]
 \centering
-\caption{ExtraTrees probability calibration metrics on the held-out test set.\label{tab:et-calibration}}
+\caption{ExtraTrees probability calibration.\label{tab:et-calibration}}
 \begin{tabular}{lcc}
 \toprule
 \textbf{Metric} & \textbf{Uncalibrated} & \textbf{Calibrated (sigmoid)} \\
 \midrule
 Log-loss                     & 0.063 & \textbf{0.059} \\
-Brier score (multiclass)     & ---   & \textbf{0.008} \\
+Brier score (multiclass)     & n/a$^{\dag}$ & \textbf{0.008} \\
 ECE                          & 0.010 & 0.019 \\
 Macro F1                     & 0.955 & 0.874 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+$^{\dag}$~Brier score was not computed for the uncalibrated output; it is reported for the calibrated model only.
+
 Calibration reduces log-loss (0.063 → 0.059) and yields a Brier score of 0.008, confirming well-calibrated probabilities. The ECE increase (0.010 → 0.019) reflects a small recalibration cost on the test set; the MCE (0.754) captures a tail bin effect in the high-confidence region. Reliability and confidence histogram plots are included in Appendix~\ref{app:calibration}.
 
 \subsection{Feature Importance: Handcrafted Features Are Discriminative}\label{sec:diag-feat-importance}
 
+Figure~\ref{fig:et-feat-importance} shows the top-20 ExtraTrees feature importances.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{figures/classification/feature_importance_top20.png}
-    \caption{Top-20 ExtraTrees feature importances on the fault diagnosis task.}
+    \caption{ExtraTrees top-20 feature importances.}
     \label{fig:et-feat-importance}
 \end{figure}
 
