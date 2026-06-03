@@ -26,7 +26,22 @@ Thresholds are calibrated exclusively on held-out normal validation scores using
 Because the normal class dominates recordings ($\sim$97\%), binary PR-AUC is a misleading headline metric: a model that globally confuses fault classes can still report a high binary score. The primary metric is therefore \textbf{macro per-class PR-AUC}: for each fault class $c$, a one-vs-normal subset is formed by keeping only samples of class $c$ and the normal class; the area under the precision-recall curve (PR-AUC) is computed on that subset, giving a score that reflects how well the model separates that specific fault from normal operation. The macro per-class PR-AUC is the unweighted average of these four values. The worst-class PR-AUC (the minimum of the four) is also reported as a pessimistic safety bound. All three are threshold-free and computed at both the \emph{sample/window} level and the \emph{episode} level. The episode-level variant aggregates the per-sample scores within each fault episode to a single episode score (using the 95th percentile of scores within the episode), then computes PR-AUC over episode-level predictions; this is a more operationally relevant view because a detector only needs to fire once per fault event.
 
 \paragraph{Leakage validation.}
-After each fold, an automated leakage audit runs a \emph{label-shuffle test}: the test labels are randomly permuted and the PR-AUC is recomputed; if the model's performance collapses to the level expected from a random permutation (approximately the positive class prevalence), this confirms that the performance depends on true label structure and not on data-ordering artefacts. A fold is marked clean (\texttt{leakage\_is\_clean}~=~1) when this test passes.
+After each fold, an automated leakage audit runs a \emph{label-shuffle test}: the test labels are randomly permuted and the PR-AUC is recomputed; if the model's performance collapses to approximately the positive class prevalence, this confirms that performance depends on true label structure and not on data-ordering artefacts. A fold is marked clean (\texttt{leakage\_is\_clean}~=~1) when this test passes. Table~\ref{tab:leakage-audit} reports the results across all Task~A models; every fold of every model passes.
+
+\begin{table}[H]
+\centering
+\caption{Task~A leakage audit.\label{tab:leakage-audit}}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{Shuffle PR-AUC (mean~$\pm$~std)} & \textbf{All folds clean} \\
+\midrule
+OC-SVM           & $0.644 \pm 0.128$ & \checkmark \\
+Isolation Forest & $0.644 \pm 0.128$ & \checkmark \\
+BOCD             & $0.644 \pm 0.128$ & \checkmark \\
+PC-Flow (raw)    & $0.628 \pm 0.073$ & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Model Lineup}
 
@@ -73,8 +88,6 @@ Macro per-class PR-AUC & 0.965 & 0.019 & sample \\
 Worst-class PR-AUC     & 0.883 & 0.073 & sample \\
 Binary PR-AUC          & 0.987 & 0.010 & sample \\
 Macro per-class PR-AUC & 0.815 & 0.070 & episode \\
-\midrule
-Leakage (label-shuffle PR-AUC) & 0.644 & 0.000 & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -93,8 +106,6 @@ Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-All five folds pass the leakage audit (Section~\ref{sec:ad-shared-infra}).
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Isolation Forest}
@@ -137,8 +148,6 @@ Macro per-class PR-AUC & 0.822 & 0.098 & sample \\
 Worst-class PR-AUC     & 0.496 & 0.185 & sample \\
 Binary PR-AUC          & 0.974 & 0.028 & sample \\
 Macro per-class PR-AUC & 0.656 & 0.044 & episode \\
-\midrule
-Leakage (label-shuffle PR-AUC) & 0.644 & 0.128 & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -199,8 +208,6 @@ Macro per-class PR-AUC & 0.401 & 0.070 & sample \\
 Worst-class PR-AUC     & 0.095 & 0.024 & sample \\
 Binary PR-AUC          & 0.870 & 0.068 & sample \\
 Macro per-class PR-AUC & 0.411 & 0.070 & episode \\
-\midrule
-Leakage (label-shuffle PR-AUC) & 0.644 & 0.128 & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -345,8 +352,6 @@ Macro per-class PR-AUC & 0.990 & 0.005 & window \\
 Worst-class PR-AUC     & 0.962 & 0.021 & window \\
 Binary PR-AUC          & 0.972 & 0.013 & window \\
 Macro per-class PR-AUC & 0.960 & 0.003 & episode \\
-\midrule
-Leakage (label-shuffle PR-AUC) & 0.628 & 0.073 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -366,8 +371,6 @@ Shadowing     (cls~4) & 0.962 & 0.021 & 1000 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Leakage check.}
-All five folds pass the automated leakage audit. The label-shuffle PR-AUC (0.628) is consistent with the purely data-driven normal-only training regime.
 
 % ────────────────────────────────────────────────────────────────────────────
 \section{Tournament Comparison}\label{sec:ad-tournament}
