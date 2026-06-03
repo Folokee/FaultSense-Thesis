@@ -275,25 +275,42 @@ and the final per-step anomaly score is the discrepancy-weighted reconstruction 
 The window-level score is the maximum of $A_t$ over all time steps in the window: a single highly anomalous time step is sufficient to flag the window.
 
 \paragraph{Hyperparameter search space and winning configuration.}
-The model is trained with AdamW and a warmup cosine learning-rate schedule. MAAT uses a two-stage HPO protocol; stage~1 tunes training parameters (Table~\ref{tab:maat-hpo-win}) including \texttt{learning\_rate} and \texttt{weight\_decay}; stage~2 is disabled and the architecture uses config defaults.
+The model is trained with AdamW and a warmup cosine learning-rate schedule. A two-stage HPO protocol is used: stage~1 tunes training dynamics (Table~\ref{tab:maat-s1}); stage~2 searches the architectural parameters (Table~\ref{tab:maat-s2}) but was disabled for this run, so the config defaults were used as the fixed architecture.
+
 \begin{table}[H]
 \centering
-\caption{MAAT stage-1 HPO configuration.\label{tab:maat-hpo-win}}
-\begin{tabular}{ll}
+\caption{MAAT stage-1 HPO search space and winning configuration.\label{tab:maat-s1}}
+\begin{tabular}{llll}
 \toprule
-\textbf{Parameter} & \textbf{Value} \\
+\textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Trials} \\
 \midrule
-\texttt{learning\_rate}    & $6.58 \times 10^{-4}$ \\
-\texttt{weight\_decay}     & $2.66 \times 10^{-4}$ \\
-\texttt{dropout}           & 0.158 \\
-\texttt{k} (assoc.\ weight) & 5.49 \\
-\texttt{temperature}       & 50 \\
-\texttt{batch\_size}       & 1024 \\
-\texttt{gradient\_clip\_val} & 2.0 \\
+\texttt{learning\_rate}      & $[5\times10^{-5},\,8\times10^{-4}]$ log-uniform & $6.58\times10^{-4}$ & \multirow{7}{*}{35} \\
+\texttt{weight\_decay}       & $[10^{-6},\,10^{-3}]$ log-uniform              & $2.66\times10^{-4}$ & \\
+\texttt{dropout}             & $[0.0,\,0.25]$                                  & 0.158               & \\
+\texttt{k} (assoc.\ weight)  & $[2.0,\,6.0]$                                   & 5.49                & \\
+\texttt{temperature}         & $\{10,25,50,100\}$                              & 50                  & \\
+\texttt{batch\_size}         & $\{512,1024,2048\}$                             & 1024                & \\
+\texttt{gradient\_clip\_val} & $\{0.5,1.0,2.0\}$                               & 2.0                 & \\
 \bottomrule
 \end{tabular}
 \end{table}
-Architecture defaults: \texttt{win\_size}~=~30, \texttt{block\_size}~=~10, \texttt{d\_model}~=~64, \texttt{n\_heads}~=~2, \texttt{e\_layers}~=~2, \texttt{d\_ff}~=~256 ($\sim$\,{\small\textit{to be filled after MAAT rerun}}).
+
+\begin{table}[H]
+\centering
+\caption{MAAT stage-2 architecture search space and fixed configuration.\label{tab:maat-s2}}
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Range} & \textbf{Config value (used)} \\
+\midrule
+\texttt{win\_size}   & $\{30,60,90,120\}$   & 30  \\
+\texttt{block\_size} & $\{5,10,15,30\}$     & 10  \\
+\texttt{d\_model}    & $\{32,64,128\}$      & 64  \\
+\texttt{n\_heads}    & $\{2,4,8\}$          & 2   \\
+\texttt{e\_layers}   & $[1,\,4]$ integer    & 2   \\
+\texttt{d\_ff}       & $\{128,256,512\}$    & 256 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Results.}
 \textit{MAAT k-fold results will be inserted once the corrected rerun completes.}
