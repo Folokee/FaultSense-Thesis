@@ -221,20 +221,26 @@ Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
 
-MAAT is a deep semi-supervised anomaly detector that combines sparse anomaly attention with a parallel Mamba state-space branch, trained with a minimax association-learning objective. Unlike pure reconstruction autoencoders, MAAT jointly models reconstruction fidelity and temporal association consistency.
+The model implemented here is a variant of the architecture proposed by \citet{sellam2025maat}, who introduced the Mamba Adaptive Anomaly Transformer combining sparse anomaly attention with a Mamba selective state-space model and association-discrepancy-based scoring. We adopt the core ideas from that work — the two-component attention mechanism (series and prior associations), the minimax training objective, and the association-discrepancy anomaly score — and apply targeted modifications to the integration structure and input embedding to better suit the multivariate PV time-series setting. The key differences from the original are:
+\begin{itemize}
+    \item \textbf{Embedding}: a \texttt{DataEmbedding} block (linear token projection + sinusoidal positional encoding + dropout) replaces the original embedding, making temporal position explicit from the first layer.
+    \item \textbf{Parallel branch structure}: in the original MAAT, the Mamba-SSM is integrated into the reconstruction module and combined with the attention output via a skip connection and gated attention. In our variant, the Mamba branch runs \emph{in parallel} with the anomaly-attention branch at every encoder layer, so both operate on the same encoder input rather than sequentially.
+    \item \textbf{Gating}: the skip-connection + gated-attention fusion of the original is replaced by a learned sigmoid gate applied to the concatenated branch outputs, allowing per-position, per-channel selection between the two temporal modelling strategies.
+\end{itemize}
+These modifications are surgical: the association-discrepancy semantics and the minimax training objective are preserved unchanged from \citet{sellam2025maat}; only the structural wiring is adapted.
 
 \paragraph{Architecture.}
-The overall structure is illustrated in Figure~\ref{fig:maat_architecture}. The model receives an input window $x \in \mathbb{R}^{B \times W \times F}$ and projects it through a \texttt{DataEmbedding} (linear token embedding + sinusoidal positional encoding + dropout). An $L$-layer encoder processes the representation through two parallel branches per layer:
+The overall structure is illustrated in Figure~\ref{fig:maat_architecture}. The model receives an input window $x \in \mathbb{R}^{B \times W \times F}$ and projects it through the \texttt{DataEmbedding} module. An $L$-layer encoder then processes the representation; each layer contains two parallel branches:
 \begin{itemize}
     \item \textbf{Anomaly-attention branch}: computes a data-driven \emph{series association} $S$ via block-local sparse self-attention and a Gaussian-kernel \emph{prior association} $P$.
-    \item \textbf{Mamba branch}: a selective state-space model (SSM) providing linear-complexity long-range mixing.
+    \item \textbf{Mamba branch}: a selective state-space model (SSM) providing linear-complexity long-range sequence mixing.
 \end{itemize}
-The outputs of the two branches are fused by a learned gating mechanism. Let $H_{\text{mamba}}$ and $H_{\text{attn}}$ be the outputs of the Mamba and attention branches respectively; they are concatenated (written $[\cdot \| \cdot]$), linearly projected by a weight matrix $W_g$, and passed through a sigmoid $\sigma(\cdot)$ to produce a gate $G \in (0,1)^{B \times W \times d}$:
+The outputs $H_{\text{mamba}}$ and $H_{\text{attn}}$ are fused by a learned sigmoid gate:
 \begin{equation}
     G = \sigma\!\left(W_g[H_{\text{mamba}} \| H_{\text{attn}}]\right), \qquad
     H_{\text{fused}} = G \odot H_{\text{mamba}} + (1-G) \odot H_{\text{attn}},
 \end{equation}
-where $\odot$ denotes element-wise multiplication. A gate value near 1 selects the Mamba output; near 0 selects the attention output. This allows the model to choose, position by position, which temporal modelling strategy is more informative. The fused representation is then processed through residual connections, Layer Normalisation, and a position-wise feed-forward network before the next encoder layer.
+where $[\cdot \| \cdot]$ denotes concatenation, $\odot$ element-wise multiplication, and $W_g$ a learned projection. A gate near 1 selects Mamba; near 0 selects attention. The fused representation passes through residual connections, Layer Normalisation, and a position-wise feed-forward network before the next layer.
 
 \begin{figure}[H]
     \centering
