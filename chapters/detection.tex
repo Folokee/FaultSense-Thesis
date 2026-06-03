@@ -32,7 +32,10 @@ After each fold, an automated leakage audit runs a \emph{label-shuffle test}: th
 
 \subsection{One-Class Support Vector Machine (OC-SVM)}
 
-OC-SVM is a kernel-based boundary method that maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$, which measures Gaussian similarity, and a cubic polynomial kernel.
+OC-SVM is a kernel-based boundary method that maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored separately, each with its own 35-trial HPO run: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$, which measures Gaussian similarity; and a cubic polynomial kernel, which captures higher-order feature interactions. \textbf{The RBF kernel achieved higher validation macro per-class PR-AUC and is used for all reported results.}
+
+\paragraph{Training subsample.}
+The full normal training set contains 183\,801 samples. Because fitting a kernel SVM scales cubically with the number of support points, a group-stratified temporal subsample capped at \textbf{40\,000 samples} is drawn before fitting, preserving episode diversity. All evaluation is performed on the complete val and test partitions.
 
 \paragraph{Scoring function.}
 The raw decision function assigns high values to inliers and low (negative) values to anomalies. To align with the project-wide convention that higher scores indicate greater anomaly likelihood, the score is negated:
@@ -41,23 +44,23 @@ The raw decision function assigns high values to inliers and low (negative) valu
 \end{equation}
 so that points far outside the learned boundary score high and are more likely to trigger an alarm.
 
-\paragraph{Hyperparameter search space and winning configuration.}
-The two key parameters are: \texttt{nu}, which sets an upper bound on the fraction of training samples that can be treated as outliers (controlling boundary tightness); and \texttt{gamma}, which controls the width of the RBF kernel (a small gamma makes the kernel broader and the boundary smoother).
+\paragraph{Hyperparameter search space and winning configuration (RBF kernel).}
+The two key RBF parameters are: \texttt{nu}, an upper bound on the fraction of training points allowed outside the boundary (controls how tight the enclosure is); and \texttt{gamma}, the inverse width of the Gaussian kernel — a smaller value makes the kernel broader and the boundary smoother.
 \begin{table}[H]
 \centering
-\caption{OC-SVM HPO search space (RBF kernel, 35 Optuna TPE trials).\label{tab:ocsvm-hpo}}
+\caption{OC-SVM HPO search space and winning configuration (\textbf{RBF kernel selected over polynomial}, 35 Optuna TPE trials per kernel).\label{tab:ocsvm-hpo}}
 \begin{tabular}{lll}
 \toprule
 \textbf{Parameter} & \textbf{Range} & \textbf{Winning value} \\
 \midrule
-\texttt{nu} (outlier fraction bound)    & $[0.03,\,0.10]$ log-uniform & 0.0308 \\
-\texttt{gamma} (RBF kernel width)       & $[0.01,\,0.08]$ log-uniform & 0.0751 \\
+\texttt{nu} (boundary tightness)   & $[0.03,\,0.10]$ log-uniform & 0.0308 \\
+\texttt{gamma} (RBF kernel width)  & $[0.01,\,0.08]$ log-uniform & 0.0751 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Results.}
-From 183\,801 normal training samples, OC-SVM retains 1\,280 support vectors ($\approx$0.7\%).
+Fitted on the 40\,000-sample subsample, the model retains 1\,280 support vectors ($\approx$3.2\% of the fit set).
 
 \begin{table}[H]
 \centering
