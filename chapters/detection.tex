@@ -204,27 +204,12 @@ Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
 
-MAAT combines two complementary lines of work: Mamba selective state-space modeling~\citep{gu2023mamba} (see Section~\ref{sec:bg-mamba}) for linear-time long-range sequence modeling, and the Anomaly Transformer association-discrepancy principle~\citep{xu2022anomaly}, which flags anomalies by comparing a data-driven series association against a Gaussian prior over adjacent time steps.
+MAAT combines two complementary lines of work: Mamba selective state-space modeling (see Section~\ref{sec:bg-mamba}) for linear-time long-range sequence modeling, and the Anomaly Transformer association-discrepancy principle~\citep{xu2022anomaly}, which flags anomalies by comparing a data-driven series association against a Gaussian prior over adjacent time steps.
 
-The implemented model is a variant of the MAAT architecture proposed by \citet{sellam2025maat}, which combines these two lines of work. The core design is preserved: the sinusoidal positional encoding, the series and prior association mechanisms, the minimax training objective, and the association-discrepancy anomaly score. Three modifications were introduced:
-\begin{itemize}
-    \item \textbf{Token embedding}: the original \texttt{TokenEmbedding} uses a \texttt{Conv1d} with kernel size 3 and \texttt{padding\_mode=`circular'}, which wraps the end of the sequence back to the beginning. Circular padding leaks future context into the first timestep and past context into the last, violating temporal ordering. This was replaced by a pointwise \texttt{nn.Linear} projection, which embeds each timestep independently with no cross-temporal mixing at the embedding stage.
-    \item \textbf{Parallel branch structure}: in the original, Mamba is applied \emph{after} the attention layer as a sequential skip connection ($\text{Mamba}(x) + x$). In our variant, both branches receive the same encoder input independently at every layer, creating two complementary temporal views: the block-local sparse attention captures short-range intra-block patterns, while the Mamba branch models long-range sequential dependencies. Running them in parallel rather than sequentially prevents either branch from conditioning on the other's output, enabling independent specialisation.
-    \item \textbf{Gating}: the additive skip-connection fusion is replaced by a learned sigmoid gate on the concatenated branch outputs, giving the model per-position control over which temporal modelling strategy to emphasise.
-\end{itemize}
+The implemented variant follows \citet{sellam2025maat} with three modifications: (i)~circular-padded \texttt{Conv1d} token embedding replaced by a pointwise linear projection to eliminate temporal leakage; (ii)~the Mamba branch runs \emph{in parallel} with the attention branch rather than sequentially, so each branch specialises independently; (iii)~additive fusion replaced by a learned sigmoid gate over the concatenated branch outputs.
 
 \paragraph{Architecture.}
-The overall structure is illustrated in Figure~\ref{fig:maat_architecture}. The model receives an input window $x \in \mathbb{R}^{B \times W \times F}$ and projects it through the \texttt{DataEmbedding} module (pointwise linear projection + sinusoidal positional encoding + dropout). An $L$-layer encoder then processes the representation; each layer contains two parallel branches:
-\begin{itemize}
-    \item \textbf{Anomaly-attention branch}: computes a data-driven \emph{series association} $S$ via block-local sparse self-attention and a Gaussian-kernel \emph{prior association} $P$.
-    \item \textbf{Mamba branch}: a selective state-space model (SSM) providing linear-complexity long-range sequence mixing.
-\end{itemize}
-The outputs $H_{\text{mamba}}$ and $H_{\text{attn}}$ are fused by a learned sigmoid gate:
-\begin{equation}
-    G = \sigma\!\left(W_g[H_{\text{mamba}} \| H_{\text{attn}}]\right), \qquad
-    H_{\text{fused}} = G \odot H_{\text{mamba}} + (1-G) \odot H_{\text{attn}},
-\end{equation}
-where $[\cdot \| \cdot]$ denotes concatenation, $\odot$ element-wise multiplication, and $W_g$ a learned projection. A gate near 1 selects Mamba; near 0 selects attention. The fused representation passes through residual connections, Layer Normalisation, and a position-wise feed-forward network before the next layer.
+The encoder stack (Figure~\ref{fig:maat_architecture}) embeds each window via sinusoidal positional encoding, then passes it through $L$ layers each containing a sparse-attention branch (series association $S$ vs.\ Gaussian prior $P$) and a Mamba branch, fused by a sigmoid gate before a feed-forward sub-layer.
 
 \begin{figure}[H]
     \centering
@@ -234,26 +219,16 @@ where $[\cdot \| \cdot]$ denotes concatenation, $\odot$ element-wise multiplicat
 \end{figure}
 
 \paragraph{Training objective.}
-MAAT is trained with a minimax objective that combines reconstruction error with an association-discrepancy term. The Kullback–Leibler (KL) divergence $\mathrm{KL}(A \| B)$ measures how much distribution $A$ differs from $B$: a large value means the two distributions are very different. The objective is:
+Minimax reconstruction + association-discrepancy loss:
 \begin{equation}
-    \mathcal{L} = 2\mathcal{L}_{\text{rec}} + k\bigl[\mathrm{KL}(P \| S) - \mathrm{KL}(S \| P)\bigr],
+    \mathcal{L} = 2\mathcal{L}_{\text{rec}} + k\bigl[\mathrm{KL}(P \| S) - \mathrm{KL}(S \| P)\bigr].
 \end{equation}
-where $\mathcal{L}_{\text{rec}}$ is the per-window mean squared reconstruction error (how accurately the model reconstructs the input), $k$ controls the relative weight of the association term, and the two KL terms form a minimax objective: the prior association $P$ is pushed towards the series association $S$ while $S$ is simultaneously pushed away from $P$. On normal data this creates a characteristic divergence pattern; faults disrupt this pattern, making them detectable.
 
 \paragraph{Scoring function.}
-At inference time, the anomaly score for each time step $t$ combines reconstruction error with how much the temporal association pattern has deviated from the learned normal pattern. Let $\hat{x}_t$ be the model's reconstruction of input $x_t$. The association discrepancy at step $t$ is:
+Per-step score is discrepancy-weighted reconstruction error; window score is the per-step maximum:
 \begin{equation}
-    D_t = \mathrm{KL}(S \| P) + \mathrm{KL}(P \| S).
+    A_t = \mathrm{Softmax}(-T \cdot D_t) \cdot \|x_t - \hat{x}_t\|^2, \qquad D_t = \mathrm{KL}(S\|P)+\mathrm{KL}(P\|S).
 \end{equation}
-Steps with high discrepancy (unusual temporal patterns) receive higher weight. The weights are computed via a temperature-scaled softmax (which converts a vector of values into a probability distribution, amplified by temperature $T$):
-\begin{equation}
-    w_t = \mathrm{Softmax}(-T \cdot D_t),
-\end{equation}
-and the final per-step anomaly score is the discrepancy-weighted reconstruction error:
-\begin{equation}
-    A_t = w_t \cdot \|x_t - \hat{x}_t\|^2.
-\end{equation}
-The window-level score is the maximum of $A_t$ over all time steps in the window: a single highly anomalous time step is sufficient to flag the window.
 
 \paragraph{Hyperparameter search space and winning configuration.}
 The model is trained with AdamW and a warmup cosine learning-rate schedule. A two-stage HPO protocol is used: stage~1 tunes training dynamics (Table~\ref{tab:maat-s1}); stage~2 searches the architectural parameters (Table~\ref{tab:maat-s2}) but was disabled for this run, so the config defaults were used as the fixed architecture.
