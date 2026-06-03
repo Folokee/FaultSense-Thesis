@@ -11,23 +11,6 @@ The anomaly detection task is formulated as a semi-supervised learning problem: 
     \item Calibrate a decision threshold $\tau$ from held-out normal validation scores; flag samples with $s(x) \geq \tau$ as anomalous.
 \end{itemize}
 
-\subsection{Shared Experimental Infrastructure}\label{sec:ad-shared-infra}
-
-\paragraph{Splits and episode stratification.}
-All detectors use the splitting protocol of Section~\ref{sec:implementation-splitting}. The training partition contains only normal segments; all fault segments are held out. To obtain robust uncertainty estimates, hyperparameters are optimised \emph{once} on the original temporal holdout, then the winning configuration is retrained across $K=5$ episode-stratified folds (val+test pool partitioned per class). Train data is held fixed across folds; only val/test rotate. Every metric is reported as mean~$\pm$~std over the five folds.
-
-\paragraph{Deep-learning windowing.}
-DL detectors operate on fixed-length windows of size $W$ with stride $s$. A shared \texttt{TimeSeriesDataset} returns tensors of shape $[B, W, F]$ and respects segment boundaries: windows never cross continuity gaps, preventing implicit leakage.
-
-\paragraph{Threshold calibration.}
-Thresholds are calibrated exclusively on held-out normal validation scores using a Peaks-Over-Threshold (POT) Generalised Pareto Distribution (GPD) fit with quantile $q=0.90$, targeting a false-alarm rate of 5\% on normal data. When the tail fit is numerically unstable a quantile fallback (95th percentile of normal scores) is used.
-
-\paragraph{Evaluation metric.}
-Because the normal class dominates recordings ($\sim$97\%), binary PR-AUC is a misleading headline metric: a model that globally confuses fault classes can still report a high binary score. The primary metric is therefore \textbf{macro per-class PR-AUC}: for each fault class $c$, a one-vs-normal subset is formed by keeping only samples of class $c$ and the normal class; the area under the precision-recall curve (PR-AUC) is computed on that subset, giving a score that reflects how well the model separates that specific fault from normal operation. The macro per-class PR-AUC is the unweighted average of these four values. The worst-class PR-AUC (the minimum of the four) is also reported as a pessimistic safety bound. All three are threshold-free and computed at both the \emph{sample/window} level and the \emph{episode} level. The episode-level variant aggregates the per-sample scores within each fault episode to a single episode score (using the 95th percentile of scores within the episode), then computes PR-AUC over episode-level predictions; this is a more operationally relevant view because a detector only needs to fire once per fault event.
-
-\paragraph{Leakage validation.}
-After each fold, an automated leakage audit runs a \emph{label-shuffle test}: the test labels are randomly permuted and the PR-AUC is recomputed; if the model's performance collapses to approximately the positive class prevalence, this confirms that performance depends on true label structure and not on data-ordering artefacts. A fold is marked clean (\texttt{leakage\_is\_clean}~=~1) when this test passes.
-
 \subsection{Model Lineup}
 
 \subsubsection{Bayesian Online Change-Point Detection (BOCD)}
@@ -95,7 +78,7 @@ Shadowing     (cls~4) & 0.865 & 0.067 & 1000 \\
 Isolation Forest builds an ensemble of random partitioning trees. Anomalous points require fewer splits to be isolated and therefore have shorter average path lengths from the root.
 
 \paragraph{Scoring function.}
-Each isolation tree is built by recursively selecting a random feature and a random split threshold until a point is isolated in its own leaf. The \emph{path length} $h(x)$ is the number of splits needed to isolate sample $x$ in one tree. Anomalous points, being rare and far from the bulk of the data, are separated in very few splits; normal points, densely packed with similar neighbours, require many more. The raw anomaly score in the original formulation~\citep{liu2008isolation} is:
+Each isolation tree is built by recursively selecting a random feature and a random split threshold until a point is isolated in its own leaf. The \emph{path length} $h(x)$ is the number of splits needed to isolate sample $x$ in one tree. Anomalous points, being rare and far from the bulk of the data, are separated in very few splits; normal points, densely packed with similar neighbours, require many more. The raw anomaly score in the original formulation is:
 \begin{equation}
     s(x,\psi) = 2^{-\,\mathbb{E}[h(x)]\,/\,c(\psi)},
 \end{equation}
@@ -221,7 +204,7 @@ Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
 
-State-space models (SSMs) are a family of sequence models that represent temporal dynamics through a latent state updated at each time step. Mamba~\citep{gu2023mamba} extends the classical SSM formulation with \emph{selective} state spaces: the transition matrices become input-dependent, allowing the model to decide at each step how much past context to retain or discard. This selectivity, combined with a hardware-aware parallel scan algorithm, achieves linear-time sequence modeling while retaining long-range dependency capture.
+State-space models (SSMs) are a family of sequence models that represent temporal dynamics through a latent state updated at each time step. Mamba~\citep{gu2023mamba} (see Section~\ref{sec:bg-mamba} for background) extends the classical SSM formulation with \emph{selective} state spaces: the transition matrices become input-dependent, allowing the model to decide at each step how much past context to retain or discard. This selectivity, combined with a hardware-aware parallel scan algorithm, achieves linear-time sequence modeling while retaining long-range dependency capture.
 
 On the anomaly detection side, attention-based detectors model pairwise temporal associations between time steps. The Anomaly Transformer~\citep{xu2022anomaly} introduced the \emph{association discrepancy} principle: a learned series association $S$ (data-driven self-attention) is compared to a Gaussian prior association $P$ (which concentrates around adjacent time steps); normal samples produce associations close to the prior, while anomalies create a discrepancy. Sparse variants of self-attention restrict computation to local blocks, capturing intra-block patterns efficiently while reducing the quadratic complexity of full self-attention.
 

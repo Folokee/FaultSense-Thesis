@@ -276,7 +276,7 @@ C_t=f_tC_{t-1}+i_t\tilde{C}_t.
 
 LSTM networks are widely applied in PV fault diagnosis because they effectively capture temporal variations in voltage, current, irradiance, and temperature signals.
 
-\subparagraph{Mamba}
+\subparagraph{Mamba}\label{sec:bg-mamba}
 
 Mamba is a state-space model architecture for sequence modeling that achieves transformer-quality representations with linear complexity in sequence length \citep{gu2023mamba}. Unlike recurrent networks, which propagate state through fixed transition matrices, Mamba employs an input-dependent selection mechanism that enables the model to selectively retain or discard information along the sequence. This selective state-space formulation captures long-range dependencies while maintaining constant memory and compute per time step, making it attractive for deployment on edge hardware such as the Jetson Nano where quadratic attention complexity is prohibitive.
 
