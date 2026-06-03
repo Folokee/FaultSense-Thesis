@@ -126,7 +126,7 @@ Sklearn's \texttt{score\_samples} returns the negative normalised average path l
 \end{table}
 
 \paragraph{Results.}
-Tables~\ref{tab:iforest-results} and~\ref{tab:iforest-per-class} report the 5-fold evaluation. The binary PR-AUC (0.974) is deceptively high; the per-class breakdown in Table~\ref{tab:iforest-per-class} reveals near-random discrimination on Degradation (0.496) and Short-Circuit (0.818), validating the choice of macro per-class PR-AUC as headline metric.
+Tables~\ref{tab:iforest-results} and~\ref{tab:iforest-per-class} report the 5-fold evaluation.
 
 \begin{table}[H]
 \centering
@@ -186,7 +186,7 @@ The sole tuned parameter is \texttt{hazard\_lambda} (Table~\ref{tab:bocd-hpo}).
 \end{table}
 
 \paragraph{Results.}
-Tables~\ref{tab:bocd-results} and~\ref{tab:bocd-per-class} report the 5-fold evaluation. BOCD captures the dominant Shadowing class (0.865) but is near-random on the three minority classes, where the NIG prior is misspecified for short, high-energy transients.
+Tables~\ref{tab:bocd-results} and~\ref{tab:bocd-per-class} report the 5-fold evaluation.
 
 \begin{table}[H]
 \centering
