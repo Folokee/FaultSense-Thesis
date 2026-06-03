@@ -547,7 +547,7 @@ Having established PC-Flow as the winner, this section analyses the design choic
 
 \subsubsection{Profile Ablation: Why Raw Features Win}\label{sec:abl-profile}
 
-Three feature profiles were evaluated under identical normalizing-flow architecture and HPO (Table~\ref{tab:pcflow-profile-abl}):
+Three feature profiles were evaluated under the same HPO budget; the Params column reflects the architecture independently selected by HPO for each profile (Table~\ref{tab:pcflow-profile-abl}). Because model capacity scales with $\textit{hidden\_dim}^2$, HPO converging to $\textit{hidden\_dim}=32$ for \texttt{plus\_physics} vs.\ $\textit{hidden\_dim}=64$ for \texttt{baseline\_raw} explains why the 15-feature model has fewer parameters than the 7-feature model.
 
 \begin{table}[H]
 \centering
