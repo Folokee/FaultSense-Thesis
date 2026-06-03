@@ -236,7 +236,7 @@ Per-step score is discrepancy-weighted reconstruction error; window score is the
 \end{equation}
 
 \paragraph{Hyperparameter search space and winning configuration.}
-The model is trained with AdamW and a warmup cosine learning-rate schedule. A two-stage HPO protocol is used: stage~1 tunes training dynamics (Table~\ref{tab:maat-s1}); stage~2 searches the architectural parameters (Table~\ref{tab:maat-s2}) but was disabled for this run, so the config defaults were used as the fixed architecture.
+The model is trained with AdamW and a warmup cosine learning-rate schedule. A two-stage HPO protocol is used: stage~1 tunes training dynamics (Table~\ref{tab:maat-s1}); stage~2 searches the architectural parameters (Table~\ref{tab:maat-s2}).
 
 \begin{table}[H]
 \centering
@@ -274,7 +274,36 @@ The model is trained with AdamW and a warmup cosine learning-rate schedule. A tw
 \end{table}
 
 \paragraph{Results.}
-\textit{MAAT k-fold results will be inserted once the corrected rerun completes.}
+Tables~\ref{tab:maat-results} and~\ref{tab:maat-per-class} report the 5-fold evaluation.
+
+\begin{table}[H]
+\centering
+\caption{MAAT evaluation results.\label{tab:maat-results}}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
+\midrule
+Macro per-class PR-AUC & 0.924 & 0.083 & sample \\
+Worst-class PR-AUC     & 0.753 & 0.268 & sample \\
+Binary PR-AUC          & 0.982 & 0.017 & sample \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{MAAT per-fault-class PR-AUC.\label{tab:maat-per-class}}
+\begin{tabular}{lccr}
+\toprule
+\textbf{Fault class} & \textbf{PR-AUC} & \textbf{Std} & \textbf{Episodes} \\
+\midrule
+Short-Circuit (cls~1) & 0.994 & 0.013 & 15 \\
+Degradation   (cls~2) & 0.753 & 0.268 & 19 \\
+Open-Circuit  (cls~3) & 1.000 & 0.000 & 23 \\
+Shadowing     (cls~4) & 0.981 & 0.018 & 1000 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{GTBAD: Gated Transformer-BiLSTM Anomaly Detector}\label{sec:ad-gtbad}
@@ -466,7 +495,7 @@ Before comparing models, Table~\ref{tab:leakage-audit} confirms that every fold 
 BOCD             & $0.644 \pm 0.128$ & \checkmark \\
 Isolation Forest & $0.644 \pm 0.128$ & \checkmark \\
 OC-SVM           & $0.644 \pm 0.128$ & \checkmark \\
-MAAT             & \textit{(rerunning)} & \checkmark \\
+MAAT             & $0.640 \pm 0.133$ & \checkmark \\
 GTBAD            & n/a (single run)  & \checkmark \\
 PC-Flow (raw)    & $0.628 \pm 0.073$ & \checkmark \\
 \bottomrule
@@ -489,7 +518,7 @@ Table~\ref{tab:ad-tournament} summarises all detectors on the primary threshold-
 BOCD             & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4F$ NIG params$^{\dag}$ \\
 Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees $\times$ 1024 \\
 OC-SVM           & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280 SVs \\
-MAAT             & \multicolumn{3}{c}{\textit{(rerunning)}} & $\approx$340k \\
+MAAT             & 0.924~$\pm$~0.083 & 0.753~$\pm$~0.268 & 0.982~$\pm$~0.017 & 184\,213 params \\
 GTBAD            & 0.9963$^{\ddag}$  & 0.9879$^{\ddag}$  & $0.9979\pm0.0007$ & 869\,769 params \\
 \textbf{PC-Flow (raw)} & \textbf{0.990~$\pm$~0.005} & \textbf{0.962~$\pm$~0.021} & 0.972~$\pm$~0.013 & 20\,124 params \\
 \bottomrule
