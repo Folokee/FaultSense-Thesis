@@ -221,14 +221,15 @@ Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
 
-The implemented model is a variant of the MAAT architecture proposed by \citet{sellam2025maat}. The core design is preserved: the \texttt{DataEmbedding} block (linear token projection + sinusoidal positional encoding + dropout), the series and prior association mechanisms, the minimax training objective, and the association-discrepancy anomaly score. Two structural modifications were introduced:
+The implemented model is a variant of the MAAT architecture proposed by \citet{sellam2025maat}. The core design is preserved: the sinusoidal positional encoding, the series and prior association mechanisms, the minimax training objective, and the association-discrepancy anomaly score. Three modifications were introduced:
 \begin{itemize}
-    \item \textbf{Parallel branch structure}: in the original, the Mamba-SSM is applied \emph{after} the attention layer as a sequential skip connection ($\text{Mamba}(x) + x$). In our variant, the Mamba branch runs \emph{in parallel} with the anomaly-attention branch at every encoder layer, so both receive the same input representation independently.
-    \item \textbf{Gating}: the additive skip-connection fusion of the original is replaced by a learned sigmoid gate on the concatenated branch outputs, giving the model explicit per-position control over which temporal modelling strategy to emphasise.
+    \item \textbf{Token embedding}: the original \texttt{TokenEmbedding} uses a \texttt{Conv1d} with kernel size 3 and \texttt{padding\_mode=`circular'}, which wraps the end of the sequence back to the beginning. Circular padding leaks future context into the first timestep and past context into the last, violating temporal ordering. This was replaced by a pointwise \texttt{nn.Linear} projection, which embeds each timestep independently with no cross-temporal mixing at the embedding stage.
+    \item \textbf{Parallel branch structure}: in the original, Mamba is applied \emph{after} the attention layer as a sequential skip connection ($\text{Mamba}(x) + x$). In our variant, the Mamba branch runs \emph{in parallel} with the anomaly-attention branch at every encoder layer, so both receive the same input independently.
+    \item \textbf{Gating}: the additive skip-connection fusion is replaced by a learned sigmoid gate on the concatenated branch outputs, giving the model per-position control over which temporal modelling strategy to emphasise.
 \end{itemize}
 
 \paragraph{Architecture.}
-The overall structure is illustrated in Figure~\ref{fig:maat_architecture}. The model receives an input window $x \in \mathbb{R}^{B \times W \times F}$ and projects it through the \texttt{DataEmbedding} module. An $L$-layer encoder then processes the representation; each layer contains two parallel branches:
+The overall structure is illustrated in Figure~\ref{fig:maat_architecture}. The model receives an input window $x \in \mathbb{R}^{B \times W \times F}$ and projects it through the \texttt{DataEmbedding} module (pointwise linear projection + sinusoidal positional encoding + dropout). An $L$-layer encoder then processes the representation; each layer contains two parallel branches:
 \begin{itemize}
     \item \textbf{Anomaly-attention branch}: computes a data-driven \emph{series association} $S$ via block-local sparse self-attention and a Gaussian-kernel \emph{prior association} $P$.
     \item \textbf{Mamba branch}: a selective state-space model (SSM) providing linear-complexity long-range sequence mixing.
