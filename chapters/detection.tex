@@ -359,7 +359,7 @@ The model is trained on normal-only data by minimising the mean squared reconstr
 where $\hat{x}$ is the reconstructed output. A high reconstruction error indicates that the input deviates from the normal manifold learned during training.
 
 \paragraph{Hyperparameter search space.}
-The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations per candidate. Table~\ref{tab:gtbad-hpo} reports the search space; winning values are determined by GVSAO and not logged separately.
+The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations per candidate. Table~\ref{tab:gtbad-hpo} reports the search space.
 \begin{table}[H]
 \centering
 \caption{GTBAD hyperparameter search space.\label{tab:gtbad-hpo}}
