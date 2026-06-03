@@ -323,7 +323,7 @@ GTBAD is a reconstruction-based deep anomaly detector that combines a Transforme
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{figures/detection/gtbad-arch.png}
-    \caption{GTBAD architecture.\label{fig:gtbad_architecture}}
+    \caption{GTBAD architecture~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}.\label{fig:gtbad_architecture}}
 \end{figure}
 
 The fixed architecture parameters are given in Table~\ref{tab:gtbad-arch}. An input projection maps each feature vector to $d_{\text{model}}$; sinusoidal positional encodings are added; the Transformer encoder captures cross-feature dependencies; the BiLSTM decoder produces a contextual representation; and a final linear layer reconstructs the original feature space.
