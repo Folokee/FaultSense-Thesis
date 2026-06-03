@@ -318,7 +318,7 @@ The model is trained with AdamW and a warmup cosine learning-rate schedule. A tw
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{GTBAD: Gated Transformer-BiLSTM Anomaly Detector}\label{sec:ad-gtbad}
 
-GTBAD is a reconstruction-based deep anomaly detector that combines a Transformer encoder with a bidirectional LSTM (BiLSTM) decoder. With window size set to 1, each time step is processed independently as a feature vector; the model learns to reconstruct normal operating patterns and flags anomalies through reconstruction error. The architecture is shown in Figure~\ref{fig:gtbad_architecture}.
+GTBAD~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026} is a reconstruction-based deep anomaly detector that combines a Transformer encoder with a bidirectional LSTM (BiLSTM) decoder. With window size set to 1, each time step is processed independently as a feature vector; the model learns to reconstruct normal operating patterns and flags anomalies through reconstruction error. The architecture is shown in Figure~\ref{fig:gtbad_architecture}.
 
 \begin{figure}[H]
     \centering
