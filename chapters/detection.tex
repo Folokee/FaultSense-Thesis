@@ -313,10 +313,10 @@ Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Op
 \caption{GTBAD hyperparameter search space.\label{tab:gtbad-hpo}}
 \begin{tabular}{llll}
 \toprule
-\textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Generations} \
+\textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Generations} \\
 \midrule
-\texttt{learning\_rate} & log-uniform & --- & \multirow{2}{*}{5} \
-\texttt{batch\_size}    & integer     & --- & \
+\texttt{learning\_rate} & log-uniform & --- & \multirow{2}{*}{5} \\
+\texttt{batch\_size}    & integer     & --- & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -329,11 +329,11 @@ GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad
 \caption{GTBAD evaluation results.\label{tab:gtbad-results}}
 \begin{tabular}{lcc}
 \toprule
-\textbf{Metric} & \textbf{Value} & \textbf{Level} \
+\textbf{Metric} & \textbf{Value} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.9963          & sample \
-Worst-class PR-AUC     & 0.9879          & sample \
-Binary PR-AUC          & $0.9979\pm0.0007$ & sample (5-fold) \
+Macro per-class PR-AUC & 0.9963            & sample \\
+Worst-class PR-AUC     & 0.9879            & sample \\
+Binary PR-AUC          & $0.9979\pm0.0007$ & sample (5-fold) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -343,12 +343,12 @@ Binary PR-AUC          & $0.9979\pm0.0007$ & sample (5-fold) \
 \caption{GTBAD per-fault-class PR-AUC.\label{tab:gtbad-per-class}}
 \begin{tabular}{lcr}
 \toprule
-\textbf{Fault class} & \textbf{PR-AUC} & \textbf{Support} \
+\textbf{Fault class} & \textbf{PR-AUC} & \textbf{Support} \\
 \midrule
-Short-Circuit (cls~1) & 0.9999 & 5\,999 \
-Degradation   (cls~2) & 0.9879 & 10\,371 \
-Open-Circuit  (cls~3) & 1.0000 & 6\,024 \
-Shadowing     (cls~4) & 0.9974 & 184\,311 \
+Short-Circuit (cls~1) & 0.9999 & 5\,999 \\
+Degradation   (cls~2) & 0.9879 & 10\,371 \\
+Open-Circuit  (cls~3) & 1.0000 & 6\,024 \\
+Shadowing     (cls~4) & 0.9974 & 184\,311 \\
 \bottomrule
 \end{tabular}
 \end{table}
