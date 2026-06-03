@@ -64,7 +64,7 @@ Fitted on the 40\,000-sample subsample, the model retains 1\,280 support vectors
 
 \begin{table}[H]
 \centering
-\caption{OC-SVM 5-fold results (sample level, mean~$\pm$~std).\label{tab:ocsvm-results}}
+\caption{OC-SVM 5-fold results (mean~$\pm$~std).\label{tab:ocsvm-results}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
@@ -72,9 +72,9 @@ Fitted on the 40\,000-sample subsample, the model retains 1\,280 support vectors
 Macro per-class PR-AUC & 0.965 & 0.019 & sample \\
 Worst-class PR-AUC     & 0.883 & 0.073 & sample \\
 Binary PR-AUC          & 0.987 & 0.010 & sample \\
-Macro per-class PR-AUC & 0.815 & ---   & episode \\
+Macro per-class PR-AUC & 0.815 & 0.070 & episode \\
 \midrule
-Leakage (label-shuffle PR-AUC) & 0.644 & --- & --- \\
+Leakage (label-shuffle PR-AUC) & 0.644 & 0.000 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -86,10 +86,10 @@ Leakage (label-shuffle PR-AUC) & 0.644 & --- & --- \\
 \toprule
 \textbf{Fault class} & \textbf{PR-AUC (mean)} & \textbf{Std} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.992 & ---   & 15 \\
-Degradation   (cls~2) & 0.884 & ---   & 19 \\
+Short-Circuit (cls~1) & 0.992 & 0.009 & 15 \\
+Degradation   (cls~2) & 0.884 & 0.074 & 19 \\
 Open-Circuit  (cls~3) & 1.000 & 0.000 & 23 \\
-Shadowing     (cls~4) & 0.983 & ---   & 1000 \\
+Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,24 +134,24 @@ The sklearn \texttt{score\_samples} method returns the raw anomaly score: negati
 Macro per-class PR-AUC & 0.822 & 0.098 & sample \\
 Worst-class PR-AUC     & 0.496 & 0.185 & sample \\
 Binary PR-AUC          & 0.974 & 0.028 & sample \\
-Macro per-class PR-AUC & 0.656 & ---   & episode \\
+Macro per-class PR-AUC & 0.656 & 0.044 & episode \\
 \midrule
-Leakage (label-shuffle PR-AUC) & 0.644 & --- & --- \\
+Leakage (label-shuffle PR-AUC) & 0.644 & 0.128 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[H]
 \centering
-\caption{Isolation Forest per-fault-class PR-AUC vs normal (mean, 5 folds).\label{tab:iforest-per-class}}
-\begin{tabular}{lcr}
+\caption{Isolation Forest per-fault-class PR-AUC vs normal (mean~$\pm$~std, 5 folds).\label{tab:iforest-per-class}}
+\begin{tabular}{lccr}
 \toprule
-\textbf{Fault class} & \textbf{PR-AUC (mean)} & \textbf{Episodes} \\
+\textbf{Fault class} & \textbf{PR-AUC (mean)} & \textbf{Std} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.818 & 15 \\
-Degradation   (cls~2) & 0.496 & 19 \\
-Open-Circuit  (cls~3) & 1.000 & 23 \\
-Shadowing     (cls~4) & 0.972 & 1000 \\
+Short-Circuit (cls~1) & 0.818 & 0.222 & 15 \\
+Degradation   (cls~2) & 0.496 & 0.185 & 19 \\
+Open-Circuit  (cls~3) & 1.000 & 0.000 & 23 \\
+Shadowing     (cls~4) & 0.972 & 0.029 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -196,24 +196,24 @@ where $R_t(r) = P(\text{run length} = r \text{ at time } t)$ is the run-length p
 Macro per-class PR-AUC & 0.401 & 0.070 & sample \\
 Worst-class PR-AUC     & 0.095 & 0.024 & sample \\
 Binary PR-AUC          & 0.870 & 0.068 & sample \\
-Macro per-class PR-AUC & 0.411 & ---   & episode \\
+Macro per-class PR-AUC & 0.411 & 0.070 & episode \\
 \midrule
-Leakage (label-shuffle PR-AUC) & 0.644 & --- & --- \\
+Leakage (label-shuffle PR-AUC) & 0.644 & 0.128 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[H]
 \centering
-\caption{BOCD per-fault-class PR-AUC vs normal (mean, 5 folds).\label{tab:bocd-per-class}}
-\begin{tabular}{lcr}
+\caption{BOCD per-fault-class PR-AUC vs normal (mean~$\pm$~std, 5 folds).\label{tab:bocd-per-class}}
+\begin{tabular}{lccr}
 \toprule
-\textbf{Fault class} & \textbf{PR-AUC (mean)} & \textbf{Episodes} \\
+\textbf{Fault class} & \textbf{PR-AUC (mean)} & \textbf{Std} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.130 & 15 \\
-Degradation   (cls~2) & 0.121 & 19 \\
-Open-Circuit  (cls~3) & 0.489 & 23 \\
-Shadowing     (cls~4) & 0.865 & 1000 \\
+Short-Circuit (cls~1) & 0.130 & 0.050 & 15 \\
+Degradation   (cls~2) & 0.121 & 0.050 & 19 \\
+Open-Circuit  (cls~3) & 0.489 & 0.191 & 23 \\
+Shadowing     (cls~4) & 0.865 & 0.067 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -342,9 +342,9 @@ The anomaly score is the negative log-likelihood: $s(x) = -\log p(x;\theta)$. Un
 Macro per-class PR-AUC & 0.990 & 0.005 & window \\
 Worst-class PR-AUC     & 0.962 & 0.021 & window \\
 Binary PR-AUC          & 0.972 & 0.013 & window \\
-Macro per-class PR-AUC & 0.960 & ---   & episode \\
+Macro per-class PR-AUC & 0.960 & 0.003 & episode \\
 \midrule
-Leakage (label-shuffle PR-AUC) & 0.628 & --- & --- \\
+Leakage (label-shuffle PR-AUC) & 0.628 & 0.073 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -357,7 +357,7 @@ Leakage (label-shuffle PR-AUC) & 0.628 & --- & --- \\
 \textbf{Fault class} & \textbf{PR-AUC (mean)} & \textbf{Std} & \textbf{Episodes} \\
 \midrule
 Short-Circuit (cls~1) & 1.000 & 0.000 & 15 \\
-Degradation   (cls~2) & 0.998 & ---   & 19 \\
+Degradation   (cls~2) & 0.998 & 0.004 & 19 \\
 Open-Circuit  (cls~3) & 1.000 & 0.000 & 23 \\
 Shadowing     (cls~4) & 0.962 & 0.021 & 1000 \\
 \bottomrule

@@ -261,12 +261,14 @@ After sigmoid calibration, the deployed model produces well-calibrated probabili
 \textbf{Metric} & \textbf{Uncalibrated} & \textbf{Calibrated (sigmoid)} \\
 \midrule
 Log-loss                     & 0.063 & \textbf{0.059} \\
-Brier score (multiclass)     & ---   & \textbf{0.008} \\
+Brier score (multiclass)     & n/a$^{\dag}$ & \textbf{0.008} \\
 ECE                          & 0.010 & 0.019 \\
 Macro F1                     & 0.955 & 0.874 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+$^{\dag}$~Brier score was not computed for the uncalibrated output; it is reported for the calibrated model only.
 
 Calibration reduces log-loss (0.063 → 0.059) and yields a Brier score of 0.008, confirming well-calibrated probabilities. The ECE increase (0.010 → 0.019) reflects a small recalibration cost on the test set; the MCE (0.754) captures a tail bin effect in the high-confidence region. Reliability and confidence histogram plots are included in Appendix~\ref{app:calibration}.
 
