@@ -380,10 +380,12 @@ Table~\ref{tab:ad-tournament} summarises all detectors on the primary threshold-
 OC-SVM       & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280~SVs \\
 MAAT         & \multicolumn{3}{c}{\textit{(rerunning — to be inserted)}} & $\approx$\,340k \\
 Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees $\times$ 1024 samples \\
-BOCD         & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4 \times F$ NIG params\tablefootnote{BOCD stores 4 Normal-Inverse-Gamma hyperparameters per feature $F$; the model is nearly non-parametric.} \\
+BOCD         & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4 \times F$ NIG params$^{\dag}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+$^{\dag}$~BOCD stores 4 Normal-Inverse-Gamma hyperparameters per feature $F$; the model is nearly non-parametric.
 
 A salient finding is the gap between binary PR-AUC and macro per-class PR-AUC: Isolation Forest scores 0.974 binary but only 0.822 per-class, and BOCD 0.870 vs 0.401. Both models capture the dominant Shadowing class reasonably well but fail almost entirely on the minority fault types. The macro per-class metric exposes this weakness; a headline based on binary PR-AUC would have masked it.
 
