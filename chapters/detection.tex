@@ -32,7 +32,7 @@ After each fold, an automated leakage audit runs a \emph{label-shuffle test}: th
 
 \subsection{One-Class Support Vector Machine (OC-SVM)}
 
-OC-SVM maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored separately: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$ and a cubic polynomial kernel. The RBF kernel is used for all reported results.
+OC-SVM maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored separately: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$ and a cubic polynomial kernel.
 
 \paragraph{Training subsample.}
 The full normal training set contains 183\,801 samples. Because fitting a kernel SVM scales cubically with the number of support points, a group-stratified temporal subsample of 40\,000 samples is drawn before fitting, preserving episode diversity. Evaluation is performed on the complete val and test partitions.
@@ -52,8 +52,9 @@ so that points outside the normal boundary score high.
 \toprule
 \textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Trials} \\
 \midrule
-\texttt{nu}    & $[0.03,\,0.10]$ log-uniform & 0.0308 & \multirow{2}{*}{35} \\
-\texttt{gamma} & $[0.01,\,0.08]$ log-uniform & 0.0751 & \\
+kernel         & $\{\text{RBF},\,\text{poly}\}$  & RBF                 & \multirow{3}{*}{35} \\
+\texttt{nu}    & $[0.03,\,0.10]$ log-uniform     & 0.0308              & \\
+\texttt{gamma} & $[0.01,\,0.08]$ log-uniform     & 0.0751              & \\
 \bottomrule
 \end{tabular}
 \end{table}
