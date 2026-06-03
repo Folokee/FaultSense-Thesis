@@ -82,11 +82,11 @@ As previously described in Subsection~\ref{subsec:svm}, SVM is mainly a supervis
 but the One-Class SVM (OC-SVM) variant is designed for semi-supervised anomaly detection by identifying the smallest hyperplane
 that encloses the normal data in the feature space.
 Two kernel functions were explored: RBF and polynomial.
-\paragraph{} Optuna was used for hyperparameter optimization with 35 trials and Macro F1 as the objective metric, tuning the kernel-specific parameters. Table~\ref{tab:ocsvm-hpo} defines the search space for each kernel.
+\paragraph{} Optuna was used for hyperparameter optimization with 35 trials and Macro F1 as the objective metric, tuning the kernel-specific parameters. Table~\ref{impl:tab:ocsvm-hpo} defines the search space for each kernel.
 
 \begin{table}[H]
 \centering
-\caption{OC-SVM hyperparameter search space grouped by kernel.\label{tab:ocsvm-hpo}}
+\caption{OC-SVM hyperparameter search space grouped by kernel.\label{impl:tab:ocsvm-hpo}}
 \begin{tabular}{llc}
 \toprule
 \textbf{Kernel} & \textbf{Parameter} & \textbf{Range} \\
@@ -105,11 +105,11 @@ Polynomial & \texttt{degree} & fixed: 3 \\
 \paragraph{Results}
 On the test set, OC-SVM achieves a PR-AUC of 0.9977. Using the operating threshold calibrated on validation normal scores with the shared POT policy and a GPD tail fit, the final threshold is $\tau=4.7243$, yielding precision~=~0.9966, recall~=~0.8824, and F1~=~0.9360.
 
-Table~\ref{tab:ocsvm-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
+Table~\ref{impl:tab:ocsvm-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
 
 \begin{table}[H]
 \centering
-\caption{OC-SVM per-class test metrics.\label{tab:ocsvm-per-class}}
+\caption{OC-SVM per-class test metrics.\label{impl:tab:ocsvm-per-class}}
 \begin{tabular}{ccrrrr}
 \toprule
 \textbf{Fault class} & \textbf{Number of Samples} & \textbf{PR-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
@@ -129,11 +129,11 @@ Shadowing & 30973 & 0.9972 & 0.9961 & 0.8688 & 0.9281 \\
 
 As previously discussed in Subsection~\ref{subsec:iforest}, Isolation Forest is an ensemble anomaly detection method that isolates anomalies by recursively partitioning the data with random splits. Anomalous points require fewer splits to be isolated, resulting in a shorter average path length from the root to the terminating leaf in the ensemble of random partitioning trees.
 
-\paragraph{} Hyperparameter optimization is conducted with Optuna using the TPE sampler over 35 trials, maximizing \texttt{macro\_per\_class\_pr\_auc} on the validation set. Table~\ref{tab:iforest-hpo} defines the search space.
+\paragraph{} Hyperparameter optimization is conducted with Optuna using the TPE sampler over 35 trials, maximizing \texttt{macro\_per\_class\_pr\_auc} on the validation set. Table~\ref{impl:tab:iforest-hpo} defines the search space.
 
 \begin{table}[H]
 \centering
-\caption{Isolation Forest hyperparameter search space.\label{tab:iforest-hpo}}
+\caption{Isolation Forest hyperparameter search space.\label{impl:tab:iforest-hpo}}
 \begin{tabular}{cc}
 \toprule
 \textbf{Parameter} & \textbf{Range} \\
@@ -154,11 +154,11 @@ The operating threshold is calibrated on normal-only validation scores using the
 \paragraph{Results}
 On the test set, Isolation Forest achieves a PR-AUC of 0.9897. Using the operating threshold calibrated on validation normal scores with the shared POT policy and a GPD tail fit, the final threshold is $\tau=0.5617$, yielding precision~=~0.9925, recall~=~0.7923, and F1~=~0.8812.
 
-Table~\ref{tab:iforest-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
+Table~\ref{impl:tab:iforest-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
 
 \begin{table}[H]
 \centering
-\caption{Isolation Forest per-class test metrics.\label{tab:iforest-per-class}}
+\caption{Isolation Forest per-class test metrics.\label{impl:tab:iforest-per-class}}
 \begin{tabular}{ccrrrr}
 \toprule
 \textbf{Fault class} & \textbf{Number of Samples} & \textbf{PR-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
@@ -190,7 +190,7 @@ The Bayesian Online Change Point Detection (BOCD) detector models each feature i
 
 \begin{table}[H]
 \centering
-\caption{BOCD hyperparameter search space.\label{tab:bocd-hpo}}
+\caption{BOCD hyperparameter search space.\label{impl:tab:bocd-hpo}}
 \begin{tabular}{p{3.5cm}p{4.3cm}p{6.0cm}}
 \toprule
 \textbf{Parameter} & \textbf{Range} & \textbf{Meaning} \\
@@ -206,11 +206,11 @@ The Bayesian Online Change Point Detection (BOCD) detector models each feature i
 
 On the test set, BOCD achieves a PR-AUC of 0.8221. Using the operating threshold selected on the validation PR curve to maximize F1, the final threshold is $\tau=-4.9190$, yielding precision~=~0.6901, recall~=~0.9010, and F1~=~0.7816.
 
-Table~\ref{tab:bocd-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
+Table~\ref{impl:tab:bocd-per-class} reports per-fault-class metrics by treating each fault class as positive against the normal class, computed at the same calibrated threshold $\tau$.
 
 \begin{table}[H]
 \centering
-\caption{BOCD per-class test metrics.\label{tab:bocd-per-class}}
+\caption{BOCD per-class test metrics.\label{impl:tab:bocd-per-class}}
 \begin{tabular}{ccrrrr}
 \toprule
 \textbf{Fault class} & \textbf{Number of Samples} & \textbf{PR-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
@@ -226,14 +226,14 @@ Shadowing     & 77058 & 0.8110 & 0.6698 & 0.9027 & 0.7690 \\
 % \subsection{Novel Approaches}
 In this section, we present novel model architectures developed for this exact task, these approaches are based on deep learning and explore complementary features from classical appraches, as well as from the literature. 
 \subsubsection{Mamba Adaptive Anomaly Transformer (MAAT)}
-The Mamba Adaptive Anomaly Transformer (MAAT) is a semi‑supervised anomaly detector for multivariate PV time series that jointly considers reconstruction fidelity and temporal association consistency. The architecture, shown in Fig.~\ref{fig:maat_architecture}, embeds an input window into a model‑dimension representation using a linear projection, sinusoidal positional encoding, and dropout. An encoder of $L$ stacked layers processes the sequence, each layer containing two parallel branches: a sparse anomaly‑attention branch that learns block‑local temporal associations (series association) alongside a fixed Gaussian prior, and a Mamba state‑space branch that models long‑range dependencies with linear complexity. Their outputs are fused via a learned sigmoid gate, followed by a feed‑forward network. A final linear projection reconstructs the input.
+The Mamba Adaptive Anomaly Transformer (MAAT) is a semi‑supervised anomaly detector for multivariate PV time series that jointly considers reconstruction fidelity and temporal association consistency. The architecture, shown in Fig.~\ref{impl:fig:maat_architecture}, embeds an input window into a model‑dimension representation using a linear projection, sinusoidal positional encoding, and dropout. An encoder of $L$ stacked layers processes the sequence, each layer containing two parallel branches: a sparse anomaly‑attention branch that learns block‑local temporal associations (series association) alongside a fixed Gaussian prior, and a Mamba state‑space branch that models long‑range dependencies with linear complexity. Their outputs are fused via a learned sigmoid gate, followed by a feed‑forward network. A final linear projection reconstructs the input.
 
 MAAT is trained with a minimax loss that balances the reconstruction mean squared error against a signed Kullback–Leibler divergence between the learned and prior associations, forcing the series association to deviate from local continuity on normal data. At inference, anomaly scores combine the association discrepancy and reconstruction error through temperature‑weighted summation; the window‑level score is the maximum over time, ensuring that anomalies are flagged only when both temporal dynamics and reconstruction quality break down.
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/detection/maat-architecture.png}
     \caption{Overall architecture of the proposed MAAT model combining sparse anomaly attention and Mamba state-space modeling.}
-    \label{fig:maat_architecture}
+    \label{impl:fig:maat_architecture}
 \end{figure}
 
 
@@ -306,11 +306,11 @@ where $\mathbf{z} = f(\mathbf{x}; \mathbf{c})$ is the latent representation unde
 
 \paragraph{PC-Flow Results}
 
-Table~\ref{tab:pcflow-results} reports the 5-fold episode-stratified cross-validation evaluation of PC-Flow on the Costa dataset. Values are reported as mean $\pm$ standard deviation across folds.
+Table~\ref{impl:tab:pcflow-results} reports the 5-fold episode-stratified cross-validation evaluation of PC-Flow on the Costa dataset. Values are reported as mean $\pm$ standard deviation across folds.
 
 \begin{table}[H]
 \centering
-\caption{PC-Flow anomaly detection results on Costa (5-fold episode-stratified CV, GPD threshold).\label{tab:pcflow-results}}
+\caption{PC-Flow anomaly detection results on Costa (5-fold episode-stratified CV, GPD threshold).\label{impl:tab:pcflow-results}}
 \begin{tabular}{lc}
 \toprule
 \textbf{Metric} & \textbf{Mean $\pm$ std} \\

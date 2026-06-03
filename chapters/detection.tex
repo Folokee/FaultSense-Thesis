@@ -299,7 +299,7 @@ PC-Flow is a physics-conditioned normalizing flow: a family of generative models
 where $p_Z$ is a simple base distribution (here a standard Gaussian) whose density is easy to evaluate, and the second term (the log absolute determinant of the Jacobian matrix of partial derivatives) corrects for how the transformation stretches or compresses volume in different regions. This means a normalizing flow \textbf{simultaneously learns a latent representation and yields a tractable, exact likelihood} — the "best of both worlds" property: the model learns its own compact internal representation of normal PV operation without requiring manually engineered features beyond the raw signals.
 
 \paragraph{Architecture.}
-The flow consists of $L$ affine coupling layers (RealNVP style). Each layer splits the input, applies a scale-and-shift network conditioned on the first partition, and uses the inverse for tractable likelihood. The physics conditioning enters through an irradiance and temperature context vector appended to the coupling network inputs, allowing the model to factor out the operating-point effect on the measured signals.
+The flow consists of $L$ affine coupling layers~\citep{dinh2017realnvp}. Each layer splits the input, applies a scale-and-shift network conditioned on the first partition, and uses the inverse for tractable likelihood. The physics conditioning enters through an irradiance and temperature context vector appended to the coupling network inputs, allowing the model to factor out the operating-point effect on the measured signals.
 
 \paragraph{Training objective.}
 The model is trained by maximising the average negative log-likelihood (NLL) on normal training windows:
