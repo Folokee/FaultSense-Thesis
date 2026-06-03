@@ -26,22 +26,7 @@ Thresholds are calibrated exclusively on held-out normal validation scores using
 Because the normal class dominates recordings ($\sim$97\%), binary PR-AUC is a misleading headline metric: a model that globally confuses fault classes can still report a high binary score. The primary metric is therefore \textbf{macro per-class PR-AUC}: for each fault class $c$, a one-vs-normal subset is formed by keeping only samples of class $c$ and the normal class; the area under the precision-recall curve (PR-AUC) is computed on that subset, giving a score that reflects how well the model separates that specific fault from normal operation. The macro per-class PR-AUC is the unweighted average of these four values. The worst-class PR-AUC (the minimum of the four) is also reported as a pessimistic safety bound. All three are threshold-free and computed at both the \emph{sample/window} level and the \emph{episode} level. The episode-level variant aggregates the per-sample scores within each fault episode to a single episode score (using the 95th percentile of scores within the episode), then computes PR-AUC over episode-level predictions; this is a more operationally relevant view because a detector only needs to fire once per fault event.
 
 \paragraph{Leakage validation.}
-After each fold, an automated leakage audit runs a \emph{label-shuffle test}: the test labels are randomly permuted and the PR-AUC is recomputed; if the model's performance collapses to approximately the positive class prevalence, this confirms that performance depends on true label structure and not on data-ordering artefacts. A fold is marked clean (\texttt{leakage\_is\_clean}~=~1) when this test passes. Table~\ref{tab:leakage-audit} reports the results across all Task~A models; every fold of every model passes.
-
-\begin{table}[H]
-\centering
-\caption{Task~A leakage audit.\label{tab:leakage-audit}}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Model} & \textbf{Shuffle PR-AUC (mean~$\pm$~std)} & \textbf{All folds clean} \\
-\midrule
-OC-SVM           & $0.644 \pm 0.128$ & \checkmark \\
-Isolation Forest & $0.644 \pm 0.128$ & \checkmark \\
-BOCD             & $0.644 \pm 0.128$ & \checkmark \\
-PC-Flow (raw)    & $0.628 \pm 0.073$ & \checkmark \\
-\bottomrule
-\end{tabular}
-\end{table}
+After each fold, an automated leakage audit runs a \emph{label-shuffle test}: the test labels are randomly permuted and the PR-AUC is recomputed; if the model's performance collapses to approximately the positive class prevalence, this confirms that performance depends on true label structure and not on data-ordering artefacts. A fold is marked clean (\texttt{leakage\_is\_clean}~=~1) when this test passes.
 
 \section{Model Lineup}
 
@@ -371,6 +356,26 @@ Shadowing     (cls~4) & 0.962 & 0.021 & 1000 \\
 \end{tabular}
 \end{table}
 
+
+% ────────────────────────────────────────────────────────────────────────────
+\section{Leakage Audit}\label{sec:ad-leakage}
+
+Before comparing models, Table~\ref{tab:leakage-audit} confirms that every fold of every model passes the label-shuffle test described in Section~\ref{sec:ad-shared-infra}. The shuffle PR-AUC values are consistent with the positive class prevalence ($\sim$0.64), providing evidence that no data-ordering artefact is inflating any model's scores.
+
+\begin{table}[H]
+\centering
+\caption{Task~A leakage audit.\label{tab:leakage-audit}}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{Shuffle PR-AUC (mean~$\pm$~std)} & \textbf{All folds clean} \\
+\midrule
+OC-SVM           & $0.644 \pm 0.128$ & \checkmark \\
+Isolation Forest & $0.644 \pm 0.128$ & \checkmark \\
+BOCD             & $0.644 \pm 0.128$ & \checkmark \\
+PC-Flow (raw)    & $0.628 \pm 0.073$ & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
 \section{Tournament Comparison}\label{sec:ad-tournament}
