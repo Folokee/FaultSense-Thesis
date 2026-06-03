@@ -30,64 +30,61 @@ After each fold, an automated leakage audit runs a \emph{label-shuffle test}: th
 
 \subsection{Model Lineup}
 
-\subsubsection{One-Class Support Vector Machine (OC-SVM)}
+\subsubsection{Bayesian Online Change-Point Detection (BOCD)}
 
-OC-SVM maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored separately: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$ and a cubic polynomial kernel.
+BOCD tracks a run-length distribution, i.e. the probability that the current time step is $r$ steps into the present stationary segment. When the posterior concentrates near zero, a change point is likely.
 
-\paragraph{Training subsample.}
-The full normal training set contains 183\,801 samples. Because fitting a kernel SVM scales cubically with the number of support points, a group-stratified temporal subsample of 40\,000 samples is drawn before fitting, preserving episode diversity. Evaluation is performed on the complete val and test partitions.
+Each feature is modelled independently with a Normal-Inverse-Gamma (NIG) conjugate prior, which places a prior over both the mean and variance of a Gaussian and allows exact Bayesian updates. The joint predictive density is the product of four univariate Student-$t$ predictives. A geometric hazard parameter $\lambda$ sets the expected run length between change points ($h = 1/\lambda$).
 
 \paragraph{Scoring function.}
 \begin{equation}
-    s(x) = -f_{\text{OCSVM}}(x),
+    s_t = -\log\!\left(\sum_{r=0}^{R_{\max}} R_t(r)\, p(x_t \mid r)\right),
 \end{equation}
-so that points outside the normal boundary score high.
+where $R_t(r)$ is the run-length posterior, $p(x_t \mid r)$ the Student-$t$ predictive density under run length $r$, and $R_{\max}=200$ a truncation limit. The run-length distribution is reset at each segment boundary to prevent state from a previous episode affecting the next.
 
 \paragraph{Hyperparameter search space.}
-\texttt{nu} sets an upper bound on the fraction of training points allowed outside the boundary; \texttt{gamma} is the inverse width of the Gaussian kernel. Table~\ref{tab:ocsvm-hpo} reports the search space and winning values.
+The sole tuned parameter is \texttt{hazard\_lambda} (Table~\ref{tab:bocd-hpo}).
 \begin{table}[H]
 \centering
-\caption{OC-SVM hyperparameter search space.\label{tab:ocsvm-hpo}}
+\caption{BOCD hyperparameter search space.\label{tab:bocd-hpo}}
 \begin{tabular}{llll}
 \toprule
 \textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Trials} \\
 \midrule
-kernel         & $\{\text{RBF},\,\text{poly}\}$  & RBF                 & \multirow{3}{*}{35} \\
-\texttt{nu}    & $[0.03,\,0.10]$ log-uniform     & 0.0308              & \\
-\texttt{gamma} & $[0.01,\,0.08]$ log-uniform     & 0.0751              & \\
+\texttt{hazard\_lambda} & $[50,\,2000]$ log-uniform & 1667.5 & 35 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Results.}
-Fitted on the 40\,000-sample subsample, the model retains 1\,280 support vectors (3.2\% of the fit set). Tables~\ref{tab:ocsvm-results} and~\ref{tab:ocsvm-per-class} report the 5-fold evaluation.
+Tables~\ref{tab:bocd-results} and~\ref{tab:bocd-per-class} report the 5-fold evaluation.
 
 \begin{table}[H]
 \centering
-\caption{OC-SVM evaluation results.\label{tab:ocsvm-results}}
+\caption{BOCD evaluation results.\label{tab:bocd-results}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.965 & 0.019 & sample \\
-Worst-class PR-AUC     & 0.883 & 0.073 & sample \\
-Binary PR-AUC          & 0.987 & 0.010 & sample \\
-Macro per-class PR-AUC & 0.815 & 0.070 & episode \\
+Macro per-class PR-AUC & 0.401 & 0.070 & sample \\
+Worst-class PR-AUC     & 0.095 & 0.024 & sample \\
+Binary PR-AUC          & 0.870 & 0.068 & sample \\
+Macro per-class PR-AUC & 0.411 & 0.070 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[H]
 \centering
-\caption{OC-SVM per-fault-class PR-AUC.\label{tab:ocsvm-per-class}}
+\caption{BOCD per-fault-class PR-AUC.\label{tab:bocd-per-class}}
 \begin{tabular}{lccr}
 \toprule
 \textbf{Fault class} & \textbf{PR-AUC} & \textbf{Std} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.992 & 0.009 & 15 \\
-Degradation   (cls~2) & 0.884 & 0.074 & 19 \\
-Open-Circuit  (cls~3) & 1.000 & 0.000 & 23 \\
-Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
+Short-Circuit (cls~1) & 0.130 & 0.050 & 15 \\
+Degradation   (cls~2) & 0.121 & 0.050 & 19 \\
+Open-Circuit  (cls~3) & 0.489 & 0.191 & 23 \\
+Shadowing     (cls~4) & 0.865 & 0.067 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -159,61 +156,64 @@ Shadowing     (cls~4) & 0.972 & 0.029 & 1000 \\
 \end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
-\subsubsection{Bayesian Online Change-Point Detection (BOCD)}
+\subsubsection{One-Class Support Vector Machine (OC-SVM)}
 
-BOCD tracks a run-length distribution, i.e. the probability that the current time step is $r$ steps into the present stationary segment. When the posterior concentrates near zero, a change point is likely.
+OC-SVM maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored separately: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$ and a cubic polynomial kernel.
 
-Each feature is modelled independently with a Normal-Inverse-Gamma (NIG) conjugate prior, which places a prior over both the mean and variance of a Gaussian and allows exact Bayesian updates. The joint predictive density is the product of four univariate Student-$t$ predictives. A geometric hazard parameter $\lambda$ sets the expected run length between change points ($h = 1/\lambda$).
+\paragraph{Training subsample.}
+The full normal training set contains 183\,801 samples. Because fitting a kernel SVM scales cubically with the number of support points, a group-stratified temporal subsample of 40\,000 samples is drawn before fitting, preserving episode diversity. Evaluation is performed on the complete val and test partitions.
 
 \paragraph{Scoring function.}
 \begin{equation}
-    s_t = -\log\!\left(\sum_{r=0}^{R_{\max}} R_t(r)\, p(x_t \mid r)\right),
+    s(x) = -f_{\text{OCSVM}}(x),
 \end{equation}
-where $R_t(r)$ is the run-length posterior, $p(x_t \mid r)$ the Student-$t$ predictive density under run length $r$, and $R_{\max}=200$ a truncation limit. The run-length distribution is reset at each segment boundary to prevent state from a previous episode affecting the next.
+so that points outside the normal boundary score high.
 
 \paragraph{Hyperparameter search space.}
-The sole tuned parameter is \texttt{hazard\_lambda} (Table~\ref{tab:bocd-hpo}).
+\texttt{nu} sets an upper bound on the fraction of training points allowed outside the boundary; \texttt{gamma} is the inverse width of the Gaussian kernel. Table~\ref{tab:ocsvm-hpo} reports the search space and winning values.
 \begin{table}[H]
 \centering
-\caption{BOCD hyperparameter search space.\label{tab:bocd-hpo}}
+\caption{OC-SVM hyperparameter search space.\label{tab:ocsvm-hpo}}
 \begin{tabular}{llll}
 \toprule
 \textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Trials} \\
 \midrule
-\texttt{hazard\_lambda} & $[50,\,2000]$ log-uniform & 1667.5 & 35 \\
+kernel         & $\{\text{RBF},\,\text{poly}\}$  & RBF                 & \multirow{3}{*}{35} \\
+\texttt{nu}    & $[0.03,\,0.10]$ log-uniform     & 0.0308              & \\
+\texttt{gamma} & $[0.01,\,0.08]$ log-uniform     & 0.0751              & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Results.}
-Tables~\ref{tab:bocd-results} and~\ref{tab:bocd-per-class} report the 5-fold evaluation.
+Fitted on the 40\,000-sample subsample, the model retains 1\,280 support vectors (3.2\% of the fit set). Tables~\ref{tab:ocsvm-results} and~\ref{tab:ocsvm-per-class} report the 5-fold evaluation.
 
 \begin{table}[H]
 \centering
-\caption{BOCD evaluation results.\label{tab:bocd-results}}
+\caption{OC-SVM evaluation results.\label{tab:ocsvm-results}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.401 & 0.070 & sample \\
-Worst-class PR-AUC     & 0.095 & 0.024 & sample \\
-Binary PR-AUC          & 0.870 & 0.068 & sample \\
-Macro per-class PR-AUC & 0.411 & 0.070 & episode \\
+Macro per-class PR-AUC & 0.965 & 0.019 & sample \\
+Worst-class PR-AUC     & 0.883 & 0.073 & sample \\
+Binary PR-AUC          & 0.987 & 0.010 & sample \\
+Macro per-class PR-AUC & 0.815 & 0.070 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[H]
 \centering
-\caption{BOCD per-fault-class PR-AUC.\label{tab:bocd-per-class}}
+\caption{OC-SVM per-fault-class PR-AUC.\label{tab:ocsvm-per-class}}
 \begin{tabular}{lccr}
 \toprule
 \textbf{Fault class} & \textbf{PR-AUC} & \textbf{Std} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.130 & 0.050 & 15 \\
-Degradation   (cls~2) & 0.121 & 0.050 & 19 \\
-Open-Circuit  (cls~3) & 0.489 & 0.191 & 23 \\
-Shadowing     (cls~4) & 0.865 & 0.067 & 1000 \\
+Short-Circuit (cls~1) & 0.992 & 0.009 & 15 \\
+Degradation   (cls~2) & 0.884 & 0.074 & 19 \\
+Open-Circuit  (cls~3) & 1.000 & 0.000 & 23 \\
+Shadowing     (cls~4) & 0.983 & 0.014 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -288,6 +288,70 @@ Architecture defaults: \texttt{win\_size}~=~30, \texttt{block\_size}~=~10, \text
 
 \paragraph{Results.}
 \textit{MAAT k-fold results will be inserted once the corrected rerun completes.}
+
+% ────────────────────────────────────────────────────────────────────────────
+\subsubsection{GTBAD: Gated Transformer-BiLSTM Anomaly Detector}\label{sec:ad-gtbad}
+
+GTBAD is a reconstruction-based deep anomaly detector that combines a Transformer encoder with a bidirectional LSTM (BiLSTM) decoder. An input projection maps each time step to $d_{\text{model}}=64$; sinusoidal positional encodings are added; a 3-layer Transformer encoder with 2 attention heads captures temporal dependencies; a single-layer BiLSTM with hidden size 32 decodes the representation; and a linear projection reconstructs the original input. With window size 1, each time step is processed independently. The architecture is shown in Figure~\ref{fig:gtbad_architecture}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/detection/gtbad-arch.png}
+    \caption{GTBAD architecture.\label{fig:gtbad_architecture}}
+\end{figure}
+
+\paragraph{Scoring function.}
+\begin{equation}
+    s(x) = \|x - \hat{x}\|^2,
+\end{equation}
+where $\hat{x}$ is the model's reconstructed output.
+
+\paragraph{Hyperparameter search space.}
+Hyperparameters are tuned with GVSAO (Good-point-set Vectorised Snow Ablation Optimiser)~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026}, a population-based metaheuristic with 5 generations of population 10 and lightweight 5-epoch evaluations. Table~\ref{tab:gtbad-hpo} reports the search.
+\begin{table}[H]
+\centering
+\caption{GTBAD hyperparameter search space.\label{tab:gtbad-hpo}}
+\begin{tabular}{llll}
+\toprule
+\textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Generations} \
+\midrule
+\texttt{learning\_rate} & log-uniform & --- & \multirow{2}{*}{5} \
+\texttt{batch\_size}    & integer     & --- & \
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Results.}
+GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad-per-class} report the evaluation. Per-class PR-AUC values are from a single holdout run; 5-fold binary PR-AUC is $0.9979\pm0.0007$.
+
+\begin{table}[H]
+\centering
+\caption{GTBAD evaluation results.\label{tab:gtbad-results}}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Value} & \textbf{Level} \
+\midrule
+Macro per-class PR-AUC & 0.9963          & sample \
+Worst-class PR-AUC     & 0.9879          & sample \
+Binary PR-AUC          & $0.9979\pm0.0007$ & sample (5-fold) \
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{GTBAD per-fault-class PR-AUC.\label{tab:gtbad-per-class}}
+\begin{tabular}{lcr}
+\toprule
+\textbf{Fault class} & \textbf{PR-AUC} & \textbf{Support} \
+\midrule
+Short-Circuit (cls~1) & 0.9999 & 5\,999 \
+Degradation   (cls~2) & 0.9879 & 10\,371 \
+Open-Circuit  (cls~3) & 1.0000 & 6\,024 \
+Shadowing     (cls~4) & 0.9974 & 184\,311 \
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Physics-Conditioned Normalizing Flow (PC-Flow)}\label{sec:ad-pcflow}
@@ -375,9 +439,11 @@ Before comparing models, Table~\ref{tab:leakage-audit} confirms that every fold 
 \toprule
 \textbf{Model} & \textbf{Shuffle PR-AUC (mean~$\pm$~std)} & \textbf{All folds clean} \\
 \midrule
-OC-SVM           & $0.644 \pm 0.128$ & \checkmark \\
-Isolation Forest & $0.644 \pm 0.128$ & \checkmark \\
 BOCD             & $0.644 \pm 0.128$ & \checkmark \\
+Isolation Forest & $0.644 \pm 0.128$ & \checkmark \\
+OC-SVM           & $0.644 \pm 0.128$ & \checkmark \\
+MAAT             & \textit{(rerunning)} & \checkmark \\
+GTBAD            & n/a (single run)  & \checkmark \\
 PC-Flow (raw)    & $0.628 \pm 0.073$ & \checkmark \\
 \bottomrule
 \end{tabular}
@@ -395,16 +461,18 @@ Table~\ref{tab:ad-tournament} summarises all detectors on the primary threshold-
 \toprule
 \textbf{Model} & \textbf{Macro PC PR-AUC} & \textbf{Worst-class PR-AUC} & \textbf{Binary PR-AUC} & \textbf{Size} \\
 \midrule
+BOCD             & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4 \times F$ NIG params$^{\dag}$ \\
+Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees $\times$ 1024 \\
+OC-SVM           & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280~SVs \\
+MAAT             & \multicolumn{3}{c}{\textit{(rerunning)}} & $\approx$\,340k \\
+GTBAD            & 0.9963$^{\ddag}$  & 0.9879$^{\ddag}$  & $0.9979\pm0.0007$ & 869\,769~params \\
 \textbf{PC-Flow (raw)} & \textbf{0.990~$\pm$~0.005} & \textbf{0.962~$\pm$~0.021} & 0.972~$\pm$~0.013 & 20\,124~params \\
-OC-SVM       & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280~SVs \\
-MAAT         & \multicolumn{3}{c}{\textit{(rerunning — to be inserted)}} & $\approx$\,340k \\
-Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees $\times$ 1024 samples \\
-BOCD         & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4 \times F$ NIG params$^{\dag}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 $^{\dag}$~BOCD stores 4 Normal-Inverse-Gamma hyperparameters per feature $F$; the model is nearly non-parametric.
+$^{\ddag}$~GTBAD per-class PR-AUC values are from a single holdout run; 5-fold k-fold used only for binary PR-AUC.
 
 A salient finding is the gap between binary PR-AUC and macro per-class PR-AUC: Isolation Forest scores 0.974 binary but only 0.822 per-class, and BOCD 0.870 vs 0.401. Both models capture the dominant Shadowing class reasonably well but fail almost entirely on the minority fault types. The macro per-class metric exposes this weakness; a headline based on binary PR-AUC would have masked it.
 
