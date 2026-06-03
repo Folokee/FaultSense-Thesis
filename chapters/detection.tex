@@ -552,7 +552,8 @@ Three feature profiles were evaluated under the same HPO budget; the Params colu
 \begin{table}[H]
 \centering
 \caption{PC-Flow profile ablation.\label{tab:pcflow-profile-abl}}
-\begin{tabular}{lccccc}
+\small
+\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
 \toprule
 \textbf{Profile} & \textbf{Modelled feat.} & \textbf{Context feat.} & \textbf{Macro PC PR-AUC} & \textbf{Worst} & \textbf{Params} \\
 \midrule
@@ -560,7 +561,7 @@ Three feature profiles were evaluated under the same HPO budget; the Params colu
 plus\_physics   & 15  & 2 & 0.985~$\pm$~0.012 & 0.954 & 9\,418 \\
 plus\_rolling   & 153 & 2 & 0.955~$\pm$~0.024 & 0.868 & 57\,546 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 Macro per-class PR-AUC degrades monotonically as the number of modelled features grows from 7 to 153. This is a hallmark of the \textbf{curse of dimensionality in density estimation}: the normalizing flow must model an increasingly high-dimensional normal distribution, making it harder to assign precise likelihoods to any given region. Importantly, a normalizing flow performs its \emph{own feature learning} as part of the bijective mapping; additional hand-engineered features are therefore redundant and ultimately harmful. The model extracts a latent representation that is jointly optimal for both likelihood estimation and anomaly scoring, without requiring explicit signal processing beyond the raw measurements. This result stands in deliberate contrast to the Task~B findings (Section~\ref{sec:fault-diagnosis}), where tree ensembles that \emph{cannot} learn representations benefit substantially from the same hand-crafted features.
