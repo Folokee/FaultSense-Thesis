@@ -574,50 +574,43 @@ GTBAD            & 0.9752~$\pm$~0.071 & 0.9140~$\pm$~0.241 & 0.9896~$\pm$~0.019 
 $^{\dag}$~NIG params: Normal-Inverse-Gamma hyperparameters — the 4 sufficient statistics (mean, pseudo-count, shape, scale) stored per feature to maintain the Bayesian posterior; 28 = $4 \times 7$ features. \quad $^{\ddag}$~SVs: support vectors — the subset of training points retained by the kernel SVM to define the decision boundary.
 
 \paragraph{Binary PR-AUC makes almost every model look excellent.}
-Figure~\ref{fig:ad-binary-macro}(a) compares the six detectors on binary PR-AUC, which asks only whether a model can tell \emph{some} fault apart from normal operation. Five of the six score between 0.97 and 0.99, and even the weakest, BOCD, reaches 0.870. The reason is that this metric counts every fault sample equally, and Shadowing alone supplies most of those samples: a model that catches Shadowing scores well even if it misses the rarer faults. Read on its own, this panel is misleading. PC-Flow appears \emph{last} among the five strong models (0.972), which would wrongly suggest it is the weakest of them.
+Figure~\ref{fig:ad-binary-macro}(a) compares the six detectors on binary PR-AUC, which asks only whether a model can tell \emph{some} fault apart from normal operation. Five of the six score between 0.97 and 0.99, and even the weakest, BOCD, reaches 0.870. The reason is that this metric counts every fault sample equally, and Shadowing alone supplies most of those samples: a model that catches Shadowing scores well even if it misses the rarer faults. Taken alone, this panel is misleading: PC-Flow scores 0.972, which places it last among the five strong models and gives the false impression that it is
+  the weakest.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/detection/fig_comparison_binary_macro.png}
-    \caption{The same six detectors under two metrics. (a) Binary PR-AUC bunches almost every model near the top. (b) Macro per-class PR-AUC, which weights each fault type equally, spreads them out and reverses the order: PC-Flow sits at the bottom of the strong group in (a) but first in (b). Bar heights are 5-fold means; whiskers are standard deviations. The dotted line marks the 0.64 no-skill baseline set by the fault prevalence in the test set.}
+    \caption{Six detectors under two metrics: binary PR-AUC (a) vs.\ macro per-class PR-AUC (b). Bars: 5-fold means $\pm$ std; dotted line: 0.64 no-skill baseline.}
     \label{fig:ad-binary-macro}
 \end{figure}
 
 \paragraph{The macro metric reveals the true ranking.}
-Figure~\ref{fig:ad-binary-macro}(b) switches to macro per-class PR-AUC, which scores each fault type on its own and then averages, so a rare fault weighs as much as a common one. The picture changes completely: the models that looked tied now span 0.401 (BOCD) to 0.990 (PC-Flow), and PC-Flow rises from the bottom of the strong group to first overall. This reversal is the central result of the comparison. Binary PR-AUC hides the differences that matter for a diagnosis system, because a detector that only recognises Shadowing is blind to the three other faults it must identify. Macro per-class PR-AUC is the metric we select on, and PC-Flow leads it.
+Figure~\ref{fig:ad-binary-macro}(b) switches to macro per-class PR-AUC — a metric that evaluates each fault class separately and averages the scores equally, so a rare fault carries the same weight as a common one. The picture changes completely: the models that looked tied now span 0.401 (BOCD) to 0.990 (PC-Flow), and PC-Flow rises from the bottom of the strong group to first overall. This reversal is the central result of the comparison. Binary PR-AUC hides the differences that matter for a diagnosis system, because a detector that only recognises Shadowing is blind to the three other faults it must identify. Macro per-class PR-AUC is the metric we select on, and PC-Flow leads it.
 
 \paragraph{One fault separates the field: Degradation.}
-Figure~\ref{fig:ad-perclass} breaks every model down by fault type, one group of bars per class. Three of the four groups look nearly identical: for Short-Circuit, Open-Circuit, and Shadowing, every competitive model sits close to 1.0. These faults cause large, abrupt changes in current and power, so they are easy to separate from normal behaviour and do not decide the ranking. The fourth group, Degradation (highlighted), is where the models fan out, from 0.121 (BOCD) to 0.998 (PC-Flow): every classical detector stays below 0.89, and even the deep MAAT model reaches only 0.753. Degradation is hard because it is a slow loss of panel efficiency that, in its early stage, looks almost like normal operation, with no sharp event to catch. PC-Flow handles it because it scores each measurement by how \emph{probable} it is under a learned model of normal operation, conditioned on the current irradiance and temperature. A small but persistent drift away from the expected behaviour lowers that probability even while the raw signal still looks normal, so the fault is flagged early. Detectors based on distance or reconstruction error must instead wait for the fault to grow large enough to cross a fixed threshold.
+Figure~\ref{fig:ad-perclass} breaks every model down by fault type, one group of bars per class. Three of the four groups look nearly identical: for Short-Circuit, Open-Circuit, and Shadowing, every competitive model sits close to 1.0. These faults cause large, abrupt changes in current and power, so they are easy to separate from normal behaviour and do not decide the ranking. The fourth group, Degradation (highlighted), is where the models fan out, from 0.121 (BOCD) to 0.998 (PC-Flow). Degradation is intrinsically hard: it is a slow loss of panel efficiency with no sharp event to catch, so each measurement, taken on its own, still looks close to normal. The classical change-point and isolation methods collapse on it (BOCD 0.121, Isolation Forest 0.496), and among the deep models MAAT lags (0.753); the strongest competitors, OC-SVM (0.884) and GTBAD (0.914), close most of the gap but none reaches PC-Flow's 0.998.
+
+PC-Flow's edge here is structural rather than incidental. It does not score a sample by how large its deviation or reconstruction error is, but by how \emph{probable} the sample is under a density of normal operation that is conditioned on the current irradiance and temperature. The model therefore judges each measurement against the behaviour expected at that exact operating point, not against a global notion of ``normal''. A small but persistent drift in the relationship between the measurements and the operating conditions lands in the low-probability tail of that conditional density and is ranked as anomalous, even when every individual signal still looks ordinary in isolation. Magnitude- and error-based scores, by contrast, can dilute such a localised drift when they aggregate over features, which is consistent with MAAT's weaker showing; PC-Flow's likelihood formulation sidesteps that aggregation, and this is what lets it rank the early-degradation samples ahead of normal operation where the other models leave the two distributions overlapping.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/detection/fig_comparison_perclass.png}
-    \caption{Per-class PR-AUC (each fault class against normal), one group of bars per fault. Short-Circuit, Open-Circuit, and Shadowing are easy for every competitive model; Degradation (highlighted) is the only class that separates the lineup. Bar heights are 5-fold means; whiskers are standard deviations.}
+    \caption{Per-class PR-AUC for all six detectors. Degradation (highlighted) is the only class that separates the lineup. Bars: 5-fold means $\pm$ std.}
     \label{fig:ad-perclass}
 \end{figure}
 
-\paragraph{The closest rival, and why model size decides.}
-PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: GTBAD's confidence interval ($\pm$0.07) comfortably overlaps PC-Flow's, so the two are statistically close and ranking quality alone does not settle the comparison. Model size does. Figure~\ref{fig:ad-size} shows each model's parameter count, with its macro per-class PR-AUC printed beside the bar. PC-Flow reaches the top score with 20\,124 parameters, whereas GTBAD needs 869\,769 to essentially match it, a model 43 times larger. For the Jetson Nano deployment target (Chapter~\ref{ch:deployment}), where memory use and inference time grow with parameter count, this is the deciding factor: PC-Flow delivers the same ranking quality in a model small enough to run on the edge device, and GTBAD does not. As the ablation in Section~\ref{sec:ad-pcflow} showed, this compactness costs nothing, since the smallest PC-Flow configuration was also the most accurate.
+\paragraph{Performance--complexity trade-off.}
+PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: GTBAD's confidence interval ($\pm$0.07) comfortably overlaps PC-Flow's, so the two are statistically close and ranking quality alone does not settle the comparison. Model size does. Figure~\ref{fig:ad-size} shows each model's parameter count, with its macro per-class PR-AUC printed beside the bar. PC-Flow reaches the top score with 20\,124 parameters, whereas GTBAD needs 869\,769 to essentially match it, a model 43 times larger. For the Jetson Nano deployment target (Chapter~\ref{ch:deployment}), where memory use and inference time grow with parameter count, this is the deciding factor: PC-Flow delivers the same ranking quality in a model small enough to run on the edge device.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/detection/fig_comparison_size.png}
-    \caption{Model size of each detector (number of parameters, log scale), with its macro per-class PR-AUC printed at the bar end. PC-Flow matches GTBAD's ranking quality (0.990 vs. 0.975) with a model 43 times smaller. Isolation Forest is omitted because its size is measured in trees, not parameters.}
+    \caption{Model size vs.\ macro per-class PR-AUC. PC-Flow matches GTBAD (0.990 vs.\ 0.975) with 43$\times$ fewer parameters.}
     \label{fig:ad-size}
 \end{figure}
-
-\paragraph{Reading the results with care.}
-The three rare fault classes are supported by very few episodes (15, 19, and 23). Under five-fold cross-validation each fold tests on only three to five episodes per class, which is why their error bars are wide for every model. The reported averages should be read together with these intervals. The single-fold deployment study in Section~\ref{sec:ad-deployment} provides the most reliable point estimate, since it evaluates on the full set of episodes at once.
-
 % ────────────────────────────────────────────────────────────────────────────
-\subsection{Deployed System: Tiered Alarm Characterisation}\label{sec:ad-deployment}
+\subsection{Deployed Model Metrics}\label{sec:ad-deployment}
 
-The deployed anomaly detector uses the \textbf{PC-Flow (baseline\_raw) model from fold~4} (validation-selected fold: val macro per-class PR-AUC~=~0.993) with a three-tier ISA-18.2-inspired escalation system. The tiers form a sequential escalation chain (P3~$\to$~P2~$\to$~P1) and are not independent detectors to be averaged.
+The deployed anomaly detector is the \textbf{PC-Flow (baseline\_raw) model from fold~4} (validation-selected: val macro per-class PR-AUC~=~0.993). At inference its continuous anomaly score is converted into operator-facing alarms by the three-tier ISA-18.2 escalation policy (P3~$\rightarrow$~P2~$\rightarrow$~P1) defined in Section~\ref{sec:threshold-calibration}. This section characterizes how the deployed model behaves at each tier on the held-out fault episodes.
 
-\begin{itemize}
-    \item \textbf{P3 Advisory}: GPD/sensitive threshold ($\text{FPR} \leq 20\%$), high recall, first-line alert.
-    \item \textbf{P2 High}: conformal threshold ($\alpha=0.05$), distribution-free FPR~$\leq$~5\% guarantee, high precision.
-    \item \textbf{P1 Critical}: one-sided CUSUM \citep{page1954continuous}, sequential accumulation for persistent anomalies; characterised by detection delay and ARL0 rather than per-sample F1.
-\end{itemize}
-
-\textit{Tier-specific precision/recall/F1/episode-recall, detection delay, and ARL0 values will be inserted from the fold~4 deployment\_alarm\_metrics.json once uploaded.}
+\textit{Tier-specific precision/recall/F1/episode-recall, detection delay, and $\text{ARL}_0$ values will be inserted from the fold~4 deployment\_alarm\_metrics.json once uploaded.}
