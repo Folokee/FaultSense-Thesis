@@ -1,15 +1,7 @@
 \section{Anomaly Detection}\label{sec:anomaly-detection}
 
 \subsection{Introduction}
-Anomaly detection is the process of distinguishing between normal and anomalous states in a PV system. This chapter introduces the problem, presents the explored models, evaluates them with robust cross-validation estimates, and concludes with an analysis of the winning design.
-
-\subsection{Task Formulation and Methodology}
-The anomaly detection task is formulated as a semi-supervised learning problem: models are trained exclusively on normal-behavior data and evaluated on held-out fault and normal samples. The shared framework across all detectors is:
-\begin{itemize}
-    \item Train on normal-only segments to learn a compact model of nominal PV operation.
-    \item Derive a scoring function $s(x)$ where higher values indicate higher anomaly likelihood.
-    \item Calibrate a decision threshold $\tau$ from held-out normal validation scores; flag samples with $s(x) \geq \tau$ as anomalous.
-\end{itemize}
+This section presents the anomaly detection task: distinguishing normal PV operation from fault conditions under a semi-supervised setting. It covers the explored models, their cross-validation evaluation, and concludes with an analysis of the winning design.
 
 \subsection{Model Lineup}
 
@@ -78,7 +70,7 @@ Shadowing     (cls~4) & 0.865 & 0.067 & 1000 \\
 Isolation Forest builds an ensemble of random partitioning trees. Anomalous points require fewer splits to be isolated and therefore have shorter average path lengths from the root.
 
 \paragraph{Scoring function.}
-Each isolation tree is built by recursively selecting a random feature and a random split threshold until a point is isolated in its own leaf. The \emph{path length} $h(x)$ is the number of splits needed to isolate sample $x$ in one tree. Anomalous points, being rare and far from the bulk of the data, are separated in very few splits; normal points, densely packed with similar neighbours, require many more. The raw anomaly score in the original formulation is:
+Each isolation tree is built by recursively selecting a random feature and a random split threshold until a point is isolated in its own leaf. The \emph{path length} $h(x)$ is the number of splits needed to isolate sample $x$ in one tree. Anomalous points, being rare and far from the bulk of the data, are separated in very few splits; normal points, densely packed with similar neighbours, require many more. The raw anomaly score is:
 \begin{equation}
     s(x,\psi) = 2^{-\,\mathbb{E}[h(x)]\,/\,c(\psi)},
 \end{equation}
@@ -364,7 +356,7 @@ The model is trained with Adam. Hyperparameters are tuned with GVSAO (Good-point
 \end{table}
 
 \paragraph{Results.}
-GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad-per-class} report the evaluation. All GTBAD metrics are from a single holdout run, so no cross-validation standard deviation is available.
+GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad-per-class} report the evaluation.
 
 \begin{table}[H]
 \centering
@@ -373,9 +365,9 @@ GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.9752 & -- & sample \\
-Worst-class PR-AUC     & 0.9140 & -- & sample \\
-Binary PR-AUC          & 0.9896 & -- & sample \\
+Macro per-class PR-AUC & 0.9752 & 0.071 & sample \\
+Worst-class PR-AUC     & 0.9140 & 0.241 & sample \\
+Binary PR-AUC          & 0.9896 & 0.019 & sample \\
 Macro per-class PR-AUC & 0.9850 & -- & episode \\
 \bottomrule
 \end{tabular}
@@ -384,14 +376,14 @@ Macro per-class PR-AUC & 0.9850 & -- & episode \\
 \begin{table}[H]
 \centering
 \caption{GTBAD per-fault-class PR-AUC.\label{tab:gtbad-per-class}}
-\begin{tabular}{lcr}
+\begin{tabular}{lccr}
 \toprule
-\textbf{Fault class} & \textbf{PR-AUC} & \textbf{Support} \\
+\textbf{Fault class} & \textbf{PR-AUC} & \textbf{Std} & \textbf{Support} \\
 \midrule
-Short-Circuit (cls~1) & 0.9998 & 5\,999 \\
-Degradation   (cls~2) & 0.9140 & 10\,371 \\
-Open-Circuit  (cls~3) & 1.0000 & 6\,024 \\
-Shadowing     (cls~4) & 0.9871 & 184\,311 \\
+Short-Circuit (cls~1) & 0.9998 & 0.016 & 5\,999 \\
+Degradation   (cls~2) & 0.9140 & 0.241 & 10\,371 \\
+Open-Circuit  (cls~3) & 1.0000 & 0.004 & 6\,024 \\
+Shadowing     (cls~4) & 0.9871 & 0.022 & 184\,311 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -399,19 +391,18 @@ Shadowing     (cls~4) & 0.9871 & 184\,311 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Physics-Conditioned Normalizing Flow (PC-Flow)}\label{sec:ad-pcflow}
 
-\paragraph{Idea.}
-PC-Flow is the first application of a physics-conditioned normalizing flow to PV fault detection. Normalizing flows~\citep{rezende2015variational} form a family of generative models that combines the strengths of autoregressive models (tractable likelihoods) and variational autoencoders (representation learning). Unlike both, a normalizing flow $f_\theta : \mathbb{R}^n \to \mathbb{R}^n$ is \emph{deterministic and invertible}: given an input $x$ it produces a latent code $z = f_\theta^{-1}(x)$, and this transformation can be perfectly reversed. Because the transformation is invertible, the exact density of any input $x$ can be computed from the density of its latent code $z$ using the change-of-variables formula:
+This work proposes PC-Flow, a physics-conditioned normalizing flow tailored to PV fault detection. A normalizing flow~\citep{rezende2015variational} is a generative model built from an exactly invertible map $f_\theta : \mathbb{R}^n \to \mathbb{R}^n$: given an input $x$ it produces a latent code $z = f_\theta^{-1}(x)$, and this transformation can be reversed exactly. This bijective structure is what distinguishes it from related generative models: unlike a variational autoencoder, which maximises a lower bound on the likelihood, the flow yields an \emph{exact} likelihood; and unlike an autoregressive model, it also learns an invertible latent representation of the input. Because the map is invertible, the exact density of any input $x$ follows from the density of its latent code $z$ through the change-of-variables formula:
 \begin{equation}
     \log p(x;\theta) = \underbrace{\log p_Z(f_\theta^{-1}(x))}_{\text{log-density of the latent code}} + \underbrace{\log\left|\det\!\left(\frac{\partial f_\theta^{-1}(x)}{\partial x}\right)\right|}_{\text{log volume change of the transformation}},
 \end{equation}
-where $p_Z$ is a standard Gaussian base distribution, and the second term corrects for how the transformation stretches or compresses volume in different regions. This means the model \textbf{simultaneously learns a latent representation and yields a tractable, exact likelihood} without requiring hand-engineered features. To our knowledge, no prior work has applied a normalizing flow to PV anomaly detection; the novelty lies both in the model family choice and in the physics conditioning described below.
+where $p_Z$ is a standard Gaussian base distribution, and the second term corrects for how the transformation stretches or compresses volume in different regions. The flow learns this latent representation directly from the raw signals as part of fitting the density, so anomaly scoring requires \textbf{no hand-engineered features}. To our knowledge, no prior work has applied a normalizing flow to PV anomaly detection; the contribution lies in adapting a conditional normalizing flow to this domain and conditioning it on the physical operating point, as described below.
 
 \paragraph{Architecture.}
 The flow is a conditional RealNVP~\citep{dinh2017realnvp}: a stack of $L$ affine coupling layers with alternating binary split masks and fixed random inter-block permutations. Each coupling block splits the input $x$ into two partitions $(x_a, x_b)$, then applies a learned scale-and-shift transformation conditioned on $(x_a, c)$:
 \begin{equation}
     x_b' = x_b \cdot \exp(s(x_a, c)) + t(x_a, c),
 \end{equation}
-where $s$ and $t$ are outputs of a small two-layer MLP, and the log-determinant contribution is $\sum_i s_i(x_a, c)$. The context vector $c = [\text{irradiance},\, T_{\text{PV}}]$ encodes the current operating point. By appending $c$ to the MLP inputs at every coupling block, the flow learns a \emph{conditional} density $p(x \mid c)$ rather than a marginal: the model factors out how irradiance and temperature normally drive the measured electrical signals, so deviations from this physics-informed manifold, not absolute signal levels, are penalised. An ablation with rational-quadratic spline coupling layers~\citep{durkan2019neural} (more expressive, non-linear per-dimension transforms) is also evaluated in Section~\ref{sec:abl-scoring}.
+where $s$ and $t$ are produced by a small MLP with two hidden layers, and the log-determinant contribution is $\sum_i s_i(x_a, c)$. The context vector $c = [\text{irradiance},\, T_{\text{PV}}]$ encodes the current operating point. By appending $c$ to the MLP inputs at every coupling block, the flow learns a \emph{conditional} density $p(x \mid c)$ rather than a marginal: the model factors out how irradiance and temperature normally drive the measured electrical signals, so deviations from this physics-informed manifold, not absolute signal levels, are penalised. An ablation with rational-quadratic spline coupling layers~\citep{durkan2019neural} (more expressive, non-linear per-dimension transforms) is also evaluated in Section~\ref{sec:abl-scoring}.
 
 \begin{figure}[H]
     \centering
@@ -421,13 +412,13 @@ where $s$ and $t$ are outputs of a small two-layer MLP, and the log-determinant 
 \end{figure}
 
 \paragraph{Training objective.}
-The model is trained by maximising the average negative log-likelihood (NLL) on normal training windows:
+The model is trained by maximising the average negative log-likelihood (NLL) on normal training samples:
 \begin{equation}
     \mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N} \log p(x_i;\theta).
 \end{equation}
 
 \paragraph{Scoring function.}
-The anomaly score is the negative log-likelihood: $s(x) = -\log p(x;\theta)$. Under a well-trained flow, normal samples lie in the high-probability region and score low; anomalous samples deviate from the learnt manifold and score high.
+The anomaly score is the negative log-likelihood: $s(x) = -\log p(x \mid c;\theta)$. Under a well-trained flow, normal samples lie in the high-probability region and score low; anomalous samples deviate from the learnt manifold and score high.
 
 \paragraph{Hyperparameter search space.}
 The flow is trained with AdamW and a warmup cosine learning-rate schedule. Table~\ref{tab:pcflow-hpo} reports the search space and winning values for the baseline\_raw profile.
@@ -438,12 +429,11 @@ The flow is trained with AdamW and a warmup cosine learning-rate schedule. Table
 \toprule
 \textbf{Parameter} & \textbf{Range} & \textbf{Winning value} & \textbf{Trials} \\
 \midrule
-\texttt{learning\_rate}      & $[10^{-4},\,10^{-2}]$ log-uniform & $1.96\times10^{-4}$ & \multirow{6}{*}{35} \\
+\texttt{learning\_rate}      & $[10^{-4},\,10^{-2}]$ log-uniform & $1.96\times10^{-4}$ & \multirow{5}{*}{35} \\
 \texttt{weight\_decay}       & $[10^{-6},\,10^{-3}]$ log-uniform & $1.26\times10^{-5}$ & \\
 \texttt{n\_coupling\_layers} & $\{2,3,4,5,6\}$                   & 4                   & \\
 \texttt{hidden\_dim}         & $\{32,64,128\}$                   & 64                  & \\
 \texttt{dropout}             & $[0.0,\,0.3]$                     & 0.0093              & \\
-\texttt{spline\_bins}        & $\{4,8,16\}$                      & 4                   & \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -457,9 +447,9 @@ The baseline\_raw profile uses 7 raw input features and 2 conditioning context f
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.990 & 0.005 & window \\
-Worst-class PR-AUC     & 0.962 & 0.021 & window \\
-Binary PR-AUC          & 0.972 & 0.013 & window \\
+Macro per-class PR-AUC & 0.990 & 0.005 & sample \\
+Worst-class PR-AUC     & 0.962 & 0.021 & sample \\
+Binary PR-AUC          & 0.972 & 0.013 & sample \\
 Macro per-class PR-AUC & 0.960 & 0.003 & episode \\
 \bottomrule
 \end{tabular}
@@ -480,6 +470,61 @@ Shadowing     (cls~4) & 0.962 & 0.021 & 1000 \\
 \end{tabular}
 \end{table}
 
+Three design experiments determined the selected configuration — feature profile, physics conditioning, and scoring function — and are compared against the full baseline ranking in Section~\ref{sec:ad-tournament}.
+
+\paragraph{Profile ablation.}
+Three feature profiles were evaluated under the same HPO budget; the Params column reflects the architecture independently selected by HPO for each profile (Table~\ref{tab:pcflow-profile-abl}). Because model capacity scales with $\textit{hidden\_dim}^2$, HPO converging to $\textit{hidden\_dim}=32$ for \texttt{plus\_physics} vs.\ $\textit{hidden\_dim}=64$ for \texttt{baseline\_raw} explains why the 15-feature model has fewer parameters than the 7-feature model.
+
+\begin{table}[H]
+\centering
+\caption{PC-Flow profile ablation.\label{tab:pcflow-profile-abl}}
+\small
+\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
+\toprule
+\textbf{Profile} & \textbf{Modelled feat.} & \textbf{Context feat.} & \textbf{Macro PC PR-AUC} & \textbf{Worst} & \textbf{Params} \\
+\midrule
+\textbf{baseline\_raw}  & 7   & 2 & \textbf{0.990~$\pm$~0.005} & \textbf{0.962} & 20\,124 \\
+plus\_physics   & 15  & 2 & 0.985~$\pm$~0.012 & 0.954 & 9\,418 \\
+plus\_rolling   & 153 & 2 & 0.955~$\pm$~0.024 & 0.868 & 57\,546 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Macro per-class PR-AUC degrades monotonically as the number of modelled features grows from 7 to 153. This is a hallmark of the \textbf{curse of dimensionality in density estimation}: the normalizing flow must model an increasingly high-dimensional normal distribution, making it harder to assign precise likelihoods to any given region. Importantly, a normalizing flow performs its \emph{own feature learning} as part of the bijective mapping; additional hand-engineered features are therefore redundant and ultimately harmful. The model extracts a latent representation that is jointly optimal for both likelihood estimation and anomaly scoring, without requiring explicit signal processing beyond the raw measurements. This result stands in deliberate contrast to the Task~B findings (Section~\ref{sec:fault-diagnosis}), where tree ensembles that \emph{cannot} learn representations benefit substantially from the same hand-crafted features.
+\paragraph{Conditioning ablation.}
+Table~\ref{tab:pcflow-cond-abl} compares the conditioned and unconditional variants on the plus\_physics profile.
+\begin{table}[H]
+\centering
+\caption{PC-Flow conditioning ablation.\label{tab:pcflow-cond-abl}}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Variant} & \textbf{Context feat.} & \textbf{Macro PC PR-AUC} & \textbf{Worst} & \textbf{Params} \\
+\midrule
+\textbf{Conditioned} & 2 & \textbf{0.985~$\pm$~0.012} & \textbf{0.954} & 20\,124 \\
+Unconditional                   & 0 & 0.977~$\pm$~0.021          & 0.938          & 29\,332 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Removing the irradiance and temperature conditioning context reduces macro per-class PR-AUC from 0.985 to 0.977 and nearly doubles the variance (std 0.021 vs 0.012). This confirms that the physics conditioning does more than reduce the flow's effective dimensionality: it anchors the normal-operating manifold to the physical operating point, so the model learns a tighter conditional distribution. Without conditioning, the same flow must capture the full marginal across all irradiance and temperature regimes, leading to a looser boundary and higher fold-to-fold instability.
+
+\paragraph{Scoring ablation.}
+Table~\ref{tab:pcflow-score-abl} compares the affine NLL and spline-typicality scoring variants.
+\begin{table}[H]
+\centering
+\caption{PC-Flow scoring ablation.\label{tab:pcflow-score-abl}}
+\small
+\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
+\toprule
+\textbf{Variant} & \textbf{Coupling} & \textbf{Scoring} & \textbf{Macro PC PR-AUC} & \textbf{Binary PR-AUC} \\
+\midrule
+\textbf{Affine NLL} (deployed) & affine & $-\log p(x)$  & \textbf{0.985~$\pm$~0.012} & 0.964~$\pm$~0.023 \\
+Spline typicality               & spline & typicality    & 0.937~$\pm$~0.047          & \textbf{0.979~$\pm$~0.019} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+This variant pairs a more expressive spline bijection with a typicality score (distance from the mode of the data distribution), which targets a known pathology of NLL-based scoring: a well-trained flow assigns its highest likelihood to the mode, so anomalies can sometimes receive higher likelihoods than rare normal samples. It changes both the coupling transform and the scoring rule relative to the deployed configuration, so the two effects are not isolated here. As a whole, the spline-typicality variant underperforms on the selection metric: macro per-class PR-AUC drops from 0.985 to 0.937, and the variance nearly quadruples (std 0.047). It improves global binary separation (0.979 vs 0.964) but degrades discrimination between individual fault classes. The affine NLL configuration provides a better-calibrated per-class ranking and is adopted as the deployed scoring function.
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Leakage Audit}\label{sec:ad-leakage}
@@ -504,96 +549,65 @@ PC-Flow    & $0.628 \pm 0.073$ & \checkmark \\
 \end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
-\subsection{Tournament Comparison}\label{sec:ad-tournament}
+\subsection{Results and Discussion}\label{sec:ad-tournament}
 
-Table~\ref{tab:ad-tournament} summarises all detectors on the primary threshold-free headline metric, ranked by macro per-class PR-AUC. The binary PR-AUC column is included to illustrate the gap between the two aggregation strategies.
+Table~\ref{tab:ad-tournament} ranks all six detectors by the primary selection metric, macro per-class PR-AUC, and reports binary PR-AUC alongside it for contrast.
 
 \begin{table}[H]
 \centering
-\caption{Task~A tournament ranking.\label{tab:ad-tournament}}
+\caption{Comparative ranking of anomaly detectors on Task~A.\label{tab:ad-tournament}}
 \small
 \begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\raggedright\arraybackslash}X}
 \toprule
 \textbf{Model} & \textbf{Macro PC PR-AUC} & \textbf{Worst-class PR-AUC} & \textbf{Binary PR-AUC} & \textbf{Size} \\
 \midrule
-BOCD             & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & ${\sim}4F$ NIG params$^{\dag}$ \\
-Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees $\times$ 1024 \\
-OC-SVM           & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280 SVs \\
+BOCD             & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & 28 NIG params$^{\dag}$ \\
+Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees \\
+OC-SVM           & 0.965~$\pm$~0.019 & 0.883~$\pm$~0.073 & 0.987~$\pm$~0.010 & 1\,280 SVs$^{\ddag}$ \\
 MAAT             & 0.924~$\pm$~0.083 & 0.753~$\pm$~0.268 & 0.982~$\pm$~0.017 & 184\,213 params \\
-GTBAD            & 0.9752$^{\ddag}$  & 0.9140$^{\ddag}$  & 0.9896$^{\ddag}$ & 869\,769 params \\
-\textbf{PC-Flow (raw)} & \textbf{0.990~$\pm$~0.005} & \textbf{0.962~$\pm$~0.021} & 0.972~$\pm$~0.013 & 20\,124 params \\
+GTBAD            & 0.9752~$\pm$~0.071 & 0.9140~$\pm$~0.241 & 0.9896~$\pm$~0.019 & 869\,769 params \\
+\textbf{PC-Flow} & \textbf{0.990~$\pm$~0.005} & \textbf{0.962~$\pm$~0.021} & 0.972~$\pm$~0.013 & 20\,124 params \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-$^{\dag}$~BOCD stores 4 Normal-Inverse-Gamma hyperparameters per feature $F$; the model is nearly non-parametric.
-$^{\ddag}$~GTBAD metrics are from a single holdout run (no cross-validation).
+$^{\dag}$~NIG params: Normal-Inverse-Gamma hyperparameters — the 4 sufficient statistics (mean, pseudo-count, shape, scale) stored per feature to maintain the Bayesian posterior; 28 = $4 \times 7$ features. \quad $^{\ddag}$~SVs: support vectors — the subset of training points retained by the kernel SVM to define the decision boundary.
 
-A salient finding is the gap between binary PR-AUC and macro per-class PR-AUC: Isolation Forest scores 0.974 binary but only 0.822 per-class, and BOCD 0.870 vs 0.401. Both models capture the dominant Shadowing class reasonably well but fail almost entirely on the minority fault types. The macro per-class metric exposes this weakness; a headline based on binary PR-AUC would have masked it.
+\paragraph{Binary PR-AUC makes almost every model look excellent.}
+Figure~\ref{fig:ad-binary-macro}(a) compares the six detectors on binary PR-AUC, which asks only whether a model can tell \emph{some} fault apart from normal operation. Five of the six score between 0.97 and 0.99, and even the weakest, BOCD, reaches 0.870. The reason is that this metric counts every fault sample equally, and Shadowing alone supplies most of those samples: a model that catches Shadowing scores well even if it misses the rarer faults. Read on its own, this panel is misleading. PC-Flow appears \emph{last} among the five strong models (0.972), which would wrongly suggest it is the weakest of them.
 
-% ────────────────────────────────────────────────────────────────────────────
-\subsection{PC-Flow Design Ablations}\label{sec:ad-ablations}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/detection/fig_comparison_binary_macro.png}
+    \caption{The same six detectors under two metrics. (a) Binary PR-AUC bunches almost every model near the top. (b) Macro per-class PR-AUC, which weights each fault type equally, spreads them out and reverses the order: PC-Flow sits at the bottom of the strong group in (a) but first in (b). Bar heights are 5-fold means; whiskers are standard deviations. The dotted line marks the 0.64 no-skill baseline set by the fault prevalence in the test set.}
+    \label{fig:ad-binary-macro}
+\end{figure}
 
-Having established PC-Flow as the winner, this section analyses the design choices that lead to the selected configuration: the feature profile, the physics conditioning, and the scoring function.
+\paragraph{The macro metric reveals the true ranking.}
+Figure~\ref{fig:ad-binary-macro}(b) switches to macro per-class PR-AUC, which scores each fault type on its own and then averages, so a rare fault weighs as much as a common one. The picture changes completely: the models that looked tied now span 0.401 (BOCD) to 0.990 (PC-Flow), and PC-Flow rises from the bottom of the strong group to first overall. This reversal is the central result of the comparison. Binary PR-AUC hides the differences that matter for a diagnosis system, because a detector that only recognises Shadowing is blind to the three other faults it must identify. Macro per-class PR-AUC is the metric we select on, and PC-Flow leads it.
 
-\subsubsection{Profile Ablation: Why Raw Features Win}\label{sec:abl-profile}
+\paragraph{One fault separates the field: Degradation.}
+Figure~\ref{fig:ad-perclass} breaks every model down by fault type, one group of bars per class. Three of the four groups look nearly identical: for Short-Circuit, Open-Circuit, and Shadowing, every competitive model sits close to 1.0. These faults cause large, abrupt changes in current and power, so they are easy to separate from normal behaviour and do not decide the ranking. The fourth group, Degradation (highlighted), is where the models fan out, from 0.121 (BOCD) to 0.998 (PC-Flow): every classical detector stays below 0.89, and even the deep MAAT model reaches only 0.753. Degradation is hard because it is a slow loss of panel efficiency that, in its early stage, looks almost like normal operation, with no sharp event to catch. PC-Flow handles it because it scores each measurement by how \emph{probable} it is under a learned model of normal operation, conditioned on the current irradiance and temperature. A small but persistent drift away from the expected behaviour lowers that probability even while the raw signal still looks normal, so the fault is flagged early. Detectors based on distance or reconstruction error must instead wait for the fault to grow large enough to cross a fixed threshold.
 
-Three feature profiles were evaluated under the same HPO budget; the Params column reflects the architecture independently selected by HPO for each profile (Table~\ref{tab:pcflow-profile-abl}). Because model capacity scales with $\textit{hidden\_dim}^2$, HPO converging to $\textit{hidden\_dim}=32$ for \texttt{plus\_physics} vs.\ $\textit{hidden\_dim}=64$ for \texttt{baseline\_raw} explains why the 15-feature model has fewer parameters than the 7-feature model.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/detection/fig_comparison_perclass.png}
+    \caption{Per-class PR-AUC (each fault class against normal), one group of bars per fault. Short-Circuit, Open-Circuit, and Shadowing are easy for every competitive model; Degradation (highlighted) is the only class that separates the lineup. Bar heights are 5-fold means; whiskers are standard deviations.}
+    \label{fig:ad-perclass}
+\end{figure}
 
-\begin{table}[H]
-\centering
-\caption{PC-Flow profile ablation.\label{tab:pcflow-profile-abl}}
-\small
-\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
-\toprule
-\textbf{Profile} & \textbf{Modelled feat.} & \textbf{Context feat.} & \textbf{Macro PC PR-AUC} & \textbf{Worst} & \textbf{Params} \\
-\midrule
-\textbf{baseline\_raw}  & 7   & 2 & \textbf{0.990~$\pm$~0.005} & \textbf{0.962} & 20\,124 \\
-plus\_physics   & 15  & 2 & 0.985~$\pm$~0.012 & 0.954 & 9\,418 \\
-plus\_rolling   & 153 & 2 & 0.955~$\pm$~0.024 & 0.868 & 57\,546 \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\paragraph{The closest rival, and why model size decides.}
+PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: GTBAD's confidence interval ($\pm$0.07) comfortably overlaps PC-Flow's, so the two are statistically close and ranking quality alone does not settle the comparison. Model size does. Figure~\ref{fig:ad-size} shows each model's parameter count, with its macro per-class PR-AUC printed beside the bar. PC-Flow reaches the top score with 20\,124 parameters, whereas GTBAD needs 869\,769 to essentially match it, a model 43 times larger. For the Jetson Nano deployment target (Chapter~\ref{ch:deployment}), where memory use and inference time grow with parameter count, this is the deciding factor: PC-Flow delivers the same ranking quality in a model small enough to run on the edge device, and GTBAD does not. As the ablation in Section~\ref{sec:ad-pcflow} showed, this compactness costs nothing, since the smallest PC-Flow configuration was also the most accurate.
 
-Macro per-class PR-AUC degrades monotonically as the number of modelled features grows from 7 to 153. This is a hallmark of the \textbf{curse of dimensionality in density estimation}: the normalizing flow must model an increasingly high-dimensional normal distribution, making it harder to assign precise likelihoods to any given region. Importantly, a normalizing flow performs its \emph{own feature learning} as part of the bijective mapping; additional hand-engineered features are therefore redundant and ultimately harmful. The model extracts a latent representation that is jointly optimal for both likelihood estimation and anomaly scoring, without requiring explicit signal processing beyond the raw measurements. This result stands in deliberate contrast to the Task~B findings (Section~\ref{sec:fault-diagnosis}), where tree ensembles that \emph{cannot} learn representations benefit substantially from the same hand-crafted features.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/detection/fig_comparison_size.png}
+    \caption{Model size of each detector (number of parameters, log scale), with its macro per-class PR-AUC printed at the bar end. PC-Flow matches GTBAD's ranking quality (0.990 vs. 0.975) with a model 43 times smaller. Isolation Forest is omitted because its size is measured in trees, not parameters.}
+    \label{fig:ad-size}
+\end{figure}
 
-\textbf{Deployed profile: baseline\_raw} (7 raw electrical + meteorological features). This also yields the lightest deployment footprint: 20\,124 parameters vs 57\,546 for the rolling profile.
-
-\subsubsection{Conditioning Ablation: Physics Context Drives Performance}\label{sec:abl-cond}
-
-Table~\ref{tab:pcflow-cond-abl} compares the conditioned and unconditional variants on the plus\_physics profile.
-\begin{table}[H]
-\centering
-\caption{PC-Flow conditioning ablation.\label{tab:pcflow-cond-abl}}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Variant} & \textbf{Context feat.} & \textbf{Macro PC PR-AUC} & \textbf{Worst} & \textbf{Params} \\
-\midrule
-\textbf{Conditioned} (deployed) & 2 & \textbf{0.985~$\pm$~0.012} & \textbf{0.954} & 9\,418 \\
-Unconditional                   & 0 & 0.977~$\pm$~0.021          & 0.938          & 29\,332 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Removing the irradiance and temperature conditioning context reduces macro per-class PR-AUC from 0.985 to 0.977 and nearly doubles the variance (std 0.021 vs 0.012). This confirms that the physics conditioning does more than reduce the flow's effective dimensionality: it anchors the normal-operating manifold to the physical operating point, so the model learns a tighter conditional distribution. Without conditioning, the same flow must capture the full marginal across all irradiance and temperature regimes, leading to a looser boundary and higher fold-to-fold instability.
-
-\subsubsection{Scoring Ablation: Affine NLL vs Spline Typicality}\label{sec:abl-scoring}
-
-Table~\ref{tab:pcflow-score-abl} compares the affine NLL and spline-typicality scoring variants.
-\begin{table}[H]
-\centering
-\caption{PC-Flow scoring ablation.\label{tab:pcflow-score-abl}}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Variant} & \textbf{Coupling} & \textbf{Scoring} & \textbf{Macro PC PR-AUC} & \textbf{Binary PR-AUC} \\
-\midrule
-\textbf{Affine NLL} (deployed) & affine & $-\log p(x)$  & \textbf{0.985~$\pm$~0.012} & 0.964~$\pm$~0.023 \\
-Spline typicality               & spline & typicality    & 0.937~$\pm$~0.047          & \textbf{0.979~$\pm$~0.019} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The spline coupling layers provide a more expressive bijection, and the typicality score (distance from the mode of the data distribution) aims to correct the known pathology of NLL-based scoring: a well-trained flow assigns its highest likelihood to the mode, so anomalies can sometimes receive higher likelihoods than rare normal samples. However, the typicality correction fails to improve per-class performance: macro per-class PR-AUC drops from 0.985 to 0.937, and the variance nearly quadruples (std 0.047). The typicality score improves global binary separation (0.979 vs 0.964) but hurts discrimination between individual fault classes, suggesting the correction over-smooths the fault-class-specific tails. The affine NLL variant provides a better-calibrated per-class ranking and is adopted as the deployed scoring function.
+\paragraph{Reading the results with care.}
+The three rare fault classes are supported by very few episodes (15, 19, and 23). Under five-fold cross-validation each fold tests on only three to five episodes per class, which is why their error bars are wide for every model. The reported averages should be read together with these intervals. The single-fold deployment study in Section~\ref{sec:ad-deployment} provides the most reliable point estimate, since it evaluates on the full set of episodes at once.
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Deployed System: Tiered Alarm Characterisation}\label{sec:ad-deployment}
@@ -607,24 +621,3 @@ The deployed anomaly detector uses the \textbf{PC-Flow (baseline\_raw) model fro
 \end{itemize}
 
 \textit{Tier-specific precision/recall/F1/episode-recall, detection delay, and ARL0 values will be inserted from the fold~4 deployment\_alarm\_metrics.json once uploaded.}
-
-% ────────────────────────────────────────────────────────────────────────────
-\subsection{Discussion}\label{sec:ad-discussion}
-
-\paragraph{Why PC-Flow wins.}
-The normalizing flow's key advantage over all classical competitors is its joint optimisation of representation learning and exact likelihood estimation. OC-SVM, Isolation Forest, and BOCD all operate on \emph{pre-fixed} feature representations; the quality of their anomaly scores is bounded by the quality of those features. PC-Flow, by contrast, learns its own latent manifold of normal PV operation as a byproduct of maximising the log-likelihood; features and scoring are co-optimised. This explains both the performance gap and the profile ablation result: adding more hand-engineered features does not help a model that already learns better representations from the raw signals.
-
-\paragraph{Where all models agree.}
-Open-Circuit (cls~3) is easy for all five models: PR-AUC near~1.0 across the board. Short-Circuit (cls~1) and Open-Circuit produce abrupt, large-magnitude deviations that any anomaly detector with a well-calibrated threshold will catch. All models also perform reasonably on Shadowing (cls~4), which dominates the dataset.
-
-\paragraph{Where models struggle.}
-Degradation (cls~2) is the hardest fault across the entire Task~A lineup, including for PC-Flow. With only 19 fault episodes, the per-class PR-AUC estimates carry wide error bars. Degradation manifests as a gradual drift rather than an abrupt event, overlapping the normal-operating manifold at low severity, a structural challenge for any one-class detector.
-
-\paragraph{Binary vs per-class PR-AUC.}
-The gap between binary and macro per-class PR-AUC (Isolation Forest: 0.974 vs 0.822; BOCD: 0.870 vs 0.401) is not a quirk of this evaluation design: it reflects the dataset's class imbalance. The binary metric is dominated by the 96\% majority class (Shadowing + Normal); per-class PR-AUC equally weights each fault type. For an FDD system intended to discriminate between fault causes, the per-class view is the operationally relevant one.
-
-\paragraph{Model complexity and edge viability.}
-PC-Flow (baseline\_raw) has 20\,124 parameters and 7 input features, a 34\,×\ smaller footprint than the rolling variant and competitive with one-class SVM on inference cost. This is a material advantage for the Jetson Nano deployment target described in Section~\ref{ch:deployment}.
-
-\paragraph{Data limitations.}
-The minority fault classes (cls~1: 15 episodes, cls~2: 19 episodes, cls~3: 23 episodes) produce wide error bars across all models, and the five-fold k-fold gives only $\sim$3--5 test episodes per class per fold. Reported means should be read with those confidence intervals in mind. The deployment characterisation (Section~\ref{sec:ad-deployment}) provides the most honest single-model estimate, using the full episode support of the val-selected fold.

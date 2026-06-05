@@ -366,19 +366,80 @@ The second stage applies minimum-redundancy maximum-relevance (mRMR) feature sel
 
 This section defines the evaluation protocols applied uniformly across all experiments. It specifies the primary metrics for each task, the leakage validation checks, the cross-validation scheme, and the threshold calibration procedure. The choice of evaluation metrics constitutes the third tier of the class imbalance handling strategy, complementing the paradigm-level and training-level responses described in earlier sections: metrics are selected to reflect per-class diagnostic capability rather than aggregate accuracy, preventing majority-class prevalence from inflating the reported figures.
 
-\subsection{Headline Metrics}
+\subsection{Performance Metrics}
 
-For anomaly detection the primary metric is the area under the precision-recall curve (PR-AUC). On field datasets where normal-operation samples constitute the overwhelming majority of the recorded sequence, the area under the receiver-operating-characteristic curve (ROC-AUC) is structurally misleading: a classifier that assigns the negative label to every sample achieves near-perfect accuracy and an ROC-AUC approaching 1.0, neither of which conveys operational meaning. The precision-recall curve measures directly the trade-off between the fraction of raised alarms that correspond to true faults and the fraction of true faults that are caught \citep{saito2015pr}. A random baseline on this curve achieves an area equal to the positive class prevalence, so any reported PR-AUC must significantly exceed that floor to be informative.
+The performance figures reported throughout this work are expressed in terms of four confusion-matrix quantities: true positives ($\mathrm{TP}$), true negatives ($\mathrm{TN}$), false positives ($\mathrm{FP}$), and false negatives ($\mathrm{FN}$).
 
-The primary PR-AUC figure is the \textbf{macro per-class PR-AUC}: for each fault class, the PR-AUC of that class versus normal is computed independently, and the macro average across all classes is the headline figure. The worst-class PR-AUC is reported alongside it, because a high macro average can conceal failure on a single subtle class. This per-class discipline is essential on Costa, where the resistive degradation class (label~2) has a subtler electrical signature than the short-circuit or open-circuit classes. A complementary set of secondary metrics (F1 score, precision, and recall at a calibrated operating threshold) is tracked because the area is a ranking quantity and does not by itself characterize the deployment behavior at a single chosen operating point.
+\paragraph{Precision.}
+Precision measures the fraction of all positive predictions that are correct, or equivalently the proportion of raised alarms that correspond to actual fault events.
+\[
+  \mathrm{Precision} = \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FP}}.
+\]
 
-For fault classification the primary metric is the \textbf{macro-averaged F1 score}, which assigns equal weight to each fault class irrespective of its support. A support-weighted average would be dominated by the shadowing class (label~4, 35.7\% of fault-labeled rows), concealing failures on the three rare electrically induced fault classes in the same way that ROC-AUC is misleading for anomaly detection under severe prevalence imbalance. The weighted F1 score and the full per-class precision-recall-F1 triplet are reported alongside the macro average as secondary figures. The confusion matrix is treated as a primary diagnostic artifact in every fault classification comparison.
+\paragraph{Recall.}
+Recall (sensitivity) measures the fraction of all actual positives that are correctly identified, or equivalently the proportion of real fault events that are detected by the system.
+\[
+  \mathrm{Recall} = \frac{\mathrm{TP}}{\mathrm{TP}+\mathrm{FN}}.
+\]
+
+\paragraph{Accuracy.}
+Accuracy measures the fraction of all predictions, whether positive or negative, that are correct.
+\[
+  \mathrm{Accuracy} = \frac{\mathrm{TP}+\mathrm{TN}}{\mathrm{TP}+\mathrm{TN}+\mathrm{FP}+\mathrm{FN}}.
+\]
+On class-imbalanced data, accuracy is dominated by the majority class and provides little diagnostic information about minority-class performance.
+
+\paragraph{F1 Score.}
+The F1 score is the harmonic mean of precision and recall. It provides a single balanced measure that accounts for both missed faults (low recall) and unreliable alarms (low precision).
+\[
+  \mathrm{F1} = \frac{2\cdot\mathrm{Precision}\cdot\mathrm{Recall}}{\mathrm{Precision}+\mathrm{Recall}}.
+\]
+
+\paragraph{Macro-Averaged Score.}
+When a metric is computed per class in a multi-class setting, the macro average takes the unweighted mean over all $K$ classes:
+\[
+  \mathrm{Score}_{\mathrm{macro}} = \frac{1}{K}\sum_{k=1}^{K}\mathrm{Score}_k.
+\]
+Macro averaging assigns equal importance to every class regardless of sample count, so a failure on a rare fault class is penalized as strongly as a failure on the majority class.
+
+\paragraph{Weighted-Averaged Score.}
+The weighted average weights each per-class score by the number of samples $n_k$ of that class:
+\[
+  \mathrm{Score}_{\mathrm{weighted}} = \frac{\sum_{k=1}^{K} n_k\cdot\mathrm{Score}_k}{\sum_{k=1}^{K} n_k}.
+\]
+Weighted averaging reflects the actual class distribution. On imbalanced data it is dominated by majority classes and can conceal failure on rare classes.
+
+\paragraph{Precision-Recall AUC.}
+As the decision threshold is swept continuously, each threshold yields a (Precision, Recall) pair; the full set of pairs traces the precision-recall curve. The area under this curve (PR-AUC) is:
+\[
+  \mathrm{PR\text{-}AUC} = \int_0^1 P(R)\,\mathrm{d}R,
+\]
+where $P(R)$ denotes precision as a function of recall \citep{saito2015pr}. A random detector achieves a PR-AUC equal to the positive-class prevalence; a perfect detector achieves~1.0. Because PR-AUC integrates over all possible thresholds, it is a threshold-independent measure of intrinsic ranking quality: it reflects how well a model separates positives from negatives regardless of where the operating point is ultimately placed.
+
+\subsection{Evaluation Protocol per Task}
+
+\paragraph{Task~A: Anomaly Detection.}
+
+Since PR-AUC is threshold-independent and measures intrinsic ranking quality, it is the primary criterion for model comparison in Chapter~\ref{ch:implementation}. The headline figure is the \textbf{macro per-class PR-AUC}, obtained by computing the binary PR-AUC of each fault class versus normal independently and averaging the results without class weighting. The \textbf{worst-class PR-AUC} is reported alongside it to ensure that no individual class is overlooked by the aggregate figure. Given the edge deployment context, \textbf{model size} is reported as a secondary comparison criterion alongside PR-AUC: two models with comparable ranking quality are differentiated by the number of trainable parameters, as the target platform imposes strict memory and computational constraints detailed in Chapter~\ref{ch:deployment}.
+
+\textbf{Evaluation granularity.} Task~A models assign anomaly scores at different natural units depending on their architecture; PR-AUC is computed at the granularity native to each model:
+\begin{itemize}
+  \item \textbf{Sample level:} one score per measurement vector $\mathbf{x}(t)$, for models that process individual time steps.
+  \item \textbf{Window level:} one score per sliding context window $\mathbf{X}(t) \in \mathbb{R}^{w \times d}$, for models that require a fixed-length input sequence.
+  \item \textbf{Episode level:} scores are aggregated over a contiguous fault episode, defined as a temporally uninterrupted sequence of fault-labeled measurements bounded by a label transition. This granularity reflects whether a fault event as a whole was detected.
+\end{itemize}
+
+\textbf{Operating-point characterization.} Once the winning model has been identified through PR-AUC, secondary operating-point figures (precision, recall, and F1 at a calibrated threshold) are reported. The threshold calibration procedure is described in Section~\ref{sec:threshold-calibration}.
+
+\paragraph{Task~B: Fault Classification.}
+
+The criterion used to compare classifiers is the \textbf{macro-averaged F1 score}. Accuracy is dominated by the normal class and is therefore uninformative under class imbalance. Weighted F1 is dominated by the shadowing class (label~4, 35.7\% of fault-labeled rows) and can conceal failure on the three rare electrically induced fault classes. Macro F1 assigns equal weight to every fault type and penalizes failure on any class regardless of its frequency. Beyond the headline figure, the full per-class precision, recall, and F1 triplet is reported for each fault class individually, alongside weighted F1 and overall accuracy as secondary aggregate references.
 
 \subsection{Leakage Validation Suite}
 
 Leakage checks fall into two categories: checks that are \emph{guaranteed by pipeline design} and only verified programmatically, and checks that require \emph{post-training inspection} of model behavior.
 
-\paragraph{By-design checks (verified, not enforced).}
+\paragraph{By-design checks.}
 \begin{itemize}
     \item \textbf{Time-split integrity.} The maximum training timestamp must strictly precede the minimum validation timestamp, which must precede the minimum test timestamp. This property is guaranteed by the segment-based temporal ordering of Section~\ref{sec:splitting}; the check confirms no implementation error has violated it.
     \item \textbf{Duplicate sample check.} No feature row in the validation or test set may be an exact duplicate of a training row. This property is guaranteed by the post-split windowing principle of Section~\ref{sec:splitting}; the check confirms it holds after feature construction.

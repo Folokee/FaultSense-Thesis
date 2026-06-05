@@ -7,40 +7,80 @@ obtained from the evaluation on the Costa dataset.
 
 \section{Tools and Experimental Setup}
 \subsection{Software and Libraries}
-The implementation relies on a small set of libraries and services, grouped by their role in the end-to-end pipeline.
+The modeling pipeline is implemented in Python. Its main libraries are the following.
 
-\subsubsection{ML/DL core}
-\par\noindent\textbf{Python:} The primary programming language used for data processing, model development, and evaluation.
-\par\noindent\textbf{PyTorch:} The deep learning framework used for implementing and training the neural models.
-\par\noindent\textbf{Scikit-learn:} Used for preprocessing, classical baselines, and evaluation metrics.
-\par\noindent\textbf{SciPy:} Scientific computing utilities used for numerical routines and statistical operations required by parts of the pipeline.
-\par\noindent\textbf{Optuna:} Hyperparameter optimization framework used to tune model configurations under a shared HPO protocol.
+\begin{itemize}
+    \item \textbf{PyTorch} and \textbf{PyTorch Lightning:} the deep learning framework and the training-loop layer used to define the neural architectures and to organize their training, validation, and checkpointing; \textbf{torchmetrics} computes training-time metrics.
+    \item \textbf{Scikit-learn:} preprocessing, classical ML baselines, and evaluation metrics.
+    \item \textbf{Optuna:} hyperparameter optimization under the shared HPO protocol.
+    \item \textbf{pandas}, \textbf{Polars}, \textbf{NumPy}, and \textbf{PyArrow:} tabular data structures, high-performance transformations, array computation, and Parquet storage across the pipeline stages.
+    \item \textbf{SciPy:} scientific computing utilities for numerical routines and statistical operations.
+    \item \textbf{Matplotlib} and \textbf{seaborn:} diagnostic plots and result figures such as precision-recall curves and confusion matrices.
+    \item \textbf{loguru:} structured logging across the pipeline stages.
+\end{itemize}
 
-\subsubsection{Data engineering and visualisation}
-\par\noindent\textbf{Polars:} A high-performance DataFrame library used for efficient tabular data transformations in the preprocessing and feature engineering stages.
-\par\noindent\textbf{Matplotlib:} Used to generate diagnostic plots and result figures (e.g., curves and confusion matrices).
+\subsection{MLOps Infrastructure}\label{sec:implementation-experimental-setup}
+The experimental work reported in this chapter spans a large configuration matrix: several candidate models per task and multiple feature profiles. Producing results that are reproducible and comparable across this matrix requires the operational discipline that Machine Learning Operations (MLOps) brings to production machine learning systems. The experimental infrastructure is accordingly organized as an MLOps stack resting on three versioned and traceable layers: the code and its component architecture, the configuration that specifies each individual experiment, and the data and pipeline lineage that links every reported metric to the exact inputs that produced it. Figure~\ref{fig:mlops-topology} shows how the supporting toolchain realizes these three layers.
 
-\subsubsection{Experiment tracking and reproducibility}
-\par\noindent\textbf{GitHub:} Used for version control and collaborative code management.
-\par\noindent\textbf{Data Version Control (DVC):} Used to version datasets and large artifacts, and to encode the multi-stage pipeline as reproducible dependency graphs.
-\par\noindent\textbf{MLflow:} Free software used for experiment tracking, metrics logging, and model versioning.
-\par\noindent\textbf{DagsHub:} Used as a centralized platform for hosting the DVC remote and the MLflow tracking server, enabling traceability of runs and artifacts.
-\par\noindent\textbf{Google Colab:} Used as a managed GPU-backed execution environment for deep learning training and hyperparameter search.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/mlops_infrastructure.png}
+    \caption{MLOps toolchain.}
+    \label{fig:mlops-topology}
+\end{figure}
 
-\subsection{Experimental Setup}\label{sec:implementation-experimental-setup}
-This section summarizes the software stack and execution environment used to implement and evaluate the proposed Fault Detection and Diagnosis (FDD) pipeline. The goal is to ensure that the reported results can be reproduced from a versioned codebase, a traceable dataset state, and a documented configuration.
+\paragraph{Codebase structure.}
+\begin{itemize}
+    \item \texttt{data/} — pipeline stages (ingestion, split, preprocess, featurize), each exposed as a module entry point.
+    \item \texttt{modeling/} — task-specific trainers with shared infrastructure (HPO, artifact contracts, cross-validation). A \texttt{run.py} dispatcher per task reads \texttt{active\_model} from config and routes to the corresponding trainer; switching models requires only a config change.
+    \item \texttt{evaluation/} — leakage checks and result figures.
+    \item Every run produces a standardized artifact bundle (serialized model, feature manifest, calibration parameters, configuration snapshot) validated at load time before any inference.
+\end{itemize}
 
-\paragraph{Codebase and execution contract.}
-All experiments are implemented as a Python (\(\geq 3.11\)) monorepository, where each pipeline stage is exposed through a module entry point executed with a unified invocation pattern (e.g., \texttt{uv run python -m src.data.ingestion}). The \texttt{uv} build system is used as the only package and environment manager, ensuring consistent dependency resolution across local and cloud execution.
+\paragraph{Configuration as the experiment specification.}
+Every experiment is fully defined by two YAML files:
+\begin{itemize}
+    \item \textbf{data\_config.yaml} — active dataset, split policy, preprocessing flags, and feature profiles. Profiles form an additive ablation ladder: each level extends the previous through boolean flags.
+    \item \textbf{model\_config.yaml} — shared experiment parameters (seeds, CV folds), per-task HPO settings (sampler, pruner strategy, trial budget, per-model search spaces), and model-specific calibrations.
+\end{itemize}
 
-\paragraph{Configuration management.}
-To minimize implicit assumptions and to enable systematic comparisons, all data and model decisions are externalized into YAML configuration files. The data configuration defines the active dataset, split policy, preprocessing options, and feature profiles, while the model configuration defines the active model lineup, hyperparameter optimization (HPO) settings, and detector-specific post-processing (e.g., anomaly threshold calibration). When multiple configuration scopes apply, parameters are resolved through a deterministic hierarchy (global defaults, dataset overrides, task directives, then profile overrides), which prevents silent overrides and simplifies run auditing.
+\paragraph{Data and pipeline lineage.}
+\begin{itemize}
+    \item \textbf{DVC} tracks all large artifacts (raw data, processed tables, model checkpoints) by content hash; only the lightweight \texttt{.dvc} pointers are stored in Git. Any upstream change automatically invalidates and regenerates the affected downstream artifacts.
+    \item \textbf{MLflow} logs each run's dataset identifier, feature profile, HPO parameters, and validation and test metrics, so that every reported figure is traceable to the exact data state and configuration that produced it.
+    \item \textbf{DagsHub} hosts the DVC remote and the MLflow tracking server on a single platform, linking versioned data, code commits, and experiment runs.
+  \end{itemize}
 
-\paragraph{Data versioning and pipeline reproducibility.}
-Large artifacts (raw data, processed tables, and selected model checkpoints) are managed with Data Version Control (DVC). The end-to-end workflow is encoded as a multi-stage DVC pipeline (ingestion, splitting, preprocessing, featurization, and training), such that intermediate artifacts are regenerated from their upstream dependencies and tracked through content hashes. The DVC remote storage is hosted on DagsHub, while Git stores the lightweight \texttt{.dvc} pointers and the pipeline definition. This separation keeps the repository manageable while preserving traceability between the reported metrics and the exact data state that produced them.
+Figures ~\ref{fig:mlflow} and ~\ref{fig:dagshub} show the integrated project view and the run comparison interface.
 
-\paragraph{Compute environments and execution discipline.}
-Two execution environments are used depending on workload characteristics. CPU-oriented stages, including ingestion, exploratory analysis, and the classical machine learning baselines, are executed on a local machine. Deep learning training and HPO are executed on Google Colab with GPU acceleration (typically NVIDIA T4 or A100). In Colab sessions, a persistent Google Drive workspace is mounted and used as an artifacts root directory, so that Optuna studies, checkpoints, metrics, and plots survive runtime disconnections. This split avoids wasting GPU resources on CPU-bound data manipulation and focuses accelerated compute on the training loops that benefit from it.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{figures/mlflow_anomaly.png}
+        \caption{Anomaly detection runs.}
+    \end{subfigure}
+    \vspace{0.5em}
+    \begin{subfigure}[b]{\textwidth}
+        \includegraphics[width=\textwidth]{figures/mlflow_classif.png}
+        \caption{Fault classification runs.}
+    \end{subfigure}
+    \caption{MLflow run comparison view for both tasks, logging hyperparameters and validation and test metrics for each tracked run.}
+    \label{fig:mlflow}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/dagshub_interface.png}
+    \caption{DagsHub project page integrating the Git repository, DVC-tracked data, and MLflow experiments on a single platform.}
+    \label{fig:dagshub}
+\end{figure}
+
+\paragraph{Compute environments.}
+\begin{itemize}
+    \item \textbf{Classical ML models} that do not require GPU are trained locally on an AMD Ryzen 7 PRO 6850U (8 cores, up to 4.7~GHz).
+    \item \textbf{Deep learning models} are trained on Google Colab Pro+, which provided access to an NVIDIA A100 GPU (6912 CUDA cores, 80~GB HBM2e, 312~TFLOPS FP16) for all deep learning training and HPO runs.
+    \item In both cases, results are logged to the remote MLflow tracking server hosted on DagsHub.
+\end{itemize}
 
 \paragraph{Hyperparameter optimization protocol.}
 % Model selection is conducted with Optuna using the Tree-structured Parzen Estimator (TPE) sampler. Classical models are tuned with fixed trial budgets, where each trial is fast and therefore pruning is not required. Deep learning models use the same Optuna interface but can additionally enable early stopping and pruning strategies, because training a single trial can span multiple epochs. For all tasks, the validation partition is the only split used for HPO decisions (metric optimization and threshold selection), while the test partition is reserved for final reporting.
@@ -63,11 +103,6 @@ controlled randomness to prevent premature convergence. Unlike TPE, which builds
 Each HPO study runs on the fixed original train/val split and completes before the K-fold cross-validation begins, so the winning configuration is fixed for all folds. The test partition is invisible throughout. The optimization objective is the validation macro per-class PR-AUC for anomaly detection and the validation macro F1 for fault classification, consistent with the headline metrics of Section~\ref{sec:evaluation-methodology}. Among configurations whose scores fall within one standard deviation of each other, the simpler configuration is preferred as a tiebreaker.
 
 The pruning strategy is adapted to trial cost. For classical ML models, no pruner is applied: trials are inexpensive and no intermediate epoch-level signal is available. For deep learning models, a Median pruner is added: a trial is terminated when its intermediate validation score falls below the median of all completed trials at the same epoch, after a warmup period during which pruning is suspended. Within-trial early stopping patience scales with the trial epoch budget, preventing premature termination on short trial budgets.
-
-
-\paragraph{Experiment tracking and artifacts.}
-All runs are tracked with MLflow and logged to a centralized DagsHub tracking server. Each run records the active dataset and split identifier, the selected feature profile, the final HPO parameters, and the computed validation and test metrics. In addition, lightweight artifacts are stored alongside metrics, including serialized preprocessing objects (e.g., scalers), model files (\texttt{.joblib} for classical models and checkpoints for deep learning), and diagnostic figures such as PR curves, score histograms, and confusion matrices. This tracking discipline supports direct comparison across the anomaly detection and fault classification experiments.
-
 
 
 \input{chapters/detection}
