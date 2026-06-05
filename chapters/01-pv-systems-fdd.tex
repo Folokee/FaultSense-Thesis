@@ -184,7 +184,7 @@ Offline methods are trained on a fixed historical dataset and deployed for infer
 Machine learning (ML) methods for PV FDD typically rely on engineered features extracted from electrical and meteorological measurements. These methods are generally computationally efficient, interpretable, and well-suited to tabular data, making them a practical choice for deployment in resource-constrained monitoring environments.
 
 \paragraph{Kernel Methods.}
-Kernel methods map input data into a higher-dimensional feature space where linear separation becomes possible, using a kernel function to compute inner products without explicitly constructing the high-dimensional representation. This approach is particularly effective when the decision boundary between normal and faulty operation is nonlinear in the original measurement space.
+Kernel methods map input data into a higher-dimensional feature space where linear separation becomes possible, using a kernel function to compute inner products without explicitly constructing the high-dimensional representation \citep{vapnik1995nature}. This approach is particularly effective when the decision boundary between normal and faulty operation is nonlinear in the original measurement space.
 
 Support Vector Machines (SVM) are supervised learning algorithms designed for classification and regression tasks. The main objective of SVM is to determine an optimal separating hyperplane that maximizes the margin between different classes in the feature space. For nonlinear problems, kernel functions are used to project the data into a higher-dimensional space where linear separation becomes possible.
 
@@ -197,7 +197,7 @@ where $w$ is the normal vector of the hyperplane and $b$ is the bias term. For n
 K(x_i,x_j)=\exp\bigl(-\gamma \lVert x_i-x_j \rVert^2\bigr).
 \end{equation}
 
-The One-Class SVM (OC-SVM) variant extends this principle to semi-supervised anomaly detection by learning the smallest enclosing region of normal data in feature space. SVM models are widely used in PV fault diagnosis because of their strong generalization capability and robustness in high-dimensional feature spaces.
+The One-Class SVM (OC-SVM) variant extends this principle to semi-supervised anomaly detection by learning the smallest enclosing region of normal data in feature space \citep{scholkopf2001oneclass}. SVM models are widely used in PV fault diagnosis because of their strong generalization capability and robustness in high-dimensional feature spaces.
 
 \paragraph{Ensemble Methods.}
 Ensemble methods combine multiple base learners to produce a single prediction that is more robust and accurate than any individual model. In PV fault diagnosis, ensemble techniques are valued for their ability to handle noisy sensor data, capture complex feature interactions, and maintain calibration under class imbalance through native weighting mechanisms.
@@ -217,7 +217,7 @@ Decision Trees are interpretable and computationally efficient, making them suit
 \subparagraph{Isolation Forest}
 \label{subsec:iforest}
 
-Isolation Forest (IF) is an unsupervised anomaly detector that isolates outliers by random partitioning of the feature space. It builds an ensemble of randomized binary trees, each grown by randomly selecting a feature and split value. Anomalies, being few and distinct from normal behavior, are isolated in fewer splits, yielding shorter path lengths.
+Isolation Forest (IF) is an unsupervised anomaly detector that isolates outliers by random partitioning of the feature space \citep{liu2008isolation}. It builds an ensemble of randomized binary trees, each grown by randomly selecting a feature and split value. Anomalies, being few and distinct from normal behavior, are isolated in fewer splits, yielding shorter path lengths.
 
 Let $h(x)$ be the path length (number of edges) of sample $x$ in a tree. Over $t$ trees, the average path length is given by
 
@@ -237,7 +237,7 @@ IF is well-suited to PV fault detection: it requires no labeled fault data, hand
 
 \subparagraph{Random Forest}
 
-Random Forest (RF) is an ensemble learning method that constructs a collection of $B$ decision trees and aggregates their predictions. For classification, the forest output is determined by majority voting over the individual tree predictions $\hat{y}_b(x)$:
+Random Forest (RF) is an ensemble learning method that constructs a collection of $B$ decision trees and aggregates their predictions \citep{breiman2001random}. For classification, the forest output is determined by majority voting over the individual tree predictions $\hat{y}_b(x)$:
 
 \begin{equation}
 \hat{y}(x) = \arg\max_{c \in \mathcal{C}} \sum_{b=1}^{B} \mathbb{1}\{\hat{y}_b(x) = c\},
@@ -251,7 +251,7 @@ A distinctive advantage of Random Forests is the out-of-bag (OOB) error estimate
 \hat{y}_{\text{OOB}}(x_i) = \arg\max_{c \in \mathcal{C}} \sum_{b \,:\, x_i \notin \mathcal{D}_b} \mathbb{1}\{\hat{y}_b(x_i) = c\},
 \end{equation}
 
-where $\mathcal{D}_b$ is the bootstrap training set of tree $b$. The OOB error is then the fraction of incorrectly classified OOB samples. Random Forests output native feature importance measures and are robust to irrelevant predictors, making them suitable for PV fault diagnosis tasks that involve many candidate features whose individual contributions require assessment. A related variant, Extremely Randomized Trees (Extra Trees), carries randomisation further by also selecting split thresholds uniformly at random rather than optimising them, yielding lower variance at the cost of slightly higher bias.
+where $\mathcal{D}_b$ is the bootstrap training set of tree $b$. The OOB error is then the fraction of incorrectly classified OOB samples. Random Forests output native feature importance measures and are robust to irrelevant predictors, making them suitable for PV fault diagnosis tasks that involve many candidate features whose individual contributions require assessment. A related variant, Extremely Randomized Trees (Extra Trees), carries randomisation further by also selecting split thresholds uniformly at random rather than optimising them, yielding lower variance at the cost of slightly higher bias \citep{geurts2006extremely}.
 
 \subsubsection{Deep Learning Methods}
 \label{sec:offline-dl}
@@ -265,7 +265,7 @@ Sequence modeling methods are designed to capture temporal dependencies in order
 
 Recurrent Neural Networks (RNNs) are a class of neural architectures designed to process sequential data by maintaining a hidden state that captures information from past time steps. At each step $t$, the hidden state $h_t$ is updated as a function of the current input $x_t$ and the previous state $h_{t-1}$, enabling the network to model temporal dependencies across variable-length sequences. Standard RNNs suffer from the vanishing gradient problem, which limits their ability to capture long-range dependencies.
 
-Long Short-Term Memory (LSTM) networks address this limitation by introducing memory cells and gating mechanisms that control the flow of information.
+Long Short-Term Memory (LSTM) networks address this limitation by introducing memory cells and gating mechanisms that control the flow of information \citep{hochreiter1997lstm}.
 
 The forget gate is expressed as:
 \begin{equation}
@@ -281,13 +281,13 @@ LSTM networks are widely applied in PV fault diagnosis because they effectively 
 \subparagraph{State-Space Models (SSM)}
 \label{sec:bg-mamba}
 
-State-space models (SSMs) are a class of sequence models that represent dynamical systems through a latent state evolving over time according to linear differential equations. Classical SSMs, such as the Structured State-Space Sequence model (S4) and its efficient diagonal variant (S4D), use fixed transition matrices to propagate information across time steps with linear computational complexity, offering a compelling alternative to attention-based architectures for long-range sequence modeling. However, their static parameterisation limits the ability to selectively focus on relevant portions of the input sequence.
+State-space models (SSMs) are a class of sequence models that represent dynamical systems through a latent state evolving over time according to linear differential equations. Classical SSMs, such as the Structured State-Space Sequence model (S4) and its efficient diagonal variant (S4D), use fixed transition matrices to propagate information across time steps with linear computational complexity \citep{gu2022s4}, offering a compelling alternative to attention-based architectures for long-range sequence modeling. However, their static parameterisation limits the ability to selectively focus on relevant portions of the input sequence.
 
 Mamba addresses this shortcoming through an input-dependent selection mechanism that enables the model to selectively retain or discard information along the sequence \citep{gu2023mamba}. Unlike recurrent networks, which propagate state through fixed transition matrices, and classical SSMs, which employ time-invariant dynamics, Mamba's selective state-space formulation captures long-range dependencies while maintaining constant memory and compute per time step, making it attractive for deployment on edge hardware such as the Jetson Nano where quadratic attention complexity is prohibitive. This input-aware gating brings the representational capacity of SSMs closer to that of self-attention without sacrificing their linear complexity advantage.
 
 \subparagraph{Transformer}
 
-Transformer models are deep learning architectures based entirely on attention mechanisms rather than recurrent structures. Their main advantage lies in the ability to capture long-range dependencies while enabling parallel computation.
+Transformer models are deep learning architectures based entirely on attention mechanisms rather than recurrent structures \citep{vaswani2017attention}. Their main advantage lies in the ability to capture long-range dependencies while enabling parallel computation.
 
 The self-attention mechanism is defined as:
 \begin{equation}
@@ -316,7 +316,7 @@ The network is trained by minimizing the reconstruction error:
 L=\lVert x-\hat{x} \rVert^2.
 \end{equation}
 
-Variational Autoencoders (VAE) extend conventional autoencoders by learning probabilistic latent distributions instead of deterministic representations. Rather than encoding a single latent vector, the encoder estimates the mean $\mu$ and variance $\sigma^2$ of a probability distribution:
+Variational Autoencoders (VAE) extend conventional autoencoders by learning probabilistic latent distributions instead of deterministic representations \citep{kingma2014vae}. Rather than encoding a single latent vector, the encoder estimates the mean $\mu$ and variance $\sigma^2$ of a probability distribution:
 \begin{equation}
 z \sim \mathcal{N}(\mu,\sigma^2).
 \end{equation}
