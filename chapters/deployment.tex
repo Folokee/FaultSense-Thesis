@@ -234,7 +234,7 @@ Three activity diagrams capture the principal runtime flows.
 \label{fig:deployment-activity-init}
 \end{figure}
 
-\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming sensor row. The pipeline dequeues it, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the CatBoost classifier when the tier is P3 or above. The inference result is forwarded to the drift monitor and broadcast to all connected dashboard clients. Figure~\ref{fig:deployment-activity-inference} details this loop.
+\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming sensor row. The pipeline dequeues it, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the Extra Trees classifier when the tier is P3 or above. The inference result is forwarded to the drift monitor and broadcast to all connected dashboard clients. Figure~\ref{fig:deployment-activity-inference} details this loop.
 
 \begin{figure}[H]
 \centering
@@ -252,7 +252,7 @@ Three activity diagrams capture the principal runtime flows.
 \node[act, below=of d1] (a2) {Featurise \& scale};
 \node[act, below=of a2] (a3) {PC-Flow score $\rightarrow$ alarm tier};
 \node[dec, below=of a3] (d2) {Tier $\geq$ P3?};
-\node[act, below=of d2] (a4) {CatBoost classify fault};
+\node[act, below=of d2] (a4) {Extra Trees classify fault};
 \node[act, below=of a4] (a5) {Update drift monitor};
 \node[act, below=of a5] (a6) {Broadcast result to dashboard};
 \node[act, right=of d1] (disc) {Discard row};
@@ -327,7 +327,7 @@ Each deployed artifact is accompanied by a \textbf{deployment contract}: a struc
     \item the ordered list of feature names, in the order expected by the model;
     \item the StandardScaler parameters (mean and scale) estimated from the training partition;
     \item the physics conditioning channels $c = (\text{irr}, \text{pvt})$ and their indices in the feature vector;
-    \item the calibrated tier parameters consumed by the alarm engine (Section~\ref{sec:deployment-alerting}): the sensitive (P3) threshold, the conformal (P2) threshold, the CUSUM (P1) reference slack $k$ and control limit $h$, and the normal-score statistics $(\mu_{\mathrm{normal}}, \sigma_{\mathrm{normal}})$ used for the CUSUM $z$-transform;
+    \item the calibrated tier parameters consumed by the alarm engine (Section~\ref{sec:threshold-calibration}): the sensitive (P3) threshold, the conformal (P2) threshold, the CUSUM (P1) reference slack $k$ and control limit $h$, and the normal-score statistics $(\mu_{\mathrm{normal}}, \sigma_{\mathrm{normal}})$ used for the CUSUM $z$-transform;
     \item the timestamp of the training run and the validation score at checkpoint.
 \end{itemize}
 The contract is verified at load time before inference begins: the runtime checks that the feature list in the incoming data stream matches the contract's ordered feature list, applies the stored scaler, and validates the threshold provenance. Any contract violation raises a runtime exception before the first inference is executed.
@@ -346,7 +346,7 @@ The FaultSense monitoring system follows a two-tier local client--server archite
 The backend is written in Python 3 and is structured around three concurrent threads that share a thread-safe output queue:
 
 \begin{itemize}
-    \item The \textbf{inference loop} dequeues sensor rows, applies the feature engineering and scaling pipeline, scores each row through the PC-Flow ONNX model via the alarm engine, conditionally invokes the CatBoost classifier, updates the Page-Hinkley drift monitor, and pushes the result onto the output queue.
+    \item The \textbf{inference loop} dequeues sensor rows, applies the feature engineering and scaling pipeline, scores each row through the PC-Flow ONNX model via the alarm engine, conditionally invokes the Extra Trees classifier, updates the Page-Hinkley drift monitor, and pushes the result onto the output queue.
     \item The \textbf{readings loop} forwards the raw sensor measurements to the frontend for visualization, independently of the inference cadence.
     \item The \textbf{metrics loop} reads CPU, GPU, memory, and temperature from the hardware layer and pushes rolling inference statistics to the dashboard once per second.
 \end{itemize}
@@ -363,7 +363,7 @@ The ingest server runs on a separate asyncio event loop in a daemon thread, rece
 \midrule
 WebSocket server & \texttt{websockets} \\
 Model inference (anomaly) & \texttt{torch}, ONNX Runtime \\
-Model inference (classification) & \texttt{catboost}, \texttt{scikit-learn} \\
+Model inference (classification) & \texttt{scikit-learn} (Extra Trees) \\
 Drift detection & \texttt{river} (Page-Hinkley) \\
 Data processing & \texttt{pandas}, \texttt{numpy}, \texttt{pyarrow} \\
 Hardware monitoring & \texttt{psutil} \\
@@ -405,23 +405,6 @@ Language & Vanilla JavaScript, HTML5, CSS3 \\
 \subsection{Deployment Mode}
 
 On the Jetson Nano the application is launched via \texttt{python main.py}. The launcher auto-selects the GUI backend: PyQt5 with QWebEngineView is preferred when available, falling back to pywebview, then to a plain browser mode that serves the frontend over a local HTTP server and opens it in the default browser. In all modes the backend and frontend communicate over \texttt{localhost}, and no network interface is exposed outside the device.
-
-% ────────────────────────────────────────────────────────────
-\section{Tiered Alerting System}
-\label{sec:deployment-alerting}
-% ────────────────────────────────────────────────────────────
-
-The alarm engine implements a three-tier priority hierarchy aligned with the ISA-18.2 alarm management standard \citep{isa182011alarm}. Each tier corresponds to a distinct threshold policy applied to the same PC-Flow NLL score, so the choice of tier does not affect the underlying model — only the decision boundary at which an alarm is raised. The three tiers and their calibration policies are as follows.
-
-\begin{description}
-    \item[P3 Advisory] The sensitive threshold calibrated at a false-positive rate of 20\% on training-normal scores. This tier maximizes recall and is intended as an early-warning indicator: the operator should \emph{investigate} when a P3 alarm fires, but no immediate intervention is required. A P3 Advisory alarm is shown in amber on the dashboard.
-
-    \item[P2 High] The conformal threshold derived from the distribution-free conformal prediction framework, providing a false-positive rate guarantee of $\alpha = 0.05$ under the exchangeability assumption. This tier offers a statistically principled high-precision boundary: \emph{schedule inspection} when a P2 High alarm fires. A P2 High alarm is shown in orange.
-
-    \item[P1 Critical] The CUSUM-based alarm: a one-sided cumulative sum chart accumulates signed deviations of the NLL score from its reference level and fires when the accumulated statistic exceeds the calibrated control limit. Because CUSUM integrates evidence across consecutive samples rather than evaluating each sample independently, it is insensitive to single-sample spikes and fires only on sustained score shifts. This tier achieves sample-level precision of 100\% in evaluation and requires \emph{immediate action}. A P1 Critical alarm is shown in red.
-\end{description}
-
-The P3 threshold thus governs early sensitivity, P2 provides a high-confidence actionable boundary, and P1 is reserved for events that have persisted long enough for the CUSUM accumulator to confirm a genuine sustained deviation.
 
 % ────────────────────────────────────────────────────────────
 \section{Monitoring Interface}
@@ -543,6 +526,40 @@ where $\bar{x}$ is the running mean, $\delta$ is a sensitivity margin against or
 \caption{Page-Hinkley drift detection on the physics channel.}
 \label{fig:deployment-drift-tikz}
 \end{figure}
+
+% ────────────────────────────────────────────────────────────
+\section{Real-Time Inference Performance on the Edge}
+\label{sec:deployment-latency}
+% ────────────────────────────────────────────────────────────
+
+A central premise of this work is that PV fault detection and diagnosis can be performed \emph{on the edge} — locally, on hardware inexpensive enough to be installed per site — rather than streaming raw measurements to a cloud service for every inference. Edge execution removes the round-trip latency, the dependence on continuous connectivity, and the recurring transmission cost that a cloud-inference architecture would impose on a permanently running monitor. This section validates that premise empirically: it shows that the full two-model pipeline meets the real-time constraint on the target device with a wide margin, and that the margin is a structural property of the design rather than an artifact of one configuration.
+
+\paragraph{Measurement protocol.} The complete pipeline — feature engineering, PC-Flow anomaly scoring, the tiered alarm engine, and conditional fault classification — was exercised on the Jetson Nano by replaying 162\,453 real PV samples in acquisition order at the operational cadence of 1~Hz. Wall-clock time was recorded around each per-sample inference call, and the first 50 samples were discarded as warm-up. Latency is reported per stage and end-to-end as the median (p50), 95th, and 99th percentiles over the full replay (Table~\ref{tab:deployment-latency}). At 1~Hz the per-sample budget is 1\,000~ms.
+
+\begin{table}[H]
+\centering
+\caption{Inference latency on the Jetson Nano (162\,453 samples at 1~Hz; budget 1\,000~ms).}
+\label{tab:deployment-latency}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Stage} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} \\
+\midrule
+PC-Flow anomaly detector  & 8.97  & 13.58 & 19.04 \\
+Extra Trees classifier    & 5.10  & 9.50  & 14.75 \\
+\midrule
+Full pipeline             & \textbf{12.94} & \textbf{21.44} & \textbf{30.04} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The full pipeline completes in 12.94~ms at the median and 30.04~ms at the 99th percentile, a margin of $77\times$ and $33\times$ respectively against the 1\,000~ms budget. Because the classifier is invoked only when the detector raises an alarm, the steady-state cost during healthy operation — the overwhelming majority of samples at a sound installation — is the detector path alone, at 8.97~ms median.
+
+\paragraph{Inference cost breakdown.} When the PC-Flow model is timed in isolation — excluding feature engineering, alarm-engine routing, and dashboard broadcast — it completes in \textbf{565~µs} at the median and \textbf{970~µs} at the 99th percentile, accounting for less than 5\% of the total end-to-end latency. The dominant cost is therefore the surrounding pipeline, not the model itself.
+
+This observation is consequential for the design rationale. PC-Flow was selected over larger deep baselines not only because it matched their detection quality (Section~\ref{sec:ad-tournament}), but because a compact detector is a prerequisite for a complete monitoring system to run within a single 1~Hz inference cycle on one device: the fault classifier, the alarm engine, and the drift monitor all execute in the same loop alongside the detector. A substantially larger model would remain within the 1\,000~ms per-sample budget in isolation, but would consume the latency margin required by the co-running components.
+
+
+In summary, the pipeline meets the real-time requirement with a $33\times$ margin at the 99th percentile, and does so in a regime where orchestration, not inference, is the dominant cost. The system satisfies the edge-deployment objective in full, and retains clear headroom for higher sampling rates, additional monitored channels, or richer feature pipelines without approaching the real-time limit.
 
 % ────────────────────────────────────────────────────────────
 \section{Conclusion}
