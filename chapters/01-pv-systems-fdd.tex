@@ -144,9 +144,6 @@ Artificial intelligence (AI) techniques are increasingly adopted to support auto
 
 Online methods are designed to operate on streaming data, processing one observation at a time and maintaining a compact internal state that summarises the relevant past. They are particularly attractive for PV monitoring because they can run causally on edge hardware without storing or re-scanning large historical buffers. Examples include sequential change-detection procedures such as the Page-Hinkley test and the Cumulative Sum (CUSUM) chart, as well as probabilistic frameworks like Bayesian Online Changepoint Detection that maintain a full posterior over regime changes.
 
-\subsubsection{Bayesian Online Change Point Detection (BOCD)}
-\label{subsec:bocd}
-
 Bayesian Online Changepoint Detection (BOCD) is an online probabilistic method for detecting abrupt changes in time-series data \citep{BayesianOnlineChangepoint2007}. At each time step, it estimates the posterior distribution of the \emph{run length} $r_t$, defined as the number of observations since the last changepoint.
 
 Given observations $x_{1:t}$, the predictive distribution for the next sample is
@@ -188,9 +185,6 @@ Machine learning (ML) methods for PV FDD typically rely on engineered features e
 
 \paragraph{Kernel Methods.}
 Kernel methods map input data into a higher-dimensional feature space where linear separation becomes possible, using a kernel function to compute inner products without explicitly constructing the high-dimensional representation. This approach is particularly effective when the decision boundary between normal and faulty operation is nonlinear in the original measurement space.
-
-\subparagraph{Support Vector Machines (SVM)}
-\label{subsec:svm}
 
 Support Vector Machines (SVM) are supervised learning algorithms designed for classification and regression tasks. The main objective of SVM is to determine an optimal separating hyperplane that maximizes the margin between different classes in the feature space. For nonlinear problems, kernel functions are used to project the data into a higher-dimensional space where linear separation becomes possible.
 
@@ -241,17 +235,23 @@ where $\psi$ is the subsampling size and $c(\psi)$ normalizes the score using th
 
 IF is well-suited to PV fault detection: it requires no labeled fault data, handles high-dimensional features, and directly outputs an anomaly score that can be thresholded for detection.
 
-\subparagraph{Extra Trees}
+\subparagraph{Random Forest}
 
-Extremely Randomized Trees (Extra Trees) extend the randomisation principle beyond standard tree ensembles. While Random Forest selects optimal split thresholds from a random feature subset, Extra Trees additionally randomises the split threshold itself, choosing cut-points uniformly at random for each candidate feature. This aggressive randomisation reduces variance further and produces well-calibrated class probability estimates. Extra Trees are trained via majority voting over a large ensemble of fully grown trees with balanced class weighting to handle imbalanced fault distributions.
+Random Forest (RF) is an ensemble learning method that constructs a collection of $B$ decision trees and aggregates their predictions. For classification, the forest output is determined by majority voting over the individual tree predictions $\hat{y}_b(x)$:
 
-\subparagraph{LightGBM}
+\begin{equation}
+\hat{y}(x) = \arg\max_{c \in \mathcal{C}} \sum_{b=1}^{B} \mathbb{1}\{\hat{y}_b(x) = c\},
+\end{equation}
 
-LightGBM (Light Gradient Boosting Machine) is a gradient boosting framework that builds an ensemble of decision trees sequentially, where each new tree corrects the residual errors of the current ensemble. It employs a histogram-based algorithm that discretises continuous features into bins, enabling fast training with low memory usage. Unlike traditional level-wise tree growth, LightGBM grows trees leaf-wise, expanding the leaf with the highest loss reduction, which produces deeper and more expressive trees under the same node budget. Native class weighting scales per-sample gradients in inverse proportion to class frequency, ensuring that minority fault classes receive proportional influence during training.
+where $\mathcal{C}$ is the set of fault classes. Each tree is trained on a bootstrap sample drawn with replacement from the training data, and at each split only a random subset of $m = \lfloor\sqrt{p}\rfloor$ features (where $p$ is the total number of features) is considered, introducing controlled diversity across the ensemble. The combination of bootstrap aggregation and random feature selection reduces variance and guards against overfitting, particularly in high-dimensional settings where individual decision trees are prone to memorising noise.
 
-\subparagraph{CatBoost}
+A distinctive advantage of Random Forests is the out-of-bag (OOB) error estimate, which provides an unbiased performance evaluation without requiring a separate validation set. For each training sample $(x_i, y_i)$, the OOB prediction is obtained by aggregating only the trees for which that sample was not included in the bootstrap draw:
 
-CatBoost (Categorical Boosting) is a gradient boosting method that uses symmetric trees and an ordered boosting strategy designed to reduce prediction shift, a form of target leakage that arises when classical boosting computes leaf values on the same data used to select splits. The symmetric tree structure ensures balanced splits and efficient inference. CatBoost's native balanced class-weighting mechanism automatically scales per-sample contributions by inverse class frequency. Its ordered target encoding and built-in evaluation metric tracking make it a strong candidate for multi-class PV fault diagnosis with minimal hyperparameter tuning.
+\begin{equation}
+\hat{y}_{\text{OOB}}(x_i) = \arg\max_{c \in \mathcal{C}} \sum_{b \,:\, x_i \notin \mathcal{D}_b} \mathbb{1}\{\hat{y}_b(x_i) = c\},
+\end{equation}
+
+where $\mathcal{D}_b$ is the bootstrap training set of tree $b$. The OOB error is then the fraction of incorrectly classified OOB samples. Random Forests output native feature importance measures and are robust to irrelevant predictors, making them suitable for PV fault diagnosis tasks that involve many candidate features whose individual contributions require assessment. A related variant, Extremely Randomized Trees (Extra Trees), carries randomisation further by also selecting split thresholds uniformly at random rather than optimising them, yielding lower variance at the cost of slightly higher bias.
 
 \subsubsection{Deep Learning Methods}
 \label{sec:offline-dl}
@@ -261,9 +261,11 @@ Deep learning (DL) methods learn hierarchical feature representations directly f
 \paragraph{Sequence Modeling.}
 Sequence modeling methods are designed to capture temporal dependencies in ordered data. In the PV context, electrical and meteorological measurements form multivariate time series where the history of past observations informs the interpretation of the current state, making sequence-aware architectures a natural fit.
 
-\subparagraph{Long Short-Term Memory (LSTM)}
+\subparagraph{Recurrent Neural Networks (RNN)}
 
-Long Short-Term Memory (LSTM) networks are recurrent neural networks specifically designed to model temporal dependencies in sequential data. LSTM architectures introduce memory cells and gating mechanisms to overcome the vanishing gradient problem encountered in conventional RNNs.
+Recurrent Neural Networks (RNNs) are a class of neural architectures designed to process sequential data by maintaining a hidden state that captures information from past time steps. At each step $t$, the hidden state $h_t$ is updated as a function of the current input $x_t$ and the previous state $h_{t-1}$, enabling the network to model temporal dependencies across variable-length sequences. Standard RNNs suffer from the vanishing gradient problem, which limits their ability to capture long-range dependencies.
+
+Long Short-Term Memory (LSTM) networks address this limitation by introducing memory cells and gating mechanisms that control the flow of information.
 
 The forget gate is expressed as:
 \begin{equation}
@@ -276,14 +278,27 @@ C_t=f_tC_{t-1}+i_t\tilde{C}_t.
 
 LSTM networks are widely applied in PV fault diagnosis because they effectively capture temporal variations in voltage, current, irradiance, and temperature signals.
 
-\subparagraph{Mamba}\label{sec:bg-mamba}
+\subparagraph{State-Space Models (SSM)}
+\label{sec:bg-mamba}
 
-Mamba is a state-space model architecture for sequence modeling that achieves transformer-quality representations with linear complexity in sequence length \citep{gu2023mamba}. Unlike recurrent networks, which propagate state through fixed transition matrices, Mamba employs an input-dependent selection mechanism that enables the model to selectively retain or discard information along the sequence. This selective state-space formulation captures long-range dependencies while maintaining constant memory and compute per time step, making it attractive for deployment on edge hardware such as the Jetson Nano where quadratic attention complexity is prohibitive.
+State-space models (SSMs) are a class of sequence models that represent dynamical systems through a latent state evolving over time according to linear differential equations. Classical SSMs, such as the Structured State-Space Sequence model (S4) and its efficient diagonal variant (S4D), use fixed transition matrices to propagate information across time steps with linear computational complexity, offering a compelling alternative to attention-based architectures for long-range sequence modeling. However, their static parameterisation limits the ability to selectively focus on relevant portions of the input sequence.
+
+Mamba addresses this shortcoming through an input-dependent selection mechanism that enables the model to selectively retain or discard information along the sequence \citep{gu2023mamba}. Unlike recurrent networks, which propagate state through fixed transition matrices, and classical SSMs, which employ time-invariant dynamics, Mamba's selective state-space formulation captures long-range dependencies while maintaining constant memory and compute per time step, making it attractive for deployment on edge hardware such as the Jetson Nano where quadratic attention complexity is prohibitive. This input-aware gating brings the representational capacity of SSMs closer to that of self-attention without sacrificing their linear complexity advantage.
+
+\subparagraph{Transformer}
+
+Transformer models are deep learning architectures based entirely on attention mechanisms rather than recurrent structures. Their main advantage lies in the ability to capture long-range dependencies while enabling parallel computation.
+
+The self-attention mechanism is defined as:
+\begin{equation}
+\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V,
+\end{equation}
+where $Q$, $K$, and $V$ denote the query, key, and value matrices.
+
+Transformers are increasingly used in PV fault diagnosis and forecasting due to their strong sequence modeling capability.
 
 \paragraph{Reconstruction-Based Methods.}
 Reconstruction-based detectors learn to reproduce normal operating data and flag deviations from this learned representation as anomalies. They are trained exclusively on normal-class samples, making them well-suited to semi-supervised anomaly detection in settings where fault-labeled data is scarce.
-
-\subparagraph{Autoencoders and Variational Autoencoders}
 
 Autoencoders (AE) are unsupervised neural networks designed to learn compressed latent representations of input data. An autoencoder consists of an encoder function that maps the input into a latent space and a decoder function that reconstructs the original input.
 
@@ -307,21 +322,6 @@ z \sim \mathcal{N}(\mu,\sigma^2).
 \end{equation}
 
 VAEs improve latent space continuity and are suitable for anomaly detection and generative modeling.
-
-\paragraph{Attention-Based Representations.}
-Beyond reconstruction, a complementary family of methods learns explicit probability densities over the data or captures global dependencies through attention mechanisms. Density estimation provides a principled anomaly score through exact likelihood evaluation, while attention-based architectures model long-range feature interactions without recurrence.
-
-\subparagraph{Transformer Networks}
-
-Transformer models are deep learning architectures based entirely on attention mechanisms rather than recurrent structures. Their main advantage lies in the ability to capture long-range dependencies while enabling parallel computation.
-
-The self-attention mechanism is defined as:
-\begin{equation}
-\text{Attention}(Q,K,V)=\text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V,
-\end{equation}
-where $Q$, $K$, and $V$ denote the query, key, and value matrices.
-
-Transformers are increasingly used in PV fault diagnosis and forecasting due to their strong sequence modeling capability.
 
 % \subparagraph{Normalizing Flows}
 
