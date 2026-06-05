@@ -142,36 +142,7 @@ Artificial intelligence (AI) techniques are increasingly adopted to support auto
 \subsection{Online Methods}
 \label{sec:online-methods}
 
-Online methods are designed to operate on streaming data, processing one observation at a time and maintaining a compact internal state that summarises the relevant past. They are particularly attractive for PV monitoring because they can run causally on edge hardware without storing or re-scanning large historical buffers. Examples include sequential change-detection procedures such as the Page-Hinkley test and the Cumulative Sum (CUSUM) chart, as well as probabilistic frameworks like Bayesian Online Changepoint Detection that maintain a full posterior over regime changes.
-
-Bayesian Online Changepoint Detection (BOCD) is an online probabilistic method for detecting abrupt changes in time-series data \citep{BayesianOnlineChangepoint2007}. At each time step, it estimates the posterior distribution of the \emph{run length} $r_t$, defined as the number of observations since the last changepoint.
-
-Given observations $x_{1:t}$, the predictive distribution for the next sample is
-
-\begin{equation}
-P(x_{t+1} \mid x_{1:t})
-=
-\sum_{r_t}
-P(x_{t+1} \mid r_t, x_t^{(r)})
-\, P(r_t \mid x_{1:t}),
-\end{equation}
-
-where $x_t^{(r)}$ denotes the observations associated with the current run \citep{BayesianOnlineChangepoint2007}.
-
-The run-length posterior is updated recursively as
-
-\begin{equation}
-P(r_t, x_{1:t})
-=
-\sum_{r_{t-1}}
-P(r_t \mid r_{t-1})
-P(x_t \mid r_{t-1}, x_t^{(r)})
-P(r_{t-1}, x_{1:t-1}),
-\end{equation}
-
-where $P(r_t \mid r_{t-1})$ is defined through a hazard function $H(\tau)$ controlling the probability of a changepoint \citep{BayesianOnlineChangepoint2007}.
-
-BOCD is well-suited for fault detection and anomaly detection in PV systems because it operates causally in real time, provides uncertainty-aware detection, and identifies regime changes through high posterior probability at $r_t = 0$ \citep{BayesianOnlineChangepoint2007}.
+Online methods are designed to operate on streaming data, processing one observation at a time and maintaining a compact internal state that summarises the relevant past. They are particularly attractive for PV monitoring because they can run causally on edge hardware without storing or re-scanning large historical buffers. Examples include sequential change-detection procedures such as the Page-Hinkley test and the Cumulative Sum (CUSUM) chart \citep{page1954continuous}, as well as probabilistic frameworks like Bayesian Online Changepoint Detection (BOCD) that maintain a full posterior over regime changes \citep{BayesianOnlineChangepoint2007}.
 
 \subsection{Offline Methods}
 \label{sec:offline-methods}
@@ -212,28 +183,7 @@ H(S)=-\sum_{i=1}^{C}p_i\log_2(p_i),
 \end{equation}
 where $p_i$ is the probability of class $i$ and $C$ is the number of classes.
 
-Decision Trees are interpretable and computationally efficient, making them suitable for fault classification and rule-based diagnostic systems.
-
-\subparagraph{Isolation Forest}
-\label{subsec:iforest}
-
-Isolation Forest (IF) is an unsupervised anomaly detector that isolates outliers by random partitioning of the feature space \citep{liu2008isolation}. It builds an ensemble of randomized binary trees, each grown by randomly selecting a feature and split value. Anomalies, being few and distinct from normal behavior, are isolated in fewer splits, yielding shorter path lengths.
-
-Let $h(x)$ be the path length (number of edges) of sample $x$ in a tree. Over $t$ trees, the average path length is given by
-
-\begin{equation}
-E[h(x)] = \frac{1}{t} \sum_{i=1}^{t} h_i(x).
-\end{equation}
-
-The anomaly score is then defined as
-
-\begin{equation}
-s(x,\psi) = 2^{-\frac{E[h(x)]}{c(\psi)}},
-\end{equation}
-
-where $\psi$ is the subsampling size and $c(\psi)$ normalizes the score using the average path length in a binary search tree of size $\psi$.
-
-IF is well-suited to PV fault detection: it requires no labeled fault data, handles high-dimensional features, and directly outputs an anomaly score that can be thresholded for detection.
+Decision Trees are interpretable and computationally efficient, making them suitable for fault classification and rule-based diagnostic systems. An unsupervised variant, the Isolation Forest (IF), detects anomalies by constructing an ensemble of randomized trees and exploiting the property that outliers are isolated in fewer splits than normal observations \citep{liu2008isolation}; it outputs a directly thresholdable anomaly score without requiring labeled fault data.
 
 \subparagraph{Random Forest}
 
