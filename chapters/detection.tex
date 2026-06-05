@@ -611,6 +611,21 @@ PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Deployed Model Metrics}\label{sec:ad-deployment}
 
-The deployed anomaly detector is the \textbf{PC-Flow (baseline\_raw) model from fold~4} (validation-selected: val macro per-class PR-AUC~=~0.993). At inference its continuous anomaly score is converted into operator-facing alarms by the three-tier ISA-18.2 escalation policy (P3~$\rightarrow$~P2~$\rightarrow$~P1) defined in Section~\ref{sec:threshold-calibration}. This section characterizes how the deployed model behaves at each tier on the held-out fault episodes.
+The deployed detector is the PC-Flow (baseline\_raw) configuration, whose anomaly score drives the three-tier ISA-18.2 alarm hierarchy (P3~$\rightarrow$~P2~$\rightarrow$~P1) calibrated in Section~\ref{sec:threshold-calibration}. Independently of any threshold, the model achieves a macro per-class PR-AUC of \textbf{0.990~$\pm$~0.005} (worst-class 0.962~$\pm$~0.021; binary 0.972~$\pm$~0.013), indicating a near-perfect ranking of faulty against normal operation.
 
-\textit{Tier-specific precision/recall/F1/episode-recall, detection delay, and $\text{ARL}_0$ values will be inserted from the fold~4 deployment\_alarm\_metrics.json once uploaded.}
+Table~\ref{tab:ad-deployment} reports the operating-point performance of each tier under five-fold cross-validation. The tiers trade sensitivity for confidence along the escalation chain: P3 favours recall (0.916) as an early advisory, P2 raises precision to 0.954 under a distribution-free false-positive-rate guarantee of $\alpha = 0.05$, and P1 attains perfect precision (1.000), restricting critical alarms to sustained, unambiguous faults.
+
+\begin{table}[H]
+\centering
+\caption{Per-tier operating-point performance of the deployed PC-Flow detector (5-fold CV, mean~$\pm$~std). P1 is a sequential CUSUM rule, for which per-sample F1 is not defined.\label{tab:ad-deployment}}
+\small
+\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
+\toprule
+\textbf{Tier} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\midrule
+P3 — Advisory & 0.886~$\pm$~0.043 & 0.916~$\pm$~0.017 & 0.900~$\pm$~0.017 \\
+P2 — High     & 0.954~$\pm$~0.025 & 0.736~$\pm$~0.053 & 0.830~$\pm$~0.033 \\
+P1 — Critical & 1.000~$\pm$~0.000 & 0.735~$\pm$~0.140 & ---               \\
+\bottomrule
+\end{tabularx}
+\end{table}

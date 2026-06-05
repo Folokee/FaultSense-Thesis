@@ -486,7 +486,7 @@ A single operating point, however, collapses a rich anomaly score into one binar
 All three thresholds are calibrated entirely from training-normal scores, without access to fault labels, so the policy remains consistent with the semi-supervised formulation. The tiers are characterized on held-out fault episodes in Section~\ref{sec:ad-deployment}, and surfaced to the operator through the monitoring interface in Chapter~\ref{ch:deployment}.
 
 
-\section{Probability Calibration}
+\section{Probability Calibration}\label{sec:prob-calibration}
 
 Gradient boosting classifiers produce a vector of class scores that sum to one and are conventionally interpreted as class probabilities. However, these scores are not guaranteed to be calibrated: a model may assign a confidence of 0.9 to a fault class while being correct only 60\% of the time at that confidence level. This miscalibration is invisible to discrimination metrics such as macro F1, which measure ranking quality rather than probabilistic accuracy. In the context of this work it matters because the monitoring interface presents the fault class confidence alongside the diagnostic label; miscalibrated scores degrade the operator's ability to triage alerts proportionally to their actual reliability.
 

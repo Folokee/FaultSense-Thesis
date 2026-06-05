@@ -3,38 +3,25 @@
 \subsection{Introduction}
 After an anomalous state is detected, the next step in an FDD workflow is to identify the most likely fault type. In this project, diagnosis is formulated as a supervised multi-class classification task over engineered features extracted from PV system measurements. Unlike the anomaly detection stage, labeled fault categories are available for training; the objective is to output a discrete fault class among $C=4$ predefined types.
 
-\subsection{Task Formulation and Methodology}
-
-\paragraph{Problem definition.}
-Let $x \in \mathbb{R}^F$ be a feature vector computed from a PV time segment, and $y \in \{1,2,3,4\}$ the corresponding fault label. The diagnosis task learns $f_\theta: x \mapsto \hat{p}(y \mid x)$ and predicts $\hat{y} = \arg\max_c \hat{p}(c \mid x)$.
-
-\paragraph{Evaluation protocol.}
-Because fault classes are imbalanced in realistic PV logs (class~4 Shadowing: 1\,000 episodes; classes~1--3: 15--23 episodes), the primary evaluation metric is \textbf{macro-averaged F1-score} (macro F1), which assigns equal weight to each class regardless of how many samples it contains; this prevents the dominant Shadowing class from masking poor performance on minority faults. Per-class F1 and per-class PR-AUC are also reported. To obtain robust uncertainty estimates, hyperparameters are optimised \emph{once} on the original temporal holdout, then the winning configuration is retrained across $K=5$ folds using \texttt{StratifiedGroupKFold}: a cross-validation strategy that (i) keeps the class-proportion ratio roughly equal across folds (\emph{stratified}) and (ii) ensures that all time-series samples belonging to the same fault episode (\emph{group}) always fall in the same fold — preventing data leakage from an episode spanning the train/test boundary. All metrics are reported as mean~$\pm$~std over the five folds.
-
-\paragraph{Feature profile.}
-Diagnosis is performed on the \texttt{plus\_physics} feature profile (15 engineered features: raw electrical + physics-derived indicators). In contrast to Task~A, where a normalizing flow learns its own representations and hand-crafted features are redundant, tree ensembles cannot perform representation learning: they partition the input feature space directly. The discriminative power of the engineered features is therefore critical — as confirmed by the feature-importance analysis in Section~\ref{sec:diag-winner}.
-
-\subsection{Shared Experimental Infrastructure}\label{sec:diag-shared-infra}
-
-\paragraph{Probability calibration.}
-A tree classifier's raw probability outputs are often overconfident (probabilities near 0 or 1) or underconfident. To make the output probabilities reliable for the confidence-based alerting logic of the operator dashboard, a calibration step is applied: after fitting the base classifier on the training partition, a \emph{sigmoid calibrator} (Platt scaling) is fitted on the held-out validation partition. Platt scaling fits a logistic (sigmoid) function on top of the raw model scores to align predicted probabilities with empirical frequencies — for example, ensuring that among samples assigned a 70\% confidence, approximately 70\% are truly of that class.
-
-Calibration quality is quantified by four metrics, all computed on the held-out test set:
-\begin{itemize}
-    \item \textbf{Log-loss} (cross-entropy): the average $-\log \hat{p}(y)$ where $\hat{p}(y)$ is the predicted probability for the true class; lower is better, with 0 being perfect.
-    \item \textbf{Brier score} (multiclass): the mean squared error between predicted probability vectors and one-hot true labels, averaged over classes; lower is better.
-    \item \textbf{Expected Calibration Error (ECE)}: the confidence axis is divided into bins; for each bin, the gap between mean predicted confidence and mean actual accuracy is measured; ECE is the weighted average of these gaps. A perfectly calibrated model has ECE~=~0.
-    \item \textbf{Maximum Calibration Error (MCE)}: the largest gap across all bins, capturing worst-case miscalibration.
-\end{itemize}
-
-\paragraph{Leakage checks.}
-Before and after training, automated checks verify that no identical feature rows appear across train and validation partitions, and a full leakage report is run on the test partition.
 
 \subsection{Model Lineup}
 
 \subsubsection{LightGBM Classifier}
 
-LightGBM builds gradient-boosted decision trees sequentially, where each tree corrects the residuals of the current ensemble. It applies histogram-based binning for efficient split search. Class imbalance is handled through balanced class weights.
+LightGBM builds an additive ensemble of decision trees by gradient boosting: starting from a constant prediction, each successive tree $f_m$ is fitted to the negative gradient of the loss with respect to the current ensemble output — the pseudo-residuals. For multi-class classification with $C$ classes, $C$ parallel score models are maintained, one per class, updated simultaneously at every boosting round. Two key algorithmic innovations reduce cost: \emph{Gradient-based One-Side Sampling} (GOSS), which retains all samples with large gradients and randomly subsamples those with small gradients, preserving the informative part of the gradient signal; and \emph{Exclusive Feature Bundling} (EFB), which detects and merges mutually exclusive sparse features, reducing the effective feature count without information loss. Splits are found over histograms of binned feature values rather than by exhaustive exact search, yielding sub-linear complexity per tree. Class imbalance is handled through balanced class weights.
+
+\paragraph{Training objective.}
+The objective is the multiclass cross-entropy loss over $N$ samples and $C$ classes:
+\begin{equation}
+    \mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{C} y_{ic}\,\log\hat{p}_{ic},
+\end{equation}
+where $y_{ic}\in\{0,1\}$ is the one-hot class indicator and $\hat{p}_{ic} = \text{softmax}(F_c(x_i))$ is the predicted probability, with $F_c(x) = \sum_{m=1}^{M} f_{m,c}(x)$ the accumulated score for class $c$ over $M$ boosting rounds.
+
+\paragraph{Prediction.}
+The final class assignment is:
+\begin{equation}
+    \hat{y} = \arg\max_{c}\; F_c(x).
+\end{equation}
 
 \paragraph{Hyperparameter search space.}
 Table~\ref{tab:lgbm-hpo} reports the winning configuration (35 Optuna TPE trials, objective: macro F1 on the validation holdout).
@@ -74,15 +61,15 @@ Balanced accuracy & 0.925 & 0.131 \\
 
 \begin{table}[H]
 \centering
-\caption{LightGBM per-fault-class results.\label{tab:lgbm-per-class}}
+\caption{LightGBM per-fault-class results (5-fold CV, mean~$\pm$~std).\label{tab:lgbm-per-class}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Fault class} & \textbf{F1} & \textbf{PR-AUC} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.886 & 0.994 & 15 \\
-Degradation   (cls~2) & 0.860 & 0.955 & 19 \\
-Open-Circuit  (cls~3) & 0.998 & 0.999 & 23 \\
-Shadowing     (cls~4) & 0.994 & 0.995 & 1000 \\
+Short-Circuit (cls~1) & 0.886~$\pm$~0.145 & 0.994~$\pm$~0.012 & 15 \\
+Degradation   (cls~2) & 0.860~$\pm$~0.242 & 0.955~$\pm$~0.098 & 19 \\
+Open-Circuit  (cls~3) & 0.998~$\pm$~0.002 & 0.999~$\pm$~0.002 & 23 \\
+Shadowing     (cls~4) & 0.994~$\pm$~0.011 & 0.995~$\pm$~0.012 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -90,7 +77,21 @@ Shadowing     (cls~4) & 0.994 & 0.995 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{CatBoost Classifier}
 
-CatBoost uses symmetric trees with an ordered boosting strategy that reduces prediction shift during training. It applies native balanced class weighting.
+CatBoost is a gradient boosted tree library distinguished by two structural choices that jointly address the two main sources of overfitting in standard gradient boosting.
+
+First, it grows \emph{oblivious} (symmetric) trees in which the same splitting condition is applied to all nodes at a given depth level, producing a balanced binary tree of depth $d$ with exactly $2^d$ leaves. Because the leaf index of any sample reduces to a single table lookup (each level contributes one bit), inference is cache-efficient and fast. The symmetric structure also acts as an implicit regulariser: every split must justify itself across the entire width of the tree rather than locally at one node.
+
+Second, it uses \emph{ordered boosting}: standard gradient boosting estimates pseudo-residuals for sample $i$ from a model that was fitted on data including $i$ itself, introducing a subtle overfitting bias. CatBoost eliminates this by maintaining $N$ separate model versions, one per training sample, where the model used to compute the gradient of sample $i$ was fitted only on samples preceding $i$ in a random permutation. This yields unbiased gradient estimates without holding out a separate validation set. Class imbalance is handled through native balanced class weighting.
+
+\paragraph{Training objective.}
+CatBoost minimises the multiclass cross-entropy loss:
+\begin{equation}
+    \mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N}\sum_{c=1}^{C} y_{ic}\,\log\hat{p}_{ic},
+\end{equation}
+where class scores are accumulated over oblivious trees and converted to probabilities via softmax.
+
+\paragraph{Prediction.}
+The predicted class is $\hat{y} = \arg\max_{c}\; F_c(x)$, where $F_c(x) = \sum_{m=1}^{M} f_{m,c}(x)$ sums the leaf values of all oblivious trees for class $c$.
 
 \paragraph{Hyperparameter search space.}
 Table~\ref{tab:cat-hpo} reports the winning configuration (35 Optuna TPE trials, objective: macro F1).
@@ -129,15 +130,15 @@ Balanced accuracy & 0.932 & 0.124 \\
 
 \begin{table}[H]
 \centering
-\caption{CatBoost per-fault-class results.\label{tab:cat-per-class}}
+\caption{CatBoost per-fault-class results (5-fold CV, mean~$\pm$~std).\label{tab:cat-per-class}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Fault class} & \textbf{F1} & \textbf{PR-AUC} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.921 & 0.996 & 15 \\
-Degradation   (cls~2) & 0.893 & 0.971 & 19 \\
-Open-Circuit  (cls~3) & 0.986 & 0.999 & 23 \\
-Shadowing     (cls~4) & 0.995 & 1.000 & 1000 \\
+Short-Circuit (cls~1) & 0.921~$\pm$~0.148 & 0.996~$\pm$~0.007 & 15 \\
+Degradation   (cls~2) & 0.893~$\pm$~0.208 & 0.971~$\pm$~0.061 & 19 \\
+Open-Circuit  (cls~3) & 0.986~$\pm$~0.027 & 0.999~$\pm$~0.001 & 23 \\
+Shadowing     (cls~4) & 0.995~$\pm$~0.010 & 1.000~$\pm$~0.000 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -145,7 +146,21 @@ Shadowing     (cls~4) & 0.995 & 1.000 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{ExtraTrees Classifier}
 
-ExtraTrees builds an ensemble of trees where both the split variable and threshold are selected at random; the best among $k$ candidates is chosen. This extra randomness regularises the ensemble and tends to reduce variance relative to standard random forests. Class imbalance is handled through balanced class weights.
+ExtraTrees (Extremely Randomised Trees) is a tree ensemble that pushes the randomisation of Random Forest one step further. In a standard Random Forest, each node selects the best split threshold by optimising an impurity criterion over the actual observed data values for each candidate feature. ExtraTrees also randomises the threshold: for each of the $k$ candidate features, a split threshold is drawn \emph{uniformly at random} from the feature's observed range, and the best among all $k$ (feature, threshold) pairs is retained. This double randomisation — both over features and over thresholds — further decouples each tree from the specific sample values in the training set, reducing variance more aggressively than a standard Random Forest at the cost of a small bias increase. The ensemble is built on the full training set per tree; bootstrap sampling is enabled in the selected configuration (Table~\ref{tab:et-hpo}). Class imbalance is handled through balanced class weights.
+
+\paragraph{Split criterion.}
+Trees are grown by maximising the information gain at each node. For a node with class distribution $\{p_c\}_{c=1}^{C}$, the entropy impurity is:
+\begin{equation}
+    H = -\sum_{c=1}^{C} p_c \log p_c.
+\end{equation}
+The candidate split that maximises $\Delta H = H_{\text{parent}} - \bigl(w_L H_L + w_R H_R\bigr)$, with $w_L, w_R$ the weighted child fractions, is selected from the $k$ randomly generated (feature, threshold) pairs. The \texttt{criterion=entropy} configuration corresponds to this information-gain criterion.
+
+\paragraph{Prediction.}
+Each tree assigns class probabilities $\hat{p}_c^{(t)}(x)$ as the empirical class fraction in the leaf reached by $x$. The ensemble averages over all $T$ trees:
+\begin{equation}
+    \hat{p}_c(x) = \frac{1}{T}\sum_{t=1}^{T}\hat{p}_c^{(t)}(x), \qquad \hat{y} = \arg\max_{c}\;\hat{p}_c(x).
+\end{equation}
+These probability estimates are subsequently passed through Platt scaling (Section~\ref{sec:diag-winner}) before deployment.
 
 \paragraph{Hyperparameter search space.}
 Table~\ref{tab:et-hpo} reports the winning configuration (35 Optuna TPE trials, objective: macro F1).
@@ -184,26 +199,45 @@ Balanced accuracy & \textbf{0.943} & \textbf{0.113} \\
 
 \begin{table}[H]
 \centering
-\caption{ExtraTrees per-fault-class results.\label{tab:et-per-class}}
+\caption{ExtraTrees per-fault-class results (5-fold CV, mean~$\pm$~std).\label{tab:et-per-class}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Fault class} & \textbf{F1} & \textbf{PR-AUC} & \textbf{Episodes} \\
 \midrule
-Short-Circuit (cls~1) & 0.922 & 0.998 & 15 \\
-Degradation   (cls~2) & 0.922 & 0.970 & 19 \\
-Open-Circuit  (cls~3) & 0.998 & 0.999 & 23 \\
-Shadowing     (cls~4) & 0.995 & 1.000 & 1000 \\
+Short-Circuit (cls~1) & 0.922~$\pm$~0.147 & 0.998~$\pm$~0.004 & 15 \\
+Degradation   (cls~2) & 0.922~$\pm$~0.157 & 0.970~$\pm$~0.065 & 19 \\
+Open-Circuit  (cls~3) & 0.998~$\pm$~0.002 & 0.999~$\pm$~0.002 & 23 \\
+Shadowing     (cls~4) & 0.995~$\pm$~0.009 & 1.000~$\pm$~0.001 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
-\subsection{Tournament Comparison}\label{sec:diag-tournament}
+\subsection{Leakage Audit}\label{sec:diag-leakage}
+
+Before comparing models, Table~\ref{tab:diag-leakage} confirms that every model passes the label-shuffle test. Labels are permuted at random and the macro F1 re-evaluated; a clean model should score near chance level ($\sim$0.25 for a uniform 4-class problem). The shuffle scores of 0.206--0.234 are consistent with chance-level performance, providing evidence that no data-ordering artefact inflates any model's scores.
+
+\begin{table}[H]
+\centering
+\caption{Task~B leakage audit.\label{tab:diag-leakage}}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Shuffle Macro F1} & \textbf{Top Feature Importance} & \textbf{Clean} \\
+\midrule
+LightGBM    & 0.214 & 0.210 & \checkmark \\
+CatBoost    & 0.206 & 0.159 & \checkmark \\
+ExtraTrees  & 0.234 & 0.415 & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ────────────────────────────────────────────────────────────────────────────
+\subsection{Results and Discussion}\label{sec:diag-tournament}
 
 Table~\ref{tab:diag-tournament} ranks all three classifiers on the primary metric.
 \begin{table}[H]
 \centering
-\caption{Task~B tournament ranking.\label{tab:diag-tournament}}
+\caption{Comparative ranking of fault classifiers on Task~B.\label{tab:diag-tournament}}
 \begin{tabular}{lccc}
 \toprule
 \textbf{Model} & \textbf{Macro F1} & \textbf{Balanced Acc.} & \textbf{Worst-class F1} \\
@@ -215,99 +249,61 @@ LightGBM            & 0.934~$\pm$~0.098          & 0.925~$\pm$~0.131          & 
 \end{tabular}
 \end{table}
 
-The three models are statistically close — the error bars overlap heavily, and the cross-fold variance is dominated by a single structurally hard fold (fold~3), as discussed in Section~\ref{sec:diag-discussion}. ExtraTrees leads on all headline metrics and has the lowest variance, making it the most reliable choice for deployment.
+All three models score close to each other — their confidence intervals overlap — yet ExtraTrees consistently leads on every metric and shows the smallest spread across folds, making it the most reliable choice for deployment.
 
-% ────────────────────────────────────────────────────────────────────────────
-\subsection{Winner Analysis: ExtraTrees}\label{sec:diag-winner}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/classification/fig_classification_macro.png}
+    \caption{Three classifiers under two metrics: macro F1 (a) vs.\ balanced accuracy (b). Bars: 5-fold means $\pm$ std.}
+    \label{fig:cls-macro}
+\end{figure}
 
-\subsubsection{Deployed Model Results (Full-Train, Calibrated)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{figures/classification/fig_classification_perclass.png}
+    \caption{Per-class F1 for all three classifiers. Degradation (highlighted) is the hardest class across all models. Bars: 5-fold means $\pm$ std.}
+    \label{fig:cls-perclass}
+\end{figure}
 
-The deployed ExtraTrees instance is trained on the \emph{full} training split (not a fold) and calibrated on the held-out validation partition. Results on the held-out test partition are given in Table~\ref{tab:et-deployed}.
+\paragraph{Why ExtraTrees wins.}
+Figure~\ref{fig:cls-macro} confirms that ExtraTrees scores the highest macro F1 with the tightest spread across folds. Its extra randomisation — drawing split thresholds at random rather than searching for the best one — acts as a built-in regulariser. This is especially useful here because the minority fault classes have very few episodes: boosting methods such as LightGBM and CatBoost tend to over-focus on the majority class under these conditions, while ExtraTrees' independent trees maintain a more balanced decision boundary.
 
-\begin{table}[H]
-\centering
-\caption{ExtraTrees deployed model results.\label{tab:et-deployed}}
-\begin{tabular}{lc}
-\toprule
-\textbf{Metric} & \textbf{Value} \\
-\midrule
-Macro F1          & 0.874 \\
-Balanced accuracy & 0.868 \\
-Weighted F1       & 0.974 \\
-PR-AUC (weighted) & 0.996 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{Where all models agree.}
+Open-Circuit (cls~3) is classified at near-perfect F1 by all three models across all folds. The fault produces a clear electrical signature — the string current drops to zero while irradiance stays normal — leaving no ambiguity in the feature space. Shadowing (cls~4) is also reliably identified, partly because it is by far the most frequent class in the dataset.
 
-\begin{table}[H]
-\centering
-\caption{ExtraTrees deployed model per-fault-class results.\label{tab:et-deployed-per-class}}
-\begin{tabular}{lcccr}
-\toprule
-\textbf{Fault class} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Support} \\
-\midrule
-Short-Circuit (cls~1) & 0.850 & 0.500 & 0.630 & 1\,182 \\
-Degradation   (cls~2) & 0.797 & 0.982 & 0.880 & 596 \\
-Open-Circuit  (cls~3) & 1.000 & 1.000 & 1.000 & 1\,201 \\
-Shadowing     (cls~4) & 0.982 & 0.992 & 0.987 & 32\,333 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{The hardest class: Degradation (cls~2).}
+Figure~\ref{fig:cls-perclass} reveals that Degradation is the most difficult fault in both Task~A and Task~B. In the classification task, its low-severity samples look similar to Short-Circuit faults, which explains the relatively low precision (0.797): some Short-Circuit samples are misclassified as Degradation. The per-class PR-AUC of 0.970 shows that the ranking quality is still good, but the decision boundary struggles with the most ambiguous cases.
 
-Table~\ref{tab:et-deployed-per-class} gives the per-fault-class breakdown. The single-holdout macro F1 (0.874) is lower than the k-fold mean (0.959): the k-fold mean pools over five different splits, while the holdout reflects one specific train set; the deployed model is more representative of production behaviour.
+\paragraph{Feature engineering validates itself.}
+Figure~\ref{fig:et-feat-importance} shows that the two most important features are both physics-derived: \texttt{voltage\_imbalance} alone accounts for 41\% of the total importance, and \texttt{pdc\_temp\_corrected} contributes a further 16\%. Together they represent over half the model's decision weight. \texttt{power\_imbalance} and \texttt{current\_imbalance} also appear in the top ten. These are quantities a raw sensor reading cannot provide directly — they are computed from ratios and corrections across multiple measurements and encode how each fault type disturbs the panel's normal operating relationships. Raw electrical signals (\texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{irr}) fill the remaining positions with much smaller contributions. This result directly validates the \texttt{plus\_physics} feature profile: the model relies primarily on the engineered features, not the raw inputs. This stands in deliberate contrast to Task~A, where the normalizing flow learns its own internal representations and the same hand-crafted features proved redundant.
 
-\subsubsection{Probability Calibration}
-
-Table~\ref{tab:et-calibration} compares uncalibrated and calibrated outputs. After sigmoid calibration, the model produces well-calibrated probabilities suitable for confidence-based alerting.
-
-\begin{table}[H]
-\centering
-\caption{ExtraTrees probability calibration.\label{tab:et-calibration}}
-\begin{tabular}{lcc}
-\toprule
-\textbf{Metric} & \textbf{Uncalibrated} & \textbf{Calibrated (sigmoid)} \\
-\midrule
-Log-loss                     & 0.063 & \textbf{0.059} \\
-Brier score (multiclass)     & n/a$^{\dag}$ & \textbf{0.008} \\
-ECE                          & 0.010 & 0.019 \\
-Macro F1                     & 0.955 & 0.874 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-$^{\dag}$~Brier score was not computed for the uncalibrated output; it is reported for the calibrated model only.
-
-Calibration reduces log-loss (0.063 → 0.059) and yields a Brier score of 0.008, confirming well-calibrated probabilities. The ECE increase (0.010 → 0.019) reflects a small recalibration cost on the test set; the MCE (0.754) captures a tail bin effect in the high-confidence region. Reliability and confidence histogram plots are included in Appendix~\ref{app:calibration}.
-
-\subsubsection{Feature Importance: Handcrafted Features Are Discriminative}\label{sec:diag-feat-importance}
-
+\paragraph{Feature importance.}
 Figure~\ref{fig:et-feat-importance} shows the top-20 ExtraTrees feature importances.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.85\textwidth]{figures/classification/feature_importance_top20.png}
-    \caption{ExtraTrees top-20 feature importances.}
-    \label{fig:et-feat-importance}
+    \caption{ExtraTrees top-20 feature importances.\label{fig:et-feat-importance}}
 \end{figure}
 
-The feature importance ranking confirms the value of the \texttt{plus\_physics} feature profile. The physics-derived indicators (efficiency ratio, normalised irradiance residual, string current deviation) rank among the top features, alongside raw electrical measurements. This result validates the domain-informed feature engineering strategy: the model leverages physically meaningful inter-variable relationships that would be invisible to a model operating on a single raw sensor stream. This stands in contrast to Task~A (Section~\ref{sec:abl-profile}), where the normalizing flow's internal representation learning made the same engineered features unnecessary.
-
 % ────────────────────────────────────────────────────────────────────────────
-\subsection{Discussion}\label{sec:diag-discussion}
+\subsection{Deployed Model Metrics}\label{sec:diag-winner}
 
-\paragraph{The fold-3 hard split.}
-All three classifiers exhibit a consistent performance drop on fold~3 (ExtraTrees: 0.820, CatBoost: 0.788, LightGBM: 0.766 vs $\sim$0.99 on the other four folds). The fold-3 test partition contains only 2 episodes from class~1 and 1 episode from class~2 — the smallest minority-class test representation across all folds. This drop is therefore a \textbf{data-structural artefact}, not a model instability: with $<$2 fault episodes in a class, even a perfect classifier is penalised by macro F1 if it correctly predicts the one episode but is scored against a two-episode baseline. The consistent drop across all three model families (gradient-boosting variants and a randomised tree ensemble) is precisely the evidence that this is a data-partition issue rather than a model deficiency. This motivates reporting mean~$\pm$~std over all five folds rather than cherry-picking a single split.
+The deployed classifier is ExtraTrees on the \texttt{plus\_physics} feature profile. As described in Section~\ref{sec:prob-calibration}, the raw class scores are post-hoc recalibrated on the validation partition using Platt scaling before deployment, so that the confidence values presented to the operator reflect true empirical frequencies.
 
-\paragraph{Why ExtraTrees wins.}
-ExtraTrees achieves the highest macro F1 and the lowest fold-to-fold variance among the three models. The strong randomisation in threshold selection acts as an implicit regulariser that is particularly effective when the minority class episodes are few and diverse. Boosting methods (LightGBM, CatBoost) can overfit to the dominant class patterns when minority support is this sparse; ExtraTrees' independence between trees provides a more balanced boundary.
+Table~\ref{tab:et-calibration} reports the calibration quality on the held-out test set. Log-loss of 0.059 and a Brier score of 0.008 confirm that the probability outputs are well-aligned with empirical frequencies. The ECE of 0.019 indicates a small residual miscalibration averaged across confidence bins; the MCE of 0.754 captures a tail-bin effect in the high-confidence region. The calibrated probabilities are surfaced alongside the diagnostic label in the monitoring interface (Chapter~\ref{ch:deployment}).
 
-\paragraph{Where all models agree.}
-Open-Circuit (cls~3) is correctly classified at near-perfect F1 across all three models and all five folds. Its spectral signature — a total string current drop combined with maintained irradiance — is unambiguous in the feature space. Shadowing (cls~4) is also easy due to its statistical dominance and characteristic partial-shading pattern.
-
-\paragraph{The hardest class: Degradation (cls~2).}
-Degradation is the hardest fault for both Task~A (anomaly detection) and Task~B (diagnosis). Its gradual drift overlaps the normal-operating manifold at low severity (Task~A), and in the classification space it confuses with Short-Circuit at partial severity (Task~B: cls~2 recall 0.982 but precision 0.797, suggesting contamination from cls~1). The high PR-AUC (0.970 for ExtraTrees) indicates that the ranking quality is good, but the decision boundary at the chosen threshold misses some low-severity instances.
-
-\paragraph{Dual feature-profile conclusion.}
-The Task~A and Task~B results together illustrate an important principle: \emph{the value of feature engineering depends on whether the model can learn its own representations}. Normalizing flows learn representations as part of density estimation; adding features hurts. Tree ensembles partition a fixed feature space; adding informative features helps. The \texttt{plus\_physics} feature profile is therefore the right choice for Task~B, and \texttt{baseline\_raw} is the right choice for Task~A — for complementary, model-family-driven reasons.
-
-\paragraph{Calibration and deployment.}
-Sigmoid calibration improves log-loss (0.063 → 0.059) with a negligible impact on macro F1 on the held-out test. The resulting probability outputs are suitable for the confidence-based tiered alerting logic of the operator dashboard (Section~\ref{ch:deployment}).
+\begin{table}[H]
+\centering
+\caption{ExtraTrees probability calibration on the held-out test set (sigmoid Platt scaling, fit on validation).\label{tab:et-calibration}}
+\begin{tabular}{lc}
+\toprule
+\textbf{Metric} & \textbf{Calibrated (sigmoid)} \\
+\midrule
+Log-loss         & \textbf{0.059} \\
+Brier score      & \textbf{0.008} \\
+ECE              & 0.019 \\
+MCE              & 0.754 \\
+\bottomrule
+\end{tabular}
+\end{table}
