@@ -46,7 +46,7 @@ DOE Regional Test Centers                            & Real, field  & 1 min     
 The picture that emerges from this survey is one of significant data scarcity. The number of publicly available, fault-labeled datasets based on genuine field measurements remains extremely limited, and those that exist cover a narrow range of climatic conditions, PV technologies, and fault types. This scarcity has pushed a substantial fraction of the research community toward simulated data, which introduces a fundamental validity concern: models that achieve high diagnostic accuracy on numerically generated data may fail to generalize when confronted with the sensor imperfections, environmental variability, and installation-specific behavior of real PV systems. A further obstacle is the absence of any cross-dataset standardization: the available labeled datasets differ in their measurement channels, sampling frequencies, and fault taxonomies, making direct aggregation or multi-source fusion impractical without substantial domain adaptation effort.
 
 % ────────────────────────────────────────────────────────────
-\section{Thermal Image-Based Fault Detection}
+\section{Thermal Image-Based Methods}
 \label{sec:thermal}
 % ────────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ More recent work has shifted from patch classification toward object detection o
 Thermographic approaches carry two fundamental limitations that restrict large-scale operational deployment. First, the acquisition cost is prohibitive for continuous monitoring: calibrated infrared cameras combined with UAV operations place the all-in cost of an inspection campaign in the range of 0.5 to 3.0 euros per module \citep{herz2021}, representing tens to hundreds of thousands of euros for a utility-scale plant. Second, the temporal resolution is incompatible with near real-time fault awareness: surveys are inherently event-driven and infrequent, so a fault that develops between campaigns may propagate undetected for weeks or months. These constraints position thermography as a periodic audit tool rather than a continuous monitoring modality.
 
 % ────────────────────────────────────────────────────────────
-\section{Current-Voltage Curve-Based Fault Detection}
+\section{Current-Voltage Curve-Based Methods}
 \label{sec:ivcurve}
 % ────────────────────────────────────────────────────────────
 
