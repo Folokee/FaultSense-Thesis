@@ -3,7 +3,7 @@
 
 \section{Introduction}
 
-This chapter specifies the design of the proposed photovoltaic Fault Detection and Diagnosis (FDD) system. It introduces the overall architecture and motivates the choice of field datasets used for development and evaluation. Based on exploratory analyses, it then defines a staged, reproducible pipeline (ingestion, splitting, preprocessing, feature engineering, and training) together with leakage-prevention safeguards, calibration policies, and the evaluation methodology used throughout the experimental chapters.
+This chapter specifies the design of the proposed photovoltaic Fault Detection and Diagnosis (FDD) system. It introduces the overall architecture and motivates the choice of the field dataset used for development and evaluation. Based on exploratory analyses, it then defines a staged, reproducible pipeline (ingestion, splitting, preprocessing, feature engineering, and modeling) together with leakage-prevention safeguards, calibration policies, and the evaluation methodology used throughout the experimental chapters.
 
 % \section{FDD System Formulation}
 
@@ -40,8 +40,8 @@ to make it suitable for input to the next stage of the system.
 
 \section{Dataset Selection}
 Based on the previous dataset survey in Section~\ref{sec:data-survey}, the Costa dataset was selected for the development and evaluation of our FDD system.
-\textbf{Costa} is the primary experimental dataset, collected from a pilot PV plant located in City of Curitiba-State of Paraná, Brazil. It contains 16 Canadian 330W Poly-crystalline Modules (CS6U-330P) divided into 2 strings of 8 modules each
-running the Maximum Power Poin Tracking (MPPT) algorithm. The system may yeild 5kW peak installed capacity \citep{MonitoringSystemOnline2020}. The figure \ref{fig:costa_circuit} illustrates in detail the electrical configuration.
+\textbf{Costa} is collected from a PV plant located in City of Curitiba-State of Paraná, Brazil. It contains 16 Canadian 330W Poly-crystalline Modules (CS6U-330P) divided into 2 strings of 8 modules each
+running the Maximum Power Point Tracking (MPPT) algorithm. The system may yeild 5kW peak installed capacity \citep{MonitoringSystemOnline2020}. The figure \ref{fig:costa_circuit} illustrates in detail the electrical configuration.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/chap3/costa-shema.png}
@@ -63,7 +63,7 @@ This dataset contains 4 fault types: \textbf{Shadowing}, \textbf{Degradation}, \
         Short-circuit & 5,999 \\
         Open-circuit & 6,024 \\
         Partial shadowing & 184,311 \\
-        No fault introduced & 1,162,931 \\
+        Normal operation & 1,162,931 \\
         \midrule
         Total &  1,373,798 \\
         \bottomrule
@@ -77,21 +77,23 @@ and the presence of a large number of data points which allows for robust model 
     \centering
     \caption{Costa dataset features and descriptions.}
     \label{tab:costa_features}
-    \begin{tabularx}{\textwidth}{l X}
+    \begin{tabular}{lp{9cm}}
         \toprule
-        Feature & Description \\
+        \textbf{Feature} & \textbf{Description} \\
         \midrule
-        \texttt{vdc1} & voltage measured for string~1 (V). \\
-        \texttt{vdc2} & voltage measured for string~2 (V). \\
-        \texttt{idc1} & current measured for string~1 (A). \\
-        \texttt{idc2} & current measured for string~2 (A). \\
-        \texttt{pdc1} & power measured for string~1 (W). \\
-        \texttt{pdc2} & power measured for string~2 (W). \\
-        \texttt{pdc} & total power measured for the system (W). \\
-        \texttt{pvt} & Average PV module temperature (\textdegree{}C). \\
-        \texttt{irr} & Solar irradiance (W/m$^2$). \\
+        \texttt{timestamp} & Date and time of the measurement (UTC). \\
+        \texttt{vdc1} & Voltage measured for string~1 (V). \\
+        \texttt{vdc2} & Voltage measured for string~2 (V). \\
+        \texttt{idc1} & Current measured for string~1 (A). \\
+        \texttt{idc2} & Current measured for string~2 (A). \\
+        \texttt{pdc1} & Power measured for string~1 (W). \\
+        \texttt{pdc2} & Power measured for string~2 (W). \\
+        \texttt{pdc}  & Total DC power measured for the system (W). \\
+        \texttt{pvt}  & Average PV module temperature (\textdegree{}C). \\
+        \texttt{irr}  & Solar irradiance (W/m$^2$). \\
+        \texttt{label} & Fault class identifier (0 = normal, 1--4 = fault types). \\
         \bottomrule
-    \end{tabularx}
+    \end{tabular}
 \end{table}
 
 % ────────────────────────────────────────────────────────────
@@ -101,9 +103,9 @@ and the presence of a large number of data points which allows for robust model 
 
 The exploratory data analysis was structured as a series of checks applied to the Costa dataset before any modeling decision was made. Each check follows the same protocol: define the check, run it, record the finding, and record the explicit downstream consequence for the preprocessing or feature engineering described in Sections~\ref{sec:preprocessing} and~\ref{sec:feature-engineering}. This traceable structure is the basis for claiming that every pipeline design choice is data-driven rather than assumed.
 
-\textbf{Schema validation and basic statistics.} The first check confirmed data types, row counts, and channel completeness. Costa yields 515,958 daytime rows over 9 sensor channels (\texttt{vdc1}, \texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{pdc1}, \texttt{pdc2}, \texttt{pdc}, \texttt{irr}, \texttt{pvt}), with 0 missing values after ingestion-time irradiance trimming. The dataset exposes all labeled classes without gaps in the label column.
+\textbf{Schema validation and basic statistics.} The first check confirmed data types, row counts, and channel completeness. Costa yields 1,373,798 rows over 9 sensor channels. The dataset exposes all labeled classes without gaps in the label column.
 
-\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence with only 20 consecutive pairs exceeding 30~s. This near-perfect regularity means that no imputation step is required and that the 300-second gap threshold for episode segmentation (Section~\ref{sec:splitting}) is a very conservative boundary.
+\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence with only 20 consecutive pairs exceeding 30~s.
 % The sampling interval distribution is shown in Figure~\ref{fig:eda-sampling}.
 
 % \begin{figure}[H]
@@ -124,7 +126,11 @@ The exploratory data analysis was structured as a series of checks applied to th
   \label{fig:eda-imbalance}
 \end{figure}
 
-\textbf{Univariate distributions: normal versus fault.} Mann-Whitney U tests were applied in 2 configurations, binary (normal versus all faults pooled) and per-class (normal versus each fault class individually), with Benjamini-Hochberg false discovery rate correction applied to all $p$-values. Figure~\ref{fig:eda-boxplots} shows the distributional contrast for the highest-ranked channels. All 9 channels produced $p$-values at the numerical floor of zero in both configurations, with FDR correction confirmed for every class combination. The per-class rank-biserial correlations reveal qualitatively distinct signatures: short circuit (label~1) depresses vdc2 toward near-total voltage collapse ($r_{\mathrm{rb}}$ approaching $-1.00$) while elevating idc1; open circuit (label~3) collapses both strings' voltage and current simultaneously (vdc1 at $r_{\mathrm{rb}} = -0.73$); shadowing (label~4) uniformly suppresses current and power in both strings with no corresponding voltage elevation ($r_{\mathrm{rb}}$ between $-0.64$ and $-0.79$). Kruskal-Wallis effect sizes range from $\varepsilon^2 = 0.14$ (vdc2) to $\varepsilon^2 = 0.45$ (idc2), indicating that class membership alone explains up to 45\% of the variance in the DC current channels.
+\textbf{Univariate distributions: normal versus fault.} Mann-Whitney U tests were applied in two configurations: binary (normal versus all faults pooled) and per-class (normal versus each fault class individually), with Benjamini-Hochberg false discovery rate correction applied to all $p$-values. All 9 channels produced $p$-values at the numerical floor of zero in both configurations, with FDR correction confirmed for every class combination. Figure~\ref{fig:eda-boxplots} shows the distributional contrast for the highest-ranked channels.
+
+The per-class rank-biserial correlations reveal qualitatively distinct fault signatures. Short circuit (label~1) depresses vdc2 toward near-total voltage collapse ($r_{\mathrm{rb}}$ approaching $-1.00$) while elevating idc1. Open circuit (label~3) collapses both strings' voltage and current simultaneously (vdc1 at $r_{\mathrm{rb}} = -0.73$). Shadowing (label~4) uniformly suppresses current and power in both strings with no corresponding voltage elevation ($r_{\mathrm{rb}}$ between $-0.64$ and $-0.79$).
+
+Kruskal-Wallis effect sizes range from $\varepsilon^2 = 0.14$ (vdc2) to $\varepsilon^2 = 0.45$ (idc2), indicating that class membership alone explains up to 45\% of the variance in the DC current channels.
 
 \begin{figure}[H]
   \centering
@@ -134,17 +140,11 @@ The exploratory data analysis was structured as a series of checks applied to th
 \end{figure}
 
 
-\textbf{Correlation, collinearity, and spurious relationship detection.} 
-Spearman rank correlation was computed in 3 contexts: across all rows, restricted to normal-class rows, and stratified by irradiance quartile within the normal class. 
-Figure~\ref{fig:eda-correlation-heatmap} shows the full normal-class Spearman heatmap and Figure~\ref{fig:eda-correlation-stratified} shows the irradiance-stratified profiles. 
-The normal-class context exposes 2 classes of alias. 
-The first class arises from additive identities: Spearman $\rho$(pdc1, pdc) = 0.999 and $\rho$(pdc2, pdc) = 0.999, empirically confirming $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$. 
-The second class arises from the multiplicative physical relationship $P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$ at approximately constant voltage, making per-string current a near-proxy for per-string power ($\rho = 0.976$ for idc1--pdc1). 
-VIF quantifies the regression-based consequence: VIF(\texttt{idc1}) = 187.8. 
-These aliases are the direct targets of the hygiene pruning stage in Section~\ref{sec:feature-engineering}. 
-The irradiance-stratified analysis reveals an additional, non-trivial pattern: while the pdc1--pdc2 correlation remains above 0.95 across all 4 irradiance quartiles, the idc1--idc2 correlation drops to 0.82 in the third quartile (830--885~W/m$^2$) before recovering at peak irradiance. 
-This regime-dependent inter-string divergence is invisible in an aggregate correlation and is preserved as evidence of non-uniform string behavior under high thermal loading, motivating the per-string imbalance features in Section~\ref{sec:feature-engineering}. 
-The aggregate heatmap identifies the algebraic aliases targeted by hygiene pruning, while the irradiance-stratified profiles distinguish those aliases from physically meaningful inter-string divergence that must be preserved.
+\textbf{Correlation, collinearity, and spurious relationship detection.} Spearman rank correlation was computed in three contexts: across all rows, restricted to normal-class rows, and stratified by irradiance quartile within the normal class. Figure~\ref{fig:eda-correlation-heatmap} shows the full normal-class Spearman heatmap and Figure~\ref{fig:eda-correlation-stratified} shows the irradiance-stratified profiles.
+
+The normal-class context exposes two classes of collinear alias. The first arises from additive identities: Spearman $\rho(\texttt{pdc1}, \texttt{pdc}) = 0.999$ and $\rho(\texttt{pdc2}, \texttt{pdc}) = 0.999$, empirically confirming $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$. The second arises from the multiplicative physical relationship $P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$ at approximately constant voltage, making per-string current a near-proxy for per-string power ($\rho = 0.976$ for \texttt{idc1}--\texttt{pdc1}). VIF quantifies the regression-based consequence: VIF(\texttt{idc1}) = 187.8. These aliases are the direct targets of the hygiene pruning stage in Section~\ref{sec:feature-engineering}.
+
+The irradiance-stratified analysis reveals an additional non-trivial pattern: while the \texttt{pdc1}--\texttt{pdc2} correlation remains above 0.95 across all four irradiance quartiles, the \texttt{idc1}--\texttt{idc2} correlation drops to 0.82 in the third quartile (830--885~W/m$^2$) before recovering at peak irradiance. This regime-dependent inter-string divergence is invisible in an aggregate correlation and is preserved as evidence of non-uniform string behavior under high thermal loading, motivating the per-string imbalance features in Section~\ref{sec:feature-engineering}.
 
 \begin{figure}[H]
   \centering
@@ -169,7 +169,9 @@ The aggregate heatmap identifies the algebraic aliases targeted by hygiene pruni
   \label{fig:eda-mi}
 \end{figure}
 
-\textbf{Outlier analysis.} A $3\times\mathrm{IQR}$ criterion was applied exclusively to normal-class rows; bounds were computed from the normal-class IQR and any row falling outside those bounds was flagged. The result is strongly channel-asymmetric: idc1, idc2, pdc1, pdc2, pdc, irr, and pvt exhibit 0 outlier rows, while vdc1 yields 1.4\% (4,430 rows). Localizing these vdc1 outliers by date and by hour of day reveals that they are concentrated in the first 3 recording days (2020-04-06 to 2020-04-09) within the 9--12~UTC morning window, a pattern consistent with system warm-up behavior at the start of the recording. Fault-labeled rows that exceed the same vdc1 bounds are not removed; their extreme voltage values are meaningful fault signatures. This label-aware treatment is the direct specification for the IQR-based preprocessing in Section~\ref{sec:preprocessing}.
+\textbf{Outlier analysis.} A $3\times\mathrm{IQR}$ criterion was applied exclusively to normal-class rows; bounds were computed from the normal-class IQR and any row falling outside those bounds was flagged. The result is strongly channel-asymmetric: \texttt{idc1}, \texttt{idc2}, \texttt{pdc1}, \texttt{pdc2}, \texttt{pdc}, \texttt{irr}, and \texttt{pvt} exhibit zero outlier rows, while \texttt{vdc1} yields 1.4\% (4,430 rows).
+
+Localizing these \texttt{vdc1} outliers by date and hour of day reveals that they are concentrated in the first three recording days (2020-04-06 to 2020-04-09) within the 09:00--12:00~UTC morning window, a pattern consistent with system warm-up behavior at the start of the recording. Fault-labeled rows that exceed the same bounds are not removed, as their extreme voltage values are meaningful fault signatures. This label-aware treatment is the direct specification for the IQR-based winsorization in Section~\ref{sec:preprocessing}.
 
 \textbf{Sensor health: stuck-at detection.} A rolling variance check was applied across all channels: no 30-sample window exhibits zero variance for any electrical channel. The ingested data is free of frozen-sensor artifacts and is clean on this criterion.
 
@@ -178,9 +180,11 @@ The aggregate heatmap identifies the algebraic aliases targeted by hygiene pruni
 \section{Pipeline Architecture}
 \label{sec:pipeline-architecture}
 % ────────────────────────────────────────────────────────────
-The data pipeline that transforms raw field recordings into the inference-ready representations consumed by every modeling experiment is organized as 5 sequential stages: ingestion, splitting, preprocessing, feature engineering, and model training. This staged organization is a deliberate architectural choice rather than an implementation convenience. A monolithic transformation script would make it impossible to enforce leakage-prevention invariants at a well-defined boundary, to rebuild expensive downstream stages independently when upstream logic changes, or to apply the same pipeline to a new field dataset without touching the transformation code. The staged structure addresses all 3 requirements simultaneously and is the structural foundation of the portability claim: the same pipeline code, parameterized by a site-specific configuration file, produces independent artifact trees for each field dataset with no shared internal state.
+The data pipeline is organized as five sequential stages: ingestion, splitting, preprocessing, feature engineering, and model training. This staged organization is a deliberate architectural choice rather than an implementation convenience.
 
-The pipeline is constructed as a Directed Acyclic Graph (DAG) of processing stages. Each stage defines formal inputs and outputs, ensuring that downstream processes strictly depend on verified upstream states. This structural abstraction enforces data lineage and prevents the reuse of stale data when upstream logic changes, ensuring end-to-end reproducibility independently of the underlying execution engine. Figure~\ref{fig:pipeline} illustrates the complete pipeline and the role of each stage.
+A monolithic transformation script would make it impossible to enforce leakage-prevention invariants at a well-defined boundary, to rebuild expensive downstream stages independently when upstream logic changes, or to apply the same pipeline to a new field dataset without touching the transformation code. The staged structure addresses all three requirements simultaneously and is the structural foundation of the portability claim: the same pipeline code, parameterized by a site-specific configuration file, produces independent artifact trees for each field dataset with no shared internal state.
+
+The pipeline is constructed as a Directed Acyclic Graph (DAG) of processing stages. Each stage defines formal inputs and outputs, ensuring that downstream processes strictly depend on verified upstream states. This structural abstraction enforces data lineage and prevents the reuse of stale artifacts when upstream logic changes, guaranteeing end-to-end reproducibility independently of the underlying execution engine. Figure~\ref{fig:pipeline} illustrates the complete pipeline and the role of each stage.
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{figures/chap3/pipeline-arch.png}
@@ -188,13 +192,6 @@ The pipeline is constructed as a Directed Acyclic Graph (DAG) of processing stag
   \label{fig:pipeline}
 \end{figure}
 
-\begin{itemize}
-    \item \textbf{Ingestion} converts raw sensor logs from a given field site into a unified operational table: acquisition streams recorded by heterogeneous systems at different sampling frequencies are joined and aligned, night-time observations are discarded, and the fault condition is assigned to a single shared label column. This conversion is the only stage that carries site-specific format knowledge; every downstream stage receives an identical schema and is fully insulated from the acquisition details of the source system.
-    \item \textbf{Splitting} partitions the consolidated table into training, validation, and test sets according to a strict temporal grouping protocol. No sample-level transformation is performed at this stage; splitting is the gate at which evaluation integrity is established, and it must precede all subsequent stages that estimate statistics from the data.
-    \item \textbf{Preprocessing} cleans the normal-class rows of the training partition through outlier removal (fault-labeled rows are exempt, as extreme values in those rows are expected fault signatures) and, for sites where the exploratory analysis identifies sustained temporal gaps in the field recording, tiered missing-value imputation, then estimates all cleaning statistics exclusively from that partition and applies them as fixed constants to validation and test.    
-    \item \textbf{Feature engineering} transforms cleaned measurements into the representations consumed by the downstream models: named profiles specify which feature families are constructed, and a train-only selection stack eliminates redundant and low-relevance candidates before yielding the final feature matrices. The profile system makes this stage a controlled ablation instrument, isolating the contribution of each feature family across experiments.    
-    \item \textbf{Model training} fits each candidate model on the feature-engineered partitions, restricts hyperparameter optimisation strictly to the training and validation partitions, and computes final metrics on the test partition exactly once after the winning configuration has been selected. All configurations, architectural choices, and evaluation results are tracked systematically, ensuring that every reported metric is traceable to a specific architectural state and data partition.
-\end{itemize}
 
 \section{Data Ingestion}
 This step involves loading the raw data from the Costa dataset, then applying a series of transformations to output a unified table ready for the next stage.
@@ -279,10 +276,7 @@ The partition ratios are 70 / 15 / 15 for training, validation, and test respect
 
 Preprocessing is conceived as a minimal cleaning layer that intervenes between split assignment and feature engineering. The guiding principle is that the model must learn to detect deviations from the expected operating behavior, and the preprocessing stage must preserve this signal while staying as lean as the underlying data quality allows.
 
-For Costa, which contains 0 missing values after ingestion-time irradiance trimming, the active preprocessing layer consists solely of a scope-limited outlier removal step applied to the primary measured channels. The interquartile range of each primary electrical channel is computed exclusively on the normal-class rows of the training partition, and any normal-class training row whose value falls outside a bound of $3 \times \mathrm{IQR}$ is dropped. Fault-class rows are never subjected to outlier removal, because the extreme values present in those rows are precisely the signatures that the detection and classification systems are expected to learn. The multiplier of 3 (rather than the more aggressive value of 1.5) is chosen to target only values attributable to sensor malfunction or acquisition errors rather than to legitimate operational variability. Derived power channels are recomputed deterministically from the cleaned primary channels after outlier removal, which preserves the algebraic identity $P_{\mathrm{dc},s} = V_{\mathrm{dc},s} \cdot I_{\mathrm{dc},s}$ and prevents spurious mismatches between primary and derived quantities.
-
-A general invariant is enforced across all preprocessing decisions. Any statistic estimated from the data, including outlier bounds and normalization factors, is computed exclusively from the training partition and applied as a constant to the validation and test partitions. This discipline preserves the independence of the evaluation surface and prevents any form of look-ahead leakage through preprocessing.
-
+For Costa, which contains 0 missing values after ingestion-time irradiance trimming, the active preprocessing layer consists solely of a scope-limited outlier removal step applied to the primary measured channels. The interquartile range of each primary electrical channel is computed exclusively on the normal-class rows of the training partition, and any normal-class training row whose value falls outside a bound of $3 \times \mathrm{IQR}$ is dropped. Fault-class rows are never subjected to outlier removal, because the extreme values present in those rows are precisely the signatures that the detection and classification systems are expected to learn. The multiplier of 3 (rather than the more aggressive value of 1.5) is chosen to target only values attributable to sensor malfunction or acquisition errors rather than to legitimate operational variability.
 
 % ────────────────────────────────────────────────────────────
 \section{Feature Engineering and Profile Ablation}
@@ -319,11 +313,11 @@ The maximum power point of crystalline silicon modules decreases linearly with t
 
 \paragraph{Family 4: First-order temporal derivatives.}
 Discrete first differences of the primary channels expose rapid transients characteristic of abrupt fault types such as short circuits and open circuits:
-\[
-    \delta P_{\mathrm{dc},s}(t) = P_{\mathrm{dc},s}(t) - P_{\mathrm{dc},s}(t-1), \quad
-    \delta V_{\mathrm{dc},s}(t) = V_{\mathrm{dc},s}(t) - V_{\mathrm{dc},s}(t-1), \quad
-    \delta I_{\mathrm{dc},s}(t) = I_{\mathrm{dc},s}(t) - I_{\mathrm{dc},s}(t-1).
-\]
+\begin{align}
+    \delta P_{\mathrm{dc},s}(t) &= P_{\mathrm{dc},s}(t) - P_{\mathrm{dc},s}(t-1), \nonumber\\
+    \delta V_{\mathrm{dc},s}(t) &= V_{\mathrm{dc},s}(t) - V_{\mathrm{dc},s}(t-1), \nonumber\\
+    \delta I_{\mathrm{dc},s}(t) &= I_{\mathrm{dc},s}(t) - I_{\mathrm{dc},s}(t-1). \nonumber
+\end{align}
 
 Together, the 4 families yield approximately 17 engineered features after the selection stack described below has pruned the candidate pool. This feature set defines the profile \texttt{plus\_physics}, which serves as the principal representation for the headline experiments in Chapter~\ref{ch:implementation}.
 
@@ -349,15 +343,15 @@ The 3 feature profiles evaluated in this thesis are as follows:
 
 \begin{itemize}
     \item \texttt{baseline\_raw}: the cleaned sensor columns produced by preprocessing, with no engineered features. This profile provides the reference level against which the contribution of each feature family is measured.
-    \item \texttt{plus\_physics}: extends \texttt{baseline\_raw} by adding the 4 physics-informed feature families of Section~\ref{sec:feature-engineering}. This is the primary profile used for the headline results in Chapter~\ref{ch:implementation}.
+    \item \texttt{plus\_physics}: extends \texttt{baseline\_raw} by adding the 4 physics-informed feature families of Section~\ref{sec:feature-engineering}.
     \item \texttt{plus\_rolling}: extends \texttt{plus\_physics} by adding the rolling mean and rolling standard deviation over windows $w \in \{10, 30\}$ for each physics-informed feature.
 \end{itemize}
 
-\subsection{Selection Stack}
+\subsection{Feature Selection}
 
-The candidate feature pool is pruned by a 2-stage train-only selector stack before the final feature set is written to disk. The first stage is hygiene pruning: near-constant columns whose variance falls below a numerical threshold are removed, exact duplicate columns are collapsed, and deterministic algebraic aliases (such as the identity $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$ identified during exploratory analysis) are detected and reduced to a single representative. This stage requires no label information and therefore introduces no leakage risk.
+The candidate feature pool is pruned by a 2-stage train-only selector stack before the final feature set is written to disk. The first stage is hygiene pruning: near-constant columns whose variance falls below a numerical threshold are removed and aliases (such as the identity $P_{\mathrm{dc}} = P_{\mathrm{dc},1} + P_{\mathrm{dc},2}$ identified during exploratory analysis) are detected and reduced to a single representative. This stage requires no label information and therefore introduces no leakage risk.
 
-The second stage applies minimum-redundancy maximum-relevance (mRMR) feature selection under the mutual information difference (MID) criterion \citep{peng2005mrmr}, with a target retained pool of 32 features after hygiene. The relevance term scores each candidate by its mutual information with the task label; the redundancy term penalizes mutual information against already-retained features; the greedy selection proceeds until the target size is reached or the pool is exhausted. All mutual information estimates are computed from the training partition only. For large training partitions, estimation is performed on a stratified, group-aware subset of up to 30\,000 rows, which preserves the statistical structure of the label distribution and the temporal grouping while keeping the selection step tractable within the project's computational budget.
+The second stage applies minimum-redundancy maximum-relevance (mRMR) feature selection under the mutual information difference (MID) criterion \citep{peng2005mrmr}, with a target retained pool of 32 features. The relevance term scores each candidate by its mutual information with the task label; the redundancy term penalizes mutual information against already-retained features; the greedy selection proceeds until the target size is reached or the pool is exhausted. All mutual information estimates are computed from the training partition only. Estimation is performed on a stratified, group-aware subset of up to 30\,000 rows, which preserves the statistical structure of the label distribution and the temporal grouping while keeping the selection step tractable within the project's computational budget.
 
 
 % ────────────────────────────────────────────────────────────
@@ -365,7 +359,7 @@ The second stage applies minimum-redundancy maximum-relevance (mRMR) feature sel
 \label{sec:evaluation-methodology}
 % ────────────────────────────────────────────────────────────
 
-This section defines the evaluation protocols applied uniformly across all experiments. It specifies the primary metrics for each task, the leakage validation checks, the cross-validation scheme, and the threshold calibration procedure. The choice of evaluation metrics constitutes the third tier of the class imbalance handling strategy, complementing the paradigm-level and training-level responses described in earlier sections: metrics are selected to reflect per-class diagnostic capability rather than aggregate accuracy, preventing majority-class prevalence from inflating the reported figures.
+This section defines the evaluation protocols applied uniformly across all experiments. It specifies the primary metrics for each task, the leakage validation checks, the cross-validation scheme, and the calibration procedures. Metrics are selected to reflect per-class diagnostic capability rather than aggregate accuracy, preventing majority-class prevalence from inflating the reported figures.
 
 \subsection{Performance Metrics}
 
@@ -410,7 +404,7 @@ The weighted average weights each per-class score by the number of samples $n_k$
 \]
 Weighted averaging reflects the actual class distribution. On imbalanced data it is dominated by majority classes and can conceal failure on rare classes.
 
-\paragraph{Precision-Recall AUC.}
+\paragraph{Area under the Precision-Recall Curve.}
 As the decision threshold is swept continuously, each threshold yields a (Precision, Recall) pair; the full set of pairs traces the precision-recall curve. The area under this curve (PR-AUC) is:
 \[
   \mathrm{PR\text{-}AUC} = \int_0^1 P(R)\,\mathrm{d}R,
@@ -446,18 +440,30 @@ Leakage checks fall into two categories: checks that are \emph{guaranteed by pip
     \item \textbf{Duplicate sample check.} No feature row in the validation or test set may be an exact duplicate of a training row. This property is guaranteed by the post-split windowing principle of Section~\ref{sec:splitting}; the check confirms it holds after feature construction.
 \end{itemize}
 
-\paragraph{Post-training checks.}
+\paragraph{Post-training checks.}\leavevmode
+
+\medskip
+\noindent\textit{Common to both tasks:}
 \begin{itemize}
-    \item \textbf{Label shuffle test.} The check is implemented differently for the two tasks because their training paradigms differ structurally. For fault classification, the model is retrained on randomly permuted training labels; validation performance must collapse to the chance level; retained performance is a symptom of target leakage through features that encode label information by construction. For anomaly detection, the model is never retrained: it was trained without any labels. Instead, the anomaly scores are held fixed and the evaluation labels (validation and test) are permuted; the resulting PR-AUC must collapse to the positive-class base rate. If shuffled PR-AUC remains materially above the base rate, the metric computation is artifactual rather than the model being discriminative.
-    \item \textbf{Feature importance audit.} A single-feature classifier is trained on each feature independently; any feature whose standalone score approaches the full-model score is flagged as a potential proxy label, indicating that it may have been inadvertently derived from or correlated with the target.
     \item \textbf{Performance sanity check.} Reported metrics are compared against the floor (random baseline at class prevalence) and an approximate ceiling derived from the dataset's class separability. Values that exceed any published baseline by an unexplained margin are flagged for investigation.
+\end{itemize}
+
+\noindent\textit{Task A — Anomaly detection:}
+\begin{itemize}
+    \item \textbf{Label shuffle test.} Anomaly scores are held fixed and the evaluation labels are permuted; the resulting PR-AUC must collapse to the positive-class base rate. A shuffled PR-AUC that remains materially above the base rate signals an artifactual metric rather than genuine model discrimination.
+\end{itemize}
+
+\noindent\textit{Task B — Fault classification:}
+\begin{itemize}
+    \item \textbf{Label shuffle test.} The model is retrained on randomly permuted training labels; validation performance must collapse to chance level. Retained performance indicates target leakage through features that encode label information by construction.
+    \item \textbf{Feature importance audit.} Tree-based classifiers expose native feature importance scores; any feature whose importance is disproportionately dominant is flagged as a potential proxy label, indicating that it may have been inadvertently derived from or correlated with the target.
 \end{itemize}
 
 A training run that fails any post-training check does not yield a reportable result; the failure is logged and its cause investigated before the run is retried.
 
-\subsection{Cross-Validation Protocol}
+\subsection{Cross-Validation Protocol for Uncertainty Estimation}
 
-All experiments use a \textbf{5-fold episode-stratified cross-validation} scheme. Folds are constructed at the episode level: each fold corresponds to a distinct partition of the episode set, so no episode appears in both the validation and test splits of any fold, and temporal ordering is preserved within folds.
+All experiments use a \textbf{5-fold episode-stratified cross-validation} scheme. Folds are constructed at the episode level so that no episode appears in both the validation and test splits of any fold, and temporal ordering is preserved within folds.
 
 The two tasks impose structurally different fold constructions:
 
@@ -466,8 +472,7 @@ The two tasks impose structurally different fold constructions:
     \item \textbf{Fault classification.} All labeled classes are present in the training partition of each fold, with temporal-stratified assignment ensuring that each fault class has evaluation coverage in every fold while respecting chronological ordering within each class.
 \end{itemize}
 
-
-
+The 5-fold scheme serves as the variance estimator for reported metrics: mean $\pm$ standard deviation across folds replaces bootstrap confidence intervals, providing an estimate of metric variability under different episode partitions. Model selection uses the fold-average validation score; the test partition of each fold is evaluated exactly once after the winning configuration has been selected, and test scores are never used to guide selection.
 
 \section{Threshold Calibration Policy}
 \label{sec:threshold-calibration}
@@ -476,7 +481,7 @@ The primary evaluation metric for anomaly detection, PR-AUC, is a \emph{threshol
 
 The calibration challenge is that the threshold must be set entirely from training-normal scores, without access to fault-labeled data, to remain consistent with the semi-supervised formulation. A naive approach based on an empirical score percentile implicitly assumes a parametric tail shape that may not hold in practice. To address this, the calibration procedure applies Extreme Value Theory: the upper tail of the normal-class score distribution is modeled by fitting a Generalized Pareto Distribution (GPD) to the exceedances above a high quantile of training-normal scores, using the Peaks-Over-Threshold (POT) method \citep{pickands1975statistical, coles2001extreme}. The GPD fit extrapolates the tail rather than reading off an empirical count, and the calibrated threshold is derived as the GPD quantile corresponding to a target false-positive rate. This procedure is applied uniformly across all detectors, so cross-model comparisons reflect architectural differences in ranking quality rather than differences in threshold policy.
 
-A single operating point, however, collapses a rich anomaly score into one binary decision and imposes the same precision-recall compromise on every fault, irrespective of its severity. The deployed system therefore exposes a three-tier escalation policy modelled on the ISA-18.2 alarm-management standard \citep{isa182011alarm}, which prescribes that alarms be prioritized by severity so that an operator triages a structured hierarchy rather than reacting to an undifferentiated stream of identical alerts. Each tier is a distinct operating point on the \emph{same} anomaly score, fixed by a different calibration rule and serving a different purpose; together they form a sequential escalation chain (P3~$\rightarrow$~P2~$\rightarrow$~P1) of increasing confidence and severity:
+A single operating point, however, collapses a rich anomaly score into one binary decision and imposes the same precision-recall compromise on every fault, irrespective of its severity. The deployed system therefore exposes a three-tier escalation policy modelled on the ISA-18.2 alarm-management standard \citep{isa182011alarm}, which prescribes that alarms must be prioritized by severity so that an operator triages a structured hierarchy rather than reacting to an undifferentiated stream of identical alerts. Each tier is a distinct operating point on the \emph{same} anomaly score, fixed by a different calibration rule and serving a different purpose; together they form a sequential escalation chain (P3~$\rightarrow$~P2~$\rightarrow$~P1) of increasing confidence and severity:
 
 \begin{itemize}
     \item \textbf{P3 (Advisory).} The GPD/POT threshold described above, set to a sensitive false-positive rate ($\text{FPR} \leq 20\%$). It favours recall as a first-line alert that surfaces candidate anomalies early.
@@ -520,7 +525,6 @@ Calibration quality is assessed through three complementary metrics:
 Together, these metrics supplement the discrimination-oriented headline figures and establish the reliability of the probability outputs presented to the operator in the monitoring interface.
 
 
-The 5-fold scheme serves as the variance estimator for reported metrics: mean $\pm$ standard deviation across folds replaces bootstrap confidence intervals, providing an estimate of metric variability under different episode partitions. Model selection uses the fold-average validation score; the test partition of each fold is evaluated exactly once after the winning configuration has been selected, and test scores are never used to guide selection.
 
 % \subsection{Hyperparameter Optimization Protocol}
 
@@ -544,5 +548,9 @@ The 5-fold scheme serves as the variance estimator for reported metrics: mean $\
 \section{Conclusion}
 % ────────────────────────────────────────────────────────────
 
-This chapter defined the design of the proposed PV FDD system, from the high-level architecture and dataset selection to a staged, leakage-aware data pipeline and feature-profile ablation strategy. It also specified the calibration and evaluation protocols that are used consistently in the implementation chapter.
+This chapter presented the design choices underlying the proposed PV FDD system. The two-stage diagnostic architecture, the selection of the Costa real-field dataset, and the structure of the data pipeline were each motivated by findings from the exploratory analysis rather than by convention.
+
+The pipeline enforces a train-only estimation discipline across all transformation stages, and the feature engineering profiles are constructed to support controlled ablation across experiments. Leakage is audited at three levels after each training run — label shuffle, feature importance, and performance sanity — to ensure that reported results reflect genuine model behavior.
+
+The evaluation methodology is uniform across both tasks: 5-fold episode-stratified cross-validation for uncertainty estimation, task-appropriate primary metrics, and explicit calibration policies for both detection thresholds and output probabilities. The implementation chapter applies these protocols consistently across all experiments.
 
