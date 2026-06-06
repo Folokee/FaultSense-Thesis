@@ -228,7 +228,7 @@ Per-step score is discrepancy-weighted reconstruction error; window score is the
 \end{equation}
 
 \paragraph{Hyperparameter search space and winning configuration.}
-The model is trained with AdamW and a warmup cosine learning-rate schedule. A two-stage HPO protocol is used: stage~1 tunes training dynamics (Table~\ref{tab:maat-s1}); stage~2 searches the architectural parameters (Table~\ref{tab:maat-s2}).
+The model is trained with AdamW and a cosine annealing learning-rate schedule. A two-stage HPO protocol is used: stage~1 tunes training dynamics (Table~\ref{tab:maat-s1}); stage~2 searches the architectural parameters (Table~\ref{tab:maat-s2}).
 
 \begin{table}[H]
 \centering
@@ -368,7 +368,7 @@ GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad
 Macro PR-AUC & 0.9752 & 0.071 & sample \\
 Worst-class PR-AUC     & 0.9140 & 0.241 & sample \\
 Binary PR-AUC          & 0.9896 & 0.019 & sample \\
-Macro PR-AUC & 0.9850 & -- & episode \\
+Macro PR-AUC & 0.9850 & 0.117 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -391,18 +391,18 @@ Shadowing     (cls~4) & 0.9871 & 0.022 & 184\,311 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Physics-Conditioned Normalizing Flow (PC-Flow)}\label{sec:ad-pcflow}
 
-This work proposes PC-Flow, a physics-conditioned normalizing flow tailored to PV fault detection. A normalizing flow~\citep{rezende2015variational} is a generative model built from an exactly invertible map $f_\theta : \mathbb{R}^n \to \mathbb{R}^n$: given an input $x$ it produces a latent code $z = f_\theta^{-1}(x)$, and this transformation can be reversed exactly. This bijective structure is what distinguishes it from related generative models: unlike a variational autoencoder, which maximises a lower bound on the likelihood, the flow yields an \emph{exact} likelihood; and unlike an autoregressive model, it also learns an invertible latent representation of the input. Because the map is invertible, the exact density of any input $x$ follows from the density of its latent code $z$ through the change-of-variables formula:
+We introduce PC-Flow, a physics-conditioned normalizing flow designed for PV fault detection. A normalizing flow~\citep{rezende2015variational} is a generative model built from an exactly invertible map $f_\theta : \mathbb{R}^n \to \mathbb{R}^n$: given an input $x$ it produces a latent code $z = f_\theta^{-1}(x)$, and this transformation can be reversed exactly. This bijective structure is what distinguishes it from related generative models: unlike a variational autoencoder, which maximises a lower bound on the likelihood, the flow yields an \emph{exact} likelihood; and unlike an autoregressive model, it also learns an invertible latent representation of the input. Because the map is invertible, the exact density of any input $x$ follows from the density of its latent code $z$ through the change-of-variables formula:
 \begin{equation}
     \log p(x;\theta) = \underbrace{\log p_Z(f_\theta^{-1}(x))}_{\text{log-density of the latent code}} + \underbrace{\log\left|\det\!\left(\frac{\partial f_\theta^{-1}(x)}{\partial x}\right)\right|}_{\text{log volume change of the transformation}},
 \end{equation}
-where $p_Z$ is a standard Gaussian base distribution, and the second term corrects for how the transformation stretches or compresses volume in different regions. The flow learns this latent representation directly from the raw signals as part of fitting the density, so anomaly scoring requires \textbf{no hand-engineered features}. To our knowledge, no prior work has applied a normalizing flow to PV anomaly detection; the contribution lies in adapting a conditional normalizing flow to this domain and conditioning it on the physical operating point, as described below.
+where $p_Z$ is a standard Gaussian base distribution, and the second term corrects for how the transformation stretches or compresses volume in different regions. The flow learns this latent representation directly from the raw signals as part of fitting the density, so anomaly scoring requires \textbf{no hand-engineered features}. To our knowledge, no prior work has applied a normalizing flow to PV anomaly detection.
 
 \paragraph{Architecture.}
 The flow is a conditional RealNVP~\citep{dinh2017realnvp}: a stack of $L$ affine coupling layers with alternating binary split masks and fixed random inter-block permutations. Each coupling block splits the input $x$ into two partitions $(x_a, x_b)$, then applies a learned scale-and-shift transformation conditioned on $(x_a, c)$:
 \begin{equation}
     x_b' = x_b \cdot \exp(s(x_a, c)) + t(x_a, c),
 \end{equation}
-where $s$ and $t$ are produced by a small MLP with two hidden layers, and the log-determinant contribution is $\sum_i s_i(x_a, c)$. The context vector $c = [\text{irradiance},\, T_{\text{PV}}]$ encodes the current operating point. By appending $c$ to the MLP inputs at every coupling block, the flow learns a \emph{conditional} density $p(x \mid c)$ rather than a marginal: the model factors out how irradiance and temperature normally drive the measured electrical signals, so deviations from this physics-informed manifold, not absolute signal levels, are penalised. An ablation with rational-quadratic spline coupling layers~\citep{durkan2019neural} (more expressive, non-linear per-dimension transforms) is also evaluated in Section~\ref{sec:abl-scoring}.
+where $s$ and $t$ are produced by a small MLP with two hidden layers, and the log-determinant contribution is $\sum_i s_i(x_a, c)$. The context vector $c = [\text{irradiance},\, T_{\text{PV}}]$ encodes the current operating point. By appending $c$ to the MLP inputs at every coupling block, the flow learns a \emph{conditional} density $p(x \mid c)$ rather than a marginal: the model factors out how irradiance and temperature normally drive the measured electrical signals, so deviations from this physics-informed manifold, not absolute signal levels, are penalised. An ablation with rational-quadratic spline coupling layers~\citep{durkan2019neural} (more expressive, non-linear per-dimension transforms) is also evaluated in Table~\ref{tab:pcflow-score-abl}.
 
 \begin{figure}[H]
     \centering
@@ -421,7 +421,7 @@ The model is trained by maximising the average negative log-likelihood (NLL) on 
 The anomaly score is the negative log-likelihood: $s(x) = -\log p(x \mid c;\theta)$. Under a well-trained flow, normal samples lie in the high-probability region and score low; anomalous samples deviate from the learnt manifold and score high.
 
 \paragraph{Hyperparameter search space.}
-The flow is trained with AdamW and a warmup cosine learning-rate schedule. Table~\ref{tab:pcflow-hpo} reports the search space and winning values for the baseline\_raw profile.
+The flow is trained with AdamW and a cosine annealing learning-rate schedule. Table~\ref{tab:pcflow-hpo} reports the search space and winning values for the baseline\_raw profile.
 \begin{table}[H]
 \centering
 \caption{PC-Flow hyperparameter search space.\label{tab:pcflow-hpo}}
@@ -524,7 +524,7 @@ Spline typicality               & spline & typicality    & 0.937~$\pm$~0.047    
 \end{tabularx}
 \end{table}
 
-This variant pairs a more expressive spline bijection with a typicality score (distance from the mode of the data distribution), which targets a known pathology of NLL-based scoring: a well-trained flow assigns its highest likelihood to the mode, so anomalies can sometimes receive higher likelihoods than rare normal samples. It changes both the coupling transform and the scoring rule relative to the deployed configuration, so the two effects are not isolated here. As a whole, the spline-typicality variant underperforms on the selection metric: macro PR-AUC drops from 0.985 to 0.937, and the variance nearly quadruples (std 0.047). It improves global binary separation (0.979 vs 0.964) but degrades discrimination between individual fault classes. The affine NLL configuration provides a better-calibrated per-class ranking and is adopted as the deployed scoring function.
+This variant pairs a more expressive spline bijection with a typicality score (distance from the mode of the data distribution) as an alternative scoring rule to NLL. It changes both the coupling transform and the scoring rule relative to the deployed configuration, so the two effects are not isolated here. As a whole, the spline-typicality variant underperforms on the selection metric: macro PR-AUC drops from 0.985 to 0.937, and the variance nearly quadruples (std 0.047). It improves global binary separation (0.979 vs 0.964) but degrades discrimination between individual fault classes. The affine NLL configuration provides a better-calibrated per-class ranking and is adopted as the deployed scoring function.
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Leakage Audit}\label{sec:ad-leakage}
@@ -611,22 +611,21 @@ PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Deployed Model Metrics}\label{sec:ad-deployment}
 
-The deployed detector is the PC-Flow (baseline\_raw) configuration, whose anomaly score drives the three-tier ISA-18.2 alarm hierarchy (P3~$\rightarrow$~P2~$\rightarrow$~P1) calibrated in Section~\ref{sec:threshold-calibration}. Independently of any threshold, the model achieves a macro PR-AUC of \textbf{0.990~$\pm$~0.005} (worst-class 0.962~$\pm$~0.021; binary 0.972~$\pm$~0.013), indicating a near-perfect ranking of faulty against normal operation.
+The deployed detector is the PC-Flow (baseline\_raw) configuration. Independently of any threshold, the model achieves a macro PR-AUC of \textbf{0.990~$\pm$~0.005} (worst-class 0.962~$\pm$~0.021; binary 0.972~$\pm$~0.013), indicating a near-perfect ranking of faulty against normal operation.
 
-Table~\ref{tab:ad-deployment} reports the operating-point performance of each tier under five-fold cross-validation (mean~$\pm$~std). The tiers trade sensitivity for confidence along the escalation chain: P3 favours recall (0.916) as an early advisory, P2 raises precision to 0.954 under a distribution-free false-positive-rate guarantee of $\alpha = 0.05$, and P1 attains perfect precision (1.000), restricting critical alarms to sustained, unambiguous faults. P1 is a sequential CUSUM rule, for which per-sample F1 is not defined.
-
+Table~\ref{tab:ad-deployment} reports the operating-point performance of each tier on the deployed model. The tiers trade sensitivity for confidence along the escalation chain: P3 favours recall (0.9167) as an early advisory, and P2 raises precision to 0.9705 under a distribution-free false-positive-rate guarantee of $\alpha = 0.05$. P1, being a sequential CUSUM rule, is characterized by precision, false-alarm rate, and detection delay rather than per-sample recall: it attains perfect precision (1.000) with a false-alarm rate of 0.000, at the cost of a median detection delay of 63 samples, restricting critical alarms to sustained, unambiguous faults.
 \begin{table}[H]
 \centering
 \caption{Per-tier operating-point performance of the deployed PC-Flow detector.}
 \label{tab:ad-deployment}
 \small
-\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
+\begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
 \toprule
-\textbf{Tier} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\textbf{Tier} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Median delay (samples)} \\
 \midrule
-P3 — Advisory & 0.886~$\pm$~0.043 & 0.916~$\pm$~0.017 & 0.900~$\pm$~0.017 \\
-P2 — High     & 0.954~$\pm$~0.025 & 0.736~$\pm$~0.053 & 0.830~$\pm$~0.033 \\
-P1 — Critical & 1.000~$\pm$~0.000 & 0.735~$\pm$~0.140 & ---               \\
+P3 — Advisory & 0.9174 & 0.9167 & 0.9170 & --- \\
+P2 — High     & 0.9705 & 0.7050 & 0.8167 & --- \\
+P1 — Critical & 1.0000 & ---    & ---    & 63  \\
 \bottomrule
 \end{tabularx}
 \end{table}
