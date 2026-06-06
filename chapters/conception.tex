@@ -481,7 +481,7 @@ A single operating point, however, collapses a rich anomaly score into one binar
 \begin{itemize}
     \item \textbf{P3 (Advisory).} The GPD/POT threshold described above, set to a sensitive false-positive rate ($\text{FPR} \leq 20\%$). It favours recall as a first-line alert that surfaces candidate anomalies early.
     \item \textbf{P2 (High).} A conformal-prediction threshold \citep{vovk2005algorithmic} at significance $\alpha = 0.05$, which provides a \emph{distribution-free} guarantee that the false-positive rate does not exceed 5\%. It trades recall for precision relative to P3.
-    \item \textbf{P1 (Critical).} A one-sided CUSUM rule \citep{page1954cusum} that accumulates evidence across consecutive samples and fires only on \emph{persistent} deviations, suppressing the transient spikes that trip the lower tiers. Being sequential, it is characterized by detection delay and mean time between false alarms ($\text{ARL}_0$) rather than by per-sample precision and recall.
+    \item \textbf{P1 (Critical).} A one-sided CUSUM rule \citep{page1954continuous} that accumulates evidence across consecutive samples and fires only on \emph{persistent} deviations, suppressing the transient spikes that trip the lower tiers. Being sequential, it is characterized by detection delay and mean time between false alarms ($\text{ARL}_0$) rather than by per-sample precision and recall.
 \end{itemize}
 
 All three thresholds are calibrated entirely from training-normal scores, without access to fault labels, so the policy remains consistent with the semi-supervised formulation. The tiers are characterized on held-out fault episodes in Section~\ref{sec:ad-deployment}, and surfaced to the operator through the monitoring interface in Chapter~\ref{ch:deployment}.
