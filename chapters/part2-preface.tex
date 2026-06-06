@@ -14,14 +14,14 @@
 
 \vspace{0.6cm}
 
-\noindent Three contributions structure this part. First, a reproducible, leakage-controlled data pipeline is constructed and validated on a real-world field dataset. Second, both diagnostic tasks are evaluated at the per-class level, providing a fine-grained characterization of each method's diagnostic capability under real field conditions, beyond what aggregate metrics alone can reveal. Third, the complete system is deployed on a Jetson Nano edge platform with drift detection and operator-gated model updates, closing the loop between offline training and operational use.
+\noindent Three contributions structure this part. First, a reproducible, leakage-controlled data pipeline is constructed and validated on a real-world field dataset. Second, both diagnostic tasks are evaluated at the per-class level, providing a fine-grained characterization of each method's diagnostic capability under real field conditions, beyond what aggregate metrics alone can reveal. Third, the complete system is deployed on a Jetson Nano edge platform with drift detection, closing the loop between offline training and operational use.
 
 \vspace{0.6cm}
 
-\noindent \textbf{Chapter~\ref{ch:conception}} defines the shared experimental infrastructure common to both tasks: the system architecture, the dataset, the data pipeline, the splitting and preprocessing protocols, the feature engineering profiles, and the evaluation methodology.
+\noindent \textbf{Chapter~\ref{ch:conception}} presents the system design and its rationale: the system architecture, the dataset, the data pipeline, the splitting and preprocessing protocols, the feature engineering profiles, and the evaluation methodology, together with the design decisions that motivate each choice.
 
-\noindent \textbf{Chapter~\ref{ch:implementation}} presents the implementation and results: the anomaly detection model lineup and evaluation and the fault classification model lineup and evaluation.
+\noindent \textbf{Chapter~\ref{ch:implementation}} presents the model lineups and experimental results for both diagnostic tasks, supported by an MLOps infrastructure providing experiment tracking, leakage auditing, and reproducible pipeline management.
 
-\noindent \textbf{Chapter~\ref{ch:deployment}} presents the edge deployment: ONNX model export, Jetson Nano benchmarks, the monitoring graphical interface, and the operational drift detection and operator-gated model update loop.
+\noindent \textbf{Chapter~\ref{ch:deployment}} presents the edge deployment: ONNX model export, Jetson Nano benchmarks, the monitoring graphical interface, and the operational drift detection mechanism.
 
 \clearpage
