@@ -239,7 +239,23 @@ LSTM networks are widely applied in PV fault diagnosis because they effectively 
 
 State-space models (SSMs) are a class of sequence models that represent dynamical systems through a latent state evolving over time according to linear differential equations. Classical SSMs, such as the Structured State-Space Sequence model (S4) and its efficient diagonal variant (S4D), use fixed transition matrices to propagate information across time steps with linear computational complexity \citep{gu2022s4}, offering a compelling alternative to attention-based architectures for long-range sequence modeling. However, their static parameterisation limits the ability to selectively focus on relevant portions of the input sequence.
 
-Mamba addresses this shortcoming through an input-dependent selection mechanism that enables the model to selectively retain or discard information along the sequence \citep{gu2023mamba}. Unlike recurrent networks, which propagate state through fixed transition matrices, and classical SSMs, which employ time-invariant dynamics, Mamba's selective state-space formulation captures long-range dependencies while maintaining constant memory and compute per time step, making it attractive for deployment on edge hardware such as the Jetson Nano where quadratic attention complexity is prohibitive. This input-aware gating brings the representational capacity of SSMs closer to that of self-attention without sacrificing their linear complexity advantage.
+A continuous-time SSM maps an input signal $x(t) \in \mathbb{R}$ to an output $y(t) \in \mathbb{R}$ through a latent state $h(t) \in \mathbb{R}^{N}$:
+\begin{align}
+h'(t) &= \mathbf{A}\,h(t) + \mathbf{B}\,x(t), \label{eq:ssm-cont}\\
+y(t)  &= \mathbf{C}\,h(t),
+\end{align}
+where $\mathbf{A} \in \mathbb{R}^{N \times N}$ is the state-transition matrix, $\mathbf{B} \in \mathbb{R}^{N \times 1}$ the input projection, and $\mathbf{C} \in \mathbb{R}^{1 \times N}$ the output projection. For discrete sequence processing, the continuous system is discretised with a time-step $\Delta$ via the zero-order hold rule:
+\begin{equation}
+\bar{\mathbf{A}} = e^{\Delta \mathbf{A}}, \qquad
+\bar{\mathbf{B}} = (\Delta \mathbf{A})^{-1}\!\left(e^{\Delta \mathbf{A}} - \mathbf{I}\right)\Delta \mathbf{B},
+\end{equation}
+yielding the recurrence $h_t = \bar{\mathbf{A}}\,h_{t-1} + \bar{\mathbf{B}}\,x_t$, $\; y_t = \mathbf{C}\,h_t$.
+
+Mamba addresses the static-parameterisation limitation through an input-dependent selection mechanism that enables the model to selectively retain or discard information along the sequence \citep{gu2023mamba}. The matrices $\mathbf{B}$, $\mathbf{C}$, and the step size $\Delta$ become functions of the current input:
+\begin{equation}
+\mathbf{B}_t = s_B(x_t),\quad \mathbf{C}_t = s_C(x_t),\quad \Delta_t = \mathrm{softplus}\!\left(s_\Delta(x_t)\right),
+\end{equation}
+where $s_B$, $s_C$, and $s_\Delta$ are learned linear projections. This selective parameterisation captures long-range dependencies while maintaining constant memory and compute per time step, making it attractive for deployment on edge hardware where quadratic attention complexity is prohibitive.
 
 \subparagraph{Transformer}
 
@@ -296,4 +312,4 @@ VAEs improve latent space continuity and are suitable for anomaly detection and 
 
 Photovoltaic installations are complex engineered systems that combine operational components for energy conversion and conditioning with protection devices for safe operation and monitoring infrastructures for supervision. This complexity is reflected in the diversity of signals and subsystems involved, ranging from PV modules and power electronics to disconnect devices, sensors, and SCADA platforms responsible for data acquisition and visualization.
 
-Because PV plants operate under variable environmental conditions and rely on many interconnected components, they remain vulnerable to a wide range of faults that can progressively degrade performance or create safety risks if they are not handled promptly. Maintaining energy yield and ensuring system longevity therefore requires timely fault detection and diagnosis, ideally based on continuous monitoring data. In this context, AI-based approaches provide a compelling solution, since machine learning and deep learning models can exploit the available measurements to detect abnormal behavior and support diagnostic decisions at scale.
+Because PV plants operate under variable environmental conditions and rely on many interconnected components, they remain vulnerable to a wide range of faults that can progressively degrade performance or create safety risks if they are not handled promptly. Maintaining energy yield and ensuring system longevity therefore requires timely fault detection and diagnosis, ideally based on continuous monitoring data. In this context, different families of AI methods provide a compelling solution, since machine learning and deep learning models can exploit the available measurements to detect abnormal behavior and support diagnostic decisions at scale.
