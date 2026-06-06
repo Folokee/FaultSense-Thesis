@@ -69,10 +69,8 @@
 % French abstract (Résumé)
 \input{chapters/abstract-french}
 
-% Arabic abstract (ملخص) — compiled separately with XeLaTeX
-\IfFileExists{chapters/abstract-arabic-standalone.pdf}
-  {\includepdf[pages={1}]{chapters/abstract-arabic-standalone.pdf}}
-  {\chapter*{\textbf{Arabic abstract not compiled. Run: xelatex chapters/abstract-arabic-standalone.tex}}}
+% Arabic abstract (ملخص)
+\input{chapters/abstract-arabic}
 
 % Table of contents
 \tableofcontents

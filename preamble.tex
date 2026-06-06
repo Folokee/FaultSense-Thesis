@@ -3,9 +3,13 @@
 % ============================================================
 
 % ── Language & encoding ─────────────────────────────────────
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[english]{babel}   % switch to [french] if needed
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\setotherlanguage{arabic}
+\newfontfamily\arabicfont[Script=Arabic,Scale=1.15]{Arabic Typesetting}
+\providecommand{\UseMathForPositioningText}{}
+\setmainfont{Latin Modern Roman}
 \usepackage{csquotes}
 
 % ── Page geometry ───────────────────────────────────────────
@@ -15,7 +19,7 @@
 \usepackage{setspace}
 \onehalfspacing
 \usepackage{microtype}
-\usepackage{lmodern}
+
 
 % ── Mathematics ─────────────────────────────────────────────
 \usepackage{amsmath,amssymb,amsfonts}
@@ -43,7 +47,7 @@
 \counterwithout{figure}{chapter}   % Continuous figure numbering
 \counterwithout{table}{chapter}    % Continuous table numbering
 \usepackage{tabularx}              % Auto-width table columns
-\usepackage{pdfpages}             % Include external PDF pages (Arabic abstract)
+
 
 % ── Colors ──────────────────────────────────────────────────
 \usepackage{xcolor}
