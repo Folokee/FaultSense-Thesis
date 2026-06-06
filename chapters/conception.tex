@@ -103,14 +103,15 @@ The exploratory data analysis was structured as a series of checks applied to th
 
 \textbf{Schema validation and basic statistics.} The first check confirmed data types, row counts, and channel completeness. Costa yields 515,958 daytime rows over 9 sensor channels (\texttt{vdc1}, \texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{pdc1}, \texttt{pdc2}, \texttt{pdc}, \texttt{irr}, \texttt{pvt}), with 0 missing values after ingestion-time irradiance trimming. The dataset exposes all labeled classes without gaps in the label column.
 
-\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence with only 20 consecutive pairs exceeding 30~s. This near-perfect regularity means that no imputation step is required and that the 300-second gap threshold for episode segmentation (Section~\ref{sec:splitting}) is a very conservative boundary. The sampling interval distribution is shown in Figure~\ref{fig:eda-sampling}.
+\textbf{Temporal coverage and sampling regularity.} The distribution of consecutive timestamp differences was computed over the full recording; gaps were catalogued at thresholds of 30\,s, 60\,s, and 300\,s. For Costa, p50 = p90 = p99 = 1.0\,s: the recording is a near-perfect 1~Hz sequence with only 20 consecutive pairs exceeding 30~s. This near-perfect regularity means that no imputation step is required and that the 300-second gap threshold for episode segmentation (Section~\ref{sec:splitting}) is a very conservative boundary.
+% The sampling interval distribution is shown in Figure~\ref{fig:eda-sampling}.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{eda/costa_sampling_intervals.png}
-\caption{Costa sampling interval distribution. Left: histogram zoomed to the 0.6--1.4\,s range, showing a single spike at 1\,s. Right: the complete interval distribution on a log-count axis, exposing the rare gaps above 30\,s.}
-\label{fig:eda-sampling}
-\end{figure}
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=\textwidth]{eda/costa_sampling_intervals.png}
+% \caption{Costa sampling interval distribution. Left: histogram zoomed to the 0.6--1.4\,s range, showing a single spike at 1\,s. Right: the complete interval distribution on a log-count axis, exposing the rare gaps above 30\,s.}
+% \label{fig:eda-sampling}
+% \end{figure}
 
 \textbf{Missing value analysis.} Costa contains 0 missing values across all 9 channels after ingestion-time irradiance trimming. The missing-value analysis therefore required no intervention for this dataset.
 

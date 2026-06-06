@@ -605,7 +605,7 @@ PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/detection/fig_comparison_size.png}
-    \caption{Model size vs.\ macro PR-AUC. PC-Flow matches GTBAD (0.990 vs.\ 0.975) with 43$\times$ fewer parameters.}
+    \caption{Model size vs.\ macro PR-AUC.}
     \label{fig:ad-size}
 \end{figure}
 % ────────────────────────────────────────────────────────────────────────────
@@ -613,11 +613,12 @@ PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: 
 
 The deployed detector is the PC-Flow (baseline\_raw) configuration, whose anomaly score drives the three-tier ISA-18.2 alarm hierarchy (P3~$\rightarrow$~P2~$\rightarrow$~P1) calibrated in Section~\ref{sec:threshold-calibration}. Independently of any threshold, the model achieves a macro PR-AUC of \textbf{0.990~$\pm$~0.005} (worst-class 0.962~$\pm$~0.021; binary 0.972~$\pm$~0.013), indicating a near-perfect ranking of faulty against normal operation.
 
-Table~\ref{tab:ad-deployment} reports the operating-point performance of each tier under five-fold cross-validation. The tiers trade sensitivity for confidence along the escalation chain: P3 favours recall (0.916) as an early advisory, P2 raises precision to 0.954 under a distribution-free false-positive-rate guarantee of $\alpha = 0.05$, and P1 attains perfect precision (1.000), restricting critical alarms to sustained, unambiguous faults.
+Table~\ref{tab:ad-deployment} reports the operating-point performance of each tier under five-fold cross-validation (mean~$\pm$~std). The tiers trade sensitivity for confidence along the escalation chain: P3 favours recall (0.916) as an early advisory, P2 raises precision to 0.954 under a distribution-free false-positive-rate guarantee of $\alpha = 0.05$, and P1 attains perfect precision (1.000), restricting critical alarms to sustained, unambiguous faults. P1 is a sequential CUSUM rule, for which per-sample F1 is not defined.
 
 \begin{table}[H]
 \centering
-\caption{Per-tier operating-point performance of the deployed PC-Flow detector (5-fold CV, mean~$\pm$~std). P1 is a sequential CUSUM rule, for which per-sample F1 is not defined.\label{tab:ad-deployment}}
+\caption{Per-tier operating-point performance of the deployed PC-Flow detector.}
+\label{tab:ad-deployment}
 \small
 \begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
 \toprule
