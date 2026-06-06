@@ -420,7 +420,7 @@ where $P(R)$ denotes precision as a function of recall \citep{saito2015pr}. A ra
 
 \paragraph{Task~A: Anomaly Detection.}
 
-Since PR-AUC is threshold-independent and measures intrinsic ranking quality, it is the primary criterion for model comparison in Chapter~\ref{ch:implementation}. The headline figure is the \textbf{macro per-class PR-AUC}, obtained by computing the binary PR-AUC of each fault class versus normal independently and averaging the results without class weighting. The \textbf{worst-class PR-AUC} is reported alongside it to ensure that no individual class is overlooked by the aggregate figure. Given the edge deployment context, \textbf{model size} is reported as a secondary comparison criterion alongside PR-AUC: two models with comparable ranking quality are differentiated by the number of trainable parameters, as the target platform imposes strict memory and computational constraints detailed in Chapter~\ref{ch:deployment}.
+Since PR-AUC is threshold-independent and measures intrinsic ranking quality, it is the primary criterion for model comparison in Chapter~\ref{ch:implementation}. The headline figure is the \textbf{macro PR-AUC}, obtained by computing the binary PR-AUC of each fault class versus normal independently and averaging the results without class weighting. The \textbf{worst-class PR-AUC} is reported alongside it to ensure that no individual class is overlooked by the aggregate figure. Given the edge deployment context, \textbf{model size} is reported as a secondary comparison criterion alongside PR-AUC: two models with comparable ranking quality are differentiated by the number of trainable parameters, as the target platform imposes strict memory and computational constraints detailed in Chapter~\ref{ch:deployment}.
 
 \textbf{Evaluation granularity.} Task~A models assign anomaly scores at different natural units depending on their architecture; PR-AUC is computed at the granularity native to each model:
 \begin{itemize}
@@ -433,7 +433,7 @@ Since PR-AUC is threshold-independent and measures intrinsic ranking quality, it
 
 \paragraph{Task~B: Fault Classification.}
 
-The criterion used to compare classifiers is the \textbf{macro-averaged F1 score}. Accuracy is dominated by the normal class and is therefore uninformative under class imbalance. Weighted F1 is dominated by the shadowing class (label~4, 35.7\% of fault-labeled rows) and can conceal failure on the three rare electrically induced fault classes. Macro F1 assigns equal weight to every fault type and penalizes failure on any class regardless of its frequency. Beyond the headline figure, the full per-class precision, recall, and F1 triplet is reported for each fault class individually, alongside weighted F1 and overall accuracy as secondary aggregate references.
+The criterion used to compare classifiers is the \textbf{macro F1 score}. Accuracy is dominated by the normal class and is therefore uninformative under class imbalance. Weighted F1 is dominated by the shadowing class (label~4, 35.7\% of fault-labeled rows) and can conceal failure on the three rare electrically induced fault classes. Macro F1 assigns equal weight to every fault type and penalizes failure on any class regardless of its frequency. Beyond the headline figure, the full per-class precision, recall, and F1 triplet is reported for each fault class individually, alongside weighted F1 and overall accuracy as secondary aggregate references.
 
 \subsection{Leakage Validation Suite}
 

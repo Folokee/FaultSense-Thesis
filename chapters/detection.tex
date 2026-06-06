@@ -41,10 +41,10 @@ Tables~\ref{tab:bocd-results} and~\ref{tab:bocd-per-class} report the 5-fold eva
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.401 & 0.070 & sample \\
+Macro PR-AUC & 0.401 & 0.070 & sample \\
 Worst-class PR-AUC     & 0.095 & 0.024 & sample \\
 Binary PR-AUC          & 0.870 & 0.068 & sample \\
-Macro per-class PR-AUC & 0.411 & 0.070 & episode \\
+Macro PR-AUC & 0.411 & 0.070 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -107,10 +107,10 @@ Tables~\ref{tab:iforest-results} and~\ref{tab:iforest-per-class} report the 5-fo
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.822 & 0.098 & sample \\
+Macro PR-AUC & 0.822 & 0.098 & sample \\
 Worst-class PR-AUC     & 0.496 & 0.185 & sample \\
 Binary PR-AUC          & 0.974 & 0.028 & sample \\
-Macro per-class PR-AUC & 0.656 & 0.044 & episode \\
+Macro PR-AUC & 0.656 & 0.044 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -170,10 +170,10 @@ Fitted on the 40\,000-sample subsample, the model retains 1\,280 support vectors
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.965 & 0.019 & sample \\
+Macro PR-AUC & 0.965 & 0.019 & sample \\
 Worst-class PR-AUC     & 0.883 & 0.073 & sample \\
 Binary PR-AUC          & 0.987 & 0.010 & sample \\
-Macro per-class PR-AUC & 0.815 & 0.070 & episode \\
+Macro PR-AUC & 0.815 & 0.070 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -275,7 +275,7 @@ Tables~\ref{tab:maat-results} and~\ref{tab:maat-per-class} report the 5-fold eva
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.924 & 0.083 & window \\
+Macro PR-AUC & 0.924 & 0.083 & window \\
 Worst-class PR-AUC     & 0.753 & 0.268 & window \\
 Binary PR-AUC          & 0.982 & 0.017 & window \\
 \bottomrule
@@ -365,10 +365,10 @@ GTBAD has 869\,769 parameters. Tables~\ref{tab:gtbad-results} and~\ref{tab:gtbad
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.9752 & 0.071 & sample \\
+Macro PR-AUC & 0.9752 & 0.071 & sample \\
 Worst-class PR-AUC     & 0.9140 & 0.241 & sample \\
 Binary PR-AUC          & 0.9896 & 0.019 & sample \\
-Macro per-class PR-AUC & 0.9850 & -- & episode \\
+Macro PR-AUC & 0.9850 & -- & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -447,10 +447,10 @@ The baseline\_raw profile uses 7 raw input features and 2 conditioning context f
 \toprule
 \textbf{Metric} & \textbf{Mean} & \textbf{Std} & \textbf{Level} \\
 \midrule
-Macro per-class PR-AUC & 0.990 & 0.005 & sample \\
+Macro PR-AUC & 0.990 & 0.005 & sample \\
 Worst-class PR-AUC     & 0.962 & 0.021 & sample \\
 Binary PR-AUC          & 0.972 & 0.013 & sample \\
-Macro per-class PR-AUC & 0.960 & 0.003 & episode \\
+Macro PR-AUC & 0.960 & 0.003 & episode \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -481,7 +481,7 @@ Three feature profiles were evaluated under the same HPO budget; the Params colu
 \small
 \begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
 \toprule
-\textbf{Profile} & \textbf{Modelled feat.} & \textbf{Context feat.} & \textbf{Macro PC PR-AUC} & \textbf{Worst} & \textbf{Params} \\
+\textbf{Profile} & \textbf{Modelled feat.} & \textbf{Context feat.} & \textbf{Macro PR-AUC} & \textbf{Worst} & \textbf{Params} \\
 \midrule
 \textbf{baseline\_raw}  & 7   & 2 & \textbf{0.990~$\pm$~0.005} & \textbf{0.962} & 20\,124 \\
 plus\_physics   & 15  & 2 & 0.985~$\pm$~0.012 & 0.954 & 9\,418 \\
@@ -490,7 +490,7 @@ plus\_rolling   & 153 & 2 & 0.955~$\pm$~0.024 & 0.868 & 57\,546 \\
 \end{tabularx}
 \end{table}
 
-Macro per-class PR-AUC degrades monotonically as the number of modelled features grows from 7 to 153. This is a hallmark of the \textbf{curse of dimensionality in density estimation}: the normalizing flow must model an increasingly high-dimensional normal distribution, making it harder to assign precise likelihoods to any given region. Importantly, a normalizing flow performs its \emph{own feature learning} as part of the bijective mapping; additional hand-engineered features are therefore redundant and ultimately harmful. The model extracts a latent representation that is jointly optimal for both likelihood estimation and anomaly scoring, without requiring explicit signal processing beyond the raw measurements. This result stands in deliberate contrast to the Task~B findings (Section~\ref{sec:fault-diagnosis}), where tree ensembles that \emph{cannot} learn representations benefit substantially from the same hand-crafted features.
+Macro PR-AUC degrades monotonically as the number of modelled features grows from 7 to 153. This is a hallmark of the \textbf{curse of dimensionality in density estimation}: the normalizing flow must model an increasingly high-dimensional normal distribution, making it harder to assign precise likelihoods to any given region. Importantly, a normalizing flow performs its \emph{own feature learning} as part of the bijective mapping; additional hand-engineered features are therefore redundant and ultimately harmful. The model extracts a latent representation that is jointly optimal for both likelihood estimation and anomaly scoring, without requiring explicit signal processing beyond the raw measurements. This result stands in deliberate contrast to the Task~B findings (Section~\ref{sec:fault-diagnosis}), where tree ensembles that \emph{cannot} learn representations benefit substantially from the same hand-crafted features.
 \paragraph{Conditioning ablation.}
 Table~\ref{tab:pcflow-cond-abl} compares the conditioned and unconditional variants on the plus\_physics profile.
 \begin{table}[H]
@@ -498,7 +498,7 @@ Table~\ref{tab:pcflow-cond-abl} compares the conditioned and unconditional varia
 \caption{PC-Flow conditioning ablation.\label{tab:pcflow-cond-abl}}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Variant} & \textbf{Context feat.} & \textbf{Macro PC PR-AUC} & \textbf{Worst} & \textbf{Params} \\
+\textbf{Variant} & \textbf{Context feat.} & \textbf{Macro PR-AUC} & \textbf{Worst} & \textbf{Params} \\
 \midrule
 \textbf{Conditioned} & 2 & \textbf{0.985~$\pm$~0.012} & \textbf{0.954} & 20\,124 \\
 Unconditional                   & 0 & 0.977~$\pm$~0.021          & 0.938          & 29\,332 \\
@@ -506,7 +506,7 @@ Unconditional                   & 0 & 0.977~$\pm$~0.021          & 0.938        
 \end{tabular}
 \end{table}
 
-Removing the irradiance and temperature conditioning context reduces macro per-class PR-AUC from 0.985 to 0.977 and nearly doubles the variance (std 0.021 vs 0.012). This confirms that the physics conditioning does more than reduce the flow's effective dimensionality: it anchors the normal-operating manifold to the physical operating point, so the model learns a tighter conditional distribution. Without conditioning, the same flow must capture the full marginal across all irradiance and temperature regimes, leading to a looser boundary and higher fold-to-fold instability.
+Removing the irradiance and temperature conditioning context reduces macro PR-AUC from 0.985 to 0.977 and nearly doubles the variance (std 0.021 vs 0.012). This confirms that the physics conditioning does more than reduce the flow's effective dimensionality: it anchors the normal-operating manifold to the physical operating point, so the model learns a tighter conditional distribution. Without conditioning, the same flow must capture the full marginal across all irradiance and temperature regimes, leading to a looser boundary and higher fold-to-fold instability.
 
 \paragraph{Scoring ablation.}
 Table~\ref{tab:pcflow-score-abl} compares the affine NLL and spline-typicality scoring variants.
@@ -516,7 +516,7 @@ Table~\ref{tab:pcflow-score-abl} compares the affine NLL and spline-typicality s
 \small
 \begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X}
 \toprule
-\textbf{Variant} & \textbf{Coupling} & \textbf{Scoring} & \textbf{Macro PC PR-AUC} & \textbf{Binary PR-AUC} \\
+\textbf{Variant} & \textbf{Coupling} & \textbf{Scoring} & \textbf{Macro PR-AUC} & \textbf{Binary PR-AUC} \\
 \midrule
 \textbf{Affine NLL} (deployed) & affine & $-\log p(x)$  & \textbf{0.985~$\pm$~0.012} & 0.964~$\pm$~0.023 \\
 Spline typicality               & spline & typicality    & 0.937~$\pm$~0.047          & \textbf{0.979~$\pm$~0.019} \\
@@ -524,7 +524,7 @@ Spline typicality               & spline & typicality    & 0.937~$\pm$~0.047    
 \end{tabularx}
 \end{table}
 
-This variant pairs a more expressive spline bijection with a typicality score (distance from the mode of the data distribution), which targets a known pathology of NLL-based scoring: a well-trained flow assigns its highest likelihood to the mode, so anomalies can sometimes receive higher likelihoods than rare normal samples. It changes both the coupling transform and the scoring rule relative to the deployed configuration, so the two effects are not isolated here. As a whole, the spline-typicality variant underperforms on the selection metric: macro per-class PR-AUC drops from 0.985 to 0.937, and the variance nearly quadruples (std 0.047). It improves global binary separation (0.979 vs 0.964) but degrades discrimination between individual fault classes. The affine NLL configuration provides a better-calibrated per-class ranking and is adopted as the deployed scoring function.
+This variant pairs a more expressive spline bijection with a typicality score (distance from the mode of the data distribution), which targets a known pathology of NLL-based scoring: a well-trained flow assigns its highest likelihood to the mode, so anomalies can sometimes receive higher likelihoods than rare normal samples. It changes both the coupling transform and the scoring rule relative to the deployed configuration, so the two effects are not isolated here. As a whole, the spline-typicality variant underperforms on the selection metric: macro PR-AUC drops from 0.985 to 0.937, and the variance nearly quadruples (std 0.047). It improves global binary separation (0.979 vs 0.964) but degrades discrimination between individual fault classes. The affine NLL configuration provides a better-calibrated per-class ranking and is adopted as the deployed scoring function.
 
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Leakage Audit}\label{sec:ad-leakage}
@@ -551,7 +551,7 @@ PC-Flow    & $0.628 \pm 0.073$ & \checkmark \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Results and Discussion}\label{sec:ad-tournament}
 
-Table~\ref{tab:ad-tournament} ranks all six detectors by the primary selection metric, macro per-class PR-AUC, and reports binary PR-AUC alongside it for contrast.
+Table~\ref{tab:ad-tournament} ranks all six detectors by the primary selection metric, macro PR-AUC, and reports binary PR-AUC alongside it for contrast.
 
 \begin{table}[H]
 \centering
@@ -559,7 +559,7 @@ Table~\ref{tab:ad-tournament} ranks all six detectors by the primary selection m
 \small
 \begin{tabularx}{\textwidth}{l >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\centering\arraybackslash}X >{\raggedright\arraybackslash}X}
 \toprule
-\textbf{Model} & \textbf{Macro PC PR-AUC} & \textbf{Worst-class PR-AUC} & \textbf{Binary PR-AUC} & \textbf{Size} \\
+\textbf{Model} & \textbf{Macro PR-AUC} & \textbf{Worst-class PR-AUC} & \textbf{Binary PR-AUC} & \textbf{Size} \\
 \midrule
 BOCD             & 0.401~$\pm$~0.070 & 0.095~$\pm$~0.024 & 0.870~$\pm$~0.068 & 28 NIG params$^{\dag}$ \\
 Isolation Forest & 0.822~$\pm$~0.098 & 0.496~$\pm$~0.185 & 0.974~$\pm$~0.028 & 400 trees \\
@@ -580,12 +580,12 @@ Figure~\ref{fig:ad-binary-macro}(a) compares the six detectors on binary PR-AUC,
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/detection/fig_comparison_binary_macro.png}
-    \caption{Six detectors under two metrics: binary PR-AUC (a) vs.\ macro per-class PR-AUC (b). Bars: 5-fold means $\pm$ std; dotted line: 0.64 no-skill baseline.}
+    \caption{Six detectors under two metrics: binary PR-AUC (a) vs.\ macro PR-AUC (b). Bars: 5-fold means $\pm$ std; dotted line: 0.64 no-skill baseline.}
     \label{fig:ad-binary-macro}
 \end{figure}
 
 \paragraph{The macro metric reveals the true ranking.}
-Figure~\ref{fig:ad-binary-macro}(b) switches to macro per-class PR-AUC — a metric that evaluates each fault class separately and averages the scores equally, so a rare fault carries the same weight as a common one. The picture changes completely: the models that looked tied now span 0.401 (BOCD) to 0.990 (PC-Flow), and PC-Flow rises from the bottom of the strong group to first overall. This reversal is the central result of the comparison. Binary PR-AUC hides the differences that matter for a diagnosis system, because a detector that only recognises Shadowing is blind to the three other faults it must identify. Macro per-class PR-AUC is the metric we select on, and PC-Flow leads it.
+Figure~\ref{fig:ad-binary-macro}(b) switches to macro PR-AUC — a metric that evaluates each fault class separately and averages the scores equally, so a rare fault carries the same weight as a common one. The picture changes completely: the models that looked tied now span 0.401 (BOCD) to 0.990 (PC-Flow), and PC-Flow rises from the bottom of the strong group to first overall. This reversal is the central result of the comparison. Binary PR-AUC hides the differences that matter for a diagnosis system, because a detector that only recognises Shadowing is blind to the three other faults it must identify. Macro PR-AUC is the metric we select on, and PC-Flow leads it.
 
 \paragraph{One fault separates the field: Degradation.}
 Figure~\ref{fig:ad-perclass} breaks every model down by fault type, one group of bars per class. Three of the four groups look nearly identical: for Short-Circuit, Open-Circuit, and Shadowing, every competitive model sits close to 1.0. These faults cause large, abrupt changes in current and power, so they are easy to separate from normal behaviour and do not decide the ranking. The fourth group, Degradation (highlighted), is where the models fan out, from 0.121 (BOCD) to 0.998 (PC-Flow). Degradation is intrinsically hard: it is a slow loss of panel efficiency with no sharp event to catch, so each measurement, taken on its own, still looks close to normal. The classical change-point and isolation methods collapse on it (BOCD 0.121, Isolation Forest 0.496), and among the deep models MAAT lags (0.753); the strongest competitors, OC-SVM (0.884) and GTBAD (0.914), close most of the gap but none reaches PC-Flow's 0.998.
@@ -600,18 +600,18 @@ PC-Flow's edge here is structural rather than incidental. It does not score a sa
 \end{figure}
 
 \paragraph{Performance--complexity trade-off.}
-PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: GTBAD's confidence interval ($\pm$0.07) comfortably overlaps PC-Flow's, so the two are statistically close and ranking quality alone does not settle the comparison. Model size does. Figure~\ref{fig:ad-size} shows each model's parameter count, with its macro per-class PR-AUC printed beside the bar. PC-Flow reaches the top score with 20\,124 parameters, whereas GTBAD needs 869\,769 to essentially match it, a model 43 times larger. For the Jetson Nano deployment target (Chapter~\ref{ch:deployment}), where memory use and inference time grow with parameter count, this is the deciding factor: PC-Flow delivers the same ranking quality in a model small enough to run on the edge device.
+PC-Flow's nearest competitor is GTBAD (0.9752 against 0.990). The gap is small: GTBAD's confidence interval ($\pm$0.07) comfortably overlaps PC-Flow's, so the two are statistically close and ranking quality alone does not settle the comparison. Model size does. Figure~\ref{fig:ad-size} shows each model's parameter count, with its macro PR-AUC printed beside the bar. PC-Flow reaches the top score with 20\,124 parameters, whereas GTBAD needs 869\,769 to essentially match it, a model 43 times larger. For the Jetson Nano deployment target (Chapter~\ref{ch:deployment}), where memory use and inference time grow with parameter count, this is the deciding factor: PC-Flow delivers the same ranking quality in a model small enough to run on the edge device.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/detection/fig_comparison_size.png}
-    \caption{Model size vs.\ macro per-class PR-AUC. PC-Flow matches GTBAD (0.990 vs.\ 0.975) with 43$\times$ fewer parameters.}
+    \caption{Model size vs.\ macro PR-AUC. PC-Flow matches GTBAD (0.990 vs.\ 0.975) with 43$\times$ fewer parameters.}
     \label{fig:ad-size}
 \end{figure}
 % ────────────────────────────────────────────────────────────────────────────
 \subsection{Deployed Model Metrics}\label{sec:ad-deployment}
 
-The deployed detector is the PC-Flow (baseline\_raw) configuration, whose anomaly score drives the three-tier ISA-18.2 alarm hierarchy (P3~$\rightarrow$~P2~$\rightarrow$~P1) calibrated in Section~\ref{sec:threshold-calibration}. Independently of any threshold, the model achieves a macro per-class PR-AUC of \textbf{0.990~$\pm$~0.005} (worst-class 0.962~$\pm$~0.021; binary 0.972~$\pm$~0.013), indicating a near-perfect ranking of faulty against normal operation.
+The deployed detector is the PC-Flow (baseline\_raw) configuration, whose anomaly score drives the three-tier ISA-18.2 alarm hierarchy (P3~$\rightarrow$~P2~$\rightarrow$~P1) calibrated in Section~\ref{sec:threshold-calibration}. Independently of any threshold, the model achieves a macro PR-AUC of \textbf{0.990~$\pm$~0.005} (worst-class 0.962~$\pm$~0.021; binary 0.972~$\pm$~0.013), indicating a near-perfect ranking of faulty against normal operation.
 
 Table~\ref{tab:ad-deployment} reports the operating-point performance of each tier under five-fold cross-validation. The tiers trade sensitivity for confidence along the escalation chain: P3 favours recall (0.916) as an early advisory, P2 raises precision to 0.954 under a distribution-free false-positive-rate guarantee of $\alpha = 0.05$, and P1 attains perfect precision (1.000), restricting critical alarms to sustained, unambiguous faults.
 
