@@ -337,81 +337,45 @@ The contract is verified at load time before inference begins: the runtime check
 \label{sec:deployment-development}
 % ────────────────────────────────────────────────────────────
 
+\subsection{Technology Stack}
+
+The backend stack:
+\begin{itemize}
+    \item \textbf{WebSocket server}: \texttt{websockets}
+    \item \textbf{Model inference (anomaly)}: \texttt{torch}, ONNX Runtime
+    \item \textbf{Model inference (classification)}: \texttt{scikit-learn} (Extra Trees)
+    \item \textbf{Drift detection}: \texttt{river} (Page-Hinkley)
+    \item \textbf{Data processing}: \texttt{pandas}, \texttt{numpy}, \texttt{pyarrow}
+    \item \textbf{Hardware monitoring}: \texttt{psutil}
+    \item \textbf{Cloud artifact sync}: \texttt{requests}
+    \item \textbf{GUI embedding}: \texttt{pywebview} or \texttt{PyQt5} + \texttt{QWebEngineView}
+\end{itemize}
+
+The frontend stack:
+\begin{itemize}
+    \item \textbf{Styling}: Tailwind CSS
+    \item \textbf{Charting}: Chart.js
+    \item \textbf{PDF export}: jsPDF
+    \item \textbf{Language}: Vanilla JavaScript, HTML5, CSS3
+\end{itemize}
+
 \subsection{Architecture Overview}
 
-The FaultSense monitoring system follows a two-tier local client--server architecture: a Python backend owns the inference pipeline, drift monitoring, and data management, while a web-based JavaScript frontend owns the operator interface. The two tiers communicate exclusively through persistent WebSocket connections — an outbound channel on which the backend pushes inference results, drift status, and hardware metrics to the dashboard at the sensor sampling rate without polling, and an inbound channel on which the backend receives operator commands (stream control, retraining requests, artifact approval). A separate WebSocket channel ingests sensor rows from an external bridge process, decoupling acquisition from inference.
+The FaultSense monitoring system follows a two-tier local client-server architecture: a Python backend owns the inference pipeline, drift monitoring, and data management, while a web-based JavaScript frontend owns the operator interface. The two tiers communicate exclusively through persistent WebSocket connections — an outbound channel on which the backend pushes inference results, drift status, and hardware metrics to the dashboard at the sensor sampling rate without polling, and an inbound channel on which the backend receives operator commands (stream control, retraining requests, artifact approval). A separate WebSocket channel ingests sensor rows from an external bridge process, decoupling acquisition from inference. Figure~\ref{fig:deployment-sequence} illustrates the interaction between these components.
 
-\subsection{Backend}
-
-The backend is written in Python 3 and is structured around three concurrent threads that share a thread-safe output queue:
-
-\begin{itemize}
-    \item The \textbf{inference loop} dequeues sensor rows, applies the feature engineering and scaling pipeline, scores each row through the PC-Flow ONNX model via the alarm engine, conditionally invokes the Extra Trees classifier, updates the Page-Hinkley drift monitor, and pushes the result onto the output queue.
-    \item The \textbf{readings loop} forwards the raw sensor measurements to the frontend for visualization, independently of the inference cadence.
-    \item The \textbf{metrics loop} reads CPU, GPU, memory, and temperature from the hardware layer and pushes rolling inference statistics to the dashboard once per second.
-\end{itemize}
-
-The ingest server runs on a separate asyncio event loop in a daemon thread, receiving sensor rows over a second WebSocket channel and placing them on a thread-safe queue that the inference loop drains. Table~\ref{tab:backend-stack} summarizes the principal backend dependencies.
-
-\begin{table}[H]
+\begin{figure}[H]
 \centering
-\caption{Backend technology stack.}
-\label{tab:backend-stack}
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Component} & \textbf{Library / Tool} \\
-\midrule
-WebSocket server & \texttt{websockets} \\
-Model inference (anomaly) & \texttt{torch}, ONNX Runtime \\
-Model inference (classification) & \texttt{scikit-learn} (Extra Trees) \\
-Drift detection & \texttt{river} (Page-Hinkley) \\
-Data processing & \texttt{pandas}, \texttt{numpy}, \texttt{pyarrow} \\
-Hardware monitoring & \texttt{psutil} \\
-Cloud artifact sync & \texttt{requests} \\
-GUI embedding & \texttt{pywebview} or \texttt{PyQt5} + \texttt{QWebEngineView} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Frontend}
-
-The frontend is a self-contained single-page application written in vanilla JavaScript with no build step. It communicates with the backend exclusively through the WebSocket connection established at startup and auto-reconnects on disconnect. The key frontend components are:
-
-\begin{itemize}
-    \item \textbf{Real-time charts}: animated score and sensor readings charts rendered on HTML5 Canvas elements using Chart.js, with a configurable rolling time window.
-    \item \textbf{Event log}: a chronological log of all alarm events with filter controls, implemented in \texttt{event-log.js}.
-    \item \textbf{Drift panel}: a reactive drift stage indicator that updates on each \texttt{drift\_status} push from the backend and exposes the retraining request controls when the stage reaches action-ready.
-    \item \textbf{PDF export}: client-side report generation using jsPDF, producing a maintenance report from the in-memory event log without any server-side file I/O.
-\end{itemize}
-
-Table~\ref{tab:frontend-stack} summarizes the frontend libraries.
-
-\begin{table}[H]
-\centering
-\caption{Frontend technology stack.}
-\label{tab:frontend-stack}
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Component} & \textbf{Library / Tool} \\
-\midrule
-Styling framework & Tailwind CSS (bundled, no CDN dependency) \\
-Charting & Chart.js (bundled UMD build) \\
-PDF export & jsPDF (bundled UMD build) \\
-Language & Vanilla JavaScript, HTML5, CSS3 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Deployment Mode}
-
-On the Jetson Nano the application is launched via \texttt{python main.py}. The launcher auto-selects the GUI backend: PyQt5 with QWebEngineView is preferred when available, falling back to pywebview, then to a plain browser mode that serves the frontend over a local HTTP server and opens it in the default browser. In all modes the backend and frontend communicate over \texttt{localhost}, and no network interface is exposed outside the device.
+\includegraphics[width=\textwidth]{figures/deployment/sequence_diagram.png}
+\caption{Sequence diagram of the FaultSense monitoring system.}
+\label{fig:deployment-sequence}
+\end{figure}
 
 % ────────────────────────────────────────────────────────────
 \section{Monitoring Interface}
 \label{sec:deployment-gui}
 % ────────────────────────────────────────────────────────────
 
-The monitoring interface presents the system state in a single integrated dashboard. The \textbf{system state} panel (Figure~\ref{fig:deployment-system-state}) summarises the current alarm tier, the PC-Flow anomaly score against its active threshold, and the fault diagnosis at a glance, while the \textbf{live readings} panel (Figure~\ref{fig:deployment-live-readings}) streams the raw sensor measurements at 1~Hz.
+The monitoring interface presents the system state in a single integrated dashboard. The \textbf{system state} panel (Figure~\ref{fig:deployment-system-state}) summarises the current alarm tier, the PC-Flow anomaly score against its active threshold, and the fault diagnosis at a glance, while the \textbf{live readings} panel (Figure~\ref{fig:deployment-live-readings}) streams the raw sensor measurements.
 
 \begin{figure}[H]
 \centering
