@@ -50,12 +50,12 @@ The picture that emerges from this survey is one of significant data scarcity. T
 
 Infrared thermography has been widely adopted as a diagnostic modality in PV fault detection research, primarily for its ability to reveal hotspot anomalies invisible to conventional optical inspection. In a healthy module, temperature is approximately uniform across the cell surface under steady irradiance. Faults such as shading, cell cracking, bypass diode failures, and soiling create localised thermal dissipation patterns detectable by infrared cameras. The typical pipeline acquires aerial images via UAVs equipped with thermal sensors, applies preprocessing to normalise illumination and correct geometric distortions, then feeds the result into a classification model.
 
-\paragraph{CNN-based classification.}
+\paragraph{}
 Convolutional neural networks have become the dominant model family for thermographic fault diagnosis. Early work framed the task as binary discrimination: \citet{manno2021thermal} applied convolutional feature extraction to thermographic images from a real installation and achieved classification accuracy exceeding 95\%. Transfer learning was subsequently used to compensate for the scarcity of large labeled infrared datasets: \citet{akram2020transfer} pretrained a lightweight CNN on electroluminescence images and transferred its representation to infrared thermography for module defect detection, reaching 99.23\% accuracy.
 
 The release of the InfraredSolarModules benchmark — 20{,}000 cropped module-level thermographs annotated across eleven anomaly categories — enabled the move to fine-grained multi-class diagnosis. \citet{korkmaz2022multiscale} built a three-branch multi-scale CNN on an AlexNet backbone and reported 97.32\% on the binary task and 93.51\% across the eleven anomaly classes.
 
-\paragraph{Detection on full aerial frames.}
+\paragraph{}
 More recent work has shifted from patch classification toward object detection on full UAV frames. \citet{xie2024styolo} extended YOLOv8 with a spatial-channel reconstruction convolution module and triplet attention, improving mean Average Precision while reducing model size by 15\% relative to the YOLOv8s baseline. \citet{dhimish2025hotspot} introduced HOTSPOT-YOLO, a lightweight attention-driven architecture designed for the small, low-contrast thermal anomalies typical of drone-based inspections, reporting a mean Average Precision of 90.8\%.
 
 \subsection{Limitations}
@@ -68,10 +68,10 @@ Thermographic approaches carry two fundamental limitations that restrict large-s
 
 The current-voltage (I-V) characteristic curve of a PV module encodes its complete electrical behaviour at a given irradiance and temperature. Under healthy conditions, the curve follows the single-diode model: a quasi-constant current plateau at low voltages, a knee near the maximum power point, and a steep decline to zero at open-circuit voltage. Different faults produce characteristic distortions of this shape — partial shading introduces step-like discontinuities as bypass diodes activate, increased series resistance tilts the knee region, and decreased shunt resistance raises the plateau slope — that serve as discriminative signatures and have motivated a dedicated family of diagnostic approaches.
 
-\paragraph{Feature-based machine learning.}
+\paragraph{}
 Early methods extract interpretable scalar features from the I-V curve — short-circuit current, open-circuit voltage, fill factor, maximum power point coordinates — and feed them into classical classifiers. \citet{chen2017} trained a kernel extreme learning machine on such features and reported fault diagnosis accuracy above 98\% on a simulated dataset. \citet{eskandari2020} applied ensemble learning to I-V and P-V curve features for line-to-line fault detection, achieving 99\% classification accuracy.
 
-\paragraph{Deep learning on curve representations.}
+\paragraph{}
 More recent work bypasses manual feature extraction entirely. \citet{liu2021sae} used a stacked autoencoder to learn a latent representation of the I-V curve directly, then applied clustering to group measurements into fault categories without labeled data. \citet{qu2024dust} transformed I-V curves into graphical image representations and applied CNNs with convolutional block attention modules (CBAM) under varying soiling and dust conditions, achieving above 99\% on both simulated and experimental data. \citet{gong2024deep} constructed a three-dimensional feature map from current, voltage, and power signals simultaneously; the resulting MIFNet, optimised with an adaptive sparrow search algorithm, reached 99.64\% average recognition accuracy across single- and multi-component fault scenarios.
 
 \subsection{Limitations}
@@ -88,20 +88,20 @@ The third and most practically relevant family of data-driven PV fault detection
 
 Classical machine learning methods were among the first applied to PV fault detection on operational electrical data, and they remain competitive with deep learning on tabular, low-frequency measurements.
 
-\paragraph{Classical methods.}
+\paragraph{}
 \citet{garoudja2017ml} proposed a probabilistic neural network for fault detection and diagnosis on the DC side of a grid-connected system, outperforming a conventional ANN under both clean and noisy conditions. \citet{suliman2024ml} benchmarked multiple SVM kernel configurations against a Binary Adaptive XGBoost on line-to-line, open-circuit, shading, and MPPT failures, with the boosted tree reaching 87.56\% accuracy. \citet{amiri2024rf} extracted single-diode model parameters via a modified grey wolf optimizer and used them to generate labeled training data for two random forest classifiers — one for binary detection, one for multi-class diagnosis — reaching 99.4\% on both tasks and outperforming SVM, KNN, MLP, decision tree, and SGD baselines.
 
-\paragraph{Gradient boosting methods.}
+\paragraph{}
 Gradient boosting algorithms have shown strong performance on tabular PV fault data. \citet{noura_explainable_2025} built a two-phase Extra Trees framework achieving 99.5\% detection and 98.7\% diagnosis accuracy, with integrated SHAP and LIME explainability. \citet{kull_adaptive_2025} paired a Deep Belief Network for feature extraction with LightGBM for classification on a 100~MW SCADA dataset, reaching 98.21\% on a seven-class problem. \citet{zwirtes_fault_2025} specifically studied generalization: classifiers trained on one real PV installation showed significant performance degradation when applied to another with different module characteristics, highlighting the installation-specific nature of fault signatures. For settings where fault labels are unavailable, \citet{kabir_isolation_2023} demonstrated Isolation Forest on PV operational data, while \citet{qu2022unsupervised} combined unsupervised weather pattern recognition with blending fitting models for label-free fault detection.
 
 \subsection{Deep Learning Approaches}
 
 Deep learning enables automatic extraction of temporal and structural features from raw time-series, reducing dependence on manual feature engineering.
 
-\paragraph{Recurrent and autoencoder architectures.}
+\paragraph{}
 \citet{amiri2024dl} proposed a hybrid combining one-dimensional convolutional feature extraction with a bidirectional gated recurrent unit, showing that the joint exploitation of convolutional and recurrent layers outperforms either alone at near-perfect accuracy. Autoencoder-based designs serve both as supervised feature extractors and as unsupervised anomaly detectors: \citet{seghiour2023autoencoder} compressed operating data with a deep autoencoder and fed its encoded representation to a feed-forward classifier for multi-class fault diagnosis. \citet{titouni_hybrid_2025} evaluated a hybrid CNN-Autoencoder on the GPVS-Faults dataset, achieving 98.84\% test accuracy. \citet{attouri_adaptive_2026} combined a polynomial Kolmogorov-Arnold network with autoencoder-based dimensionality reduction; on the photovoltaic dataset the model reached 96.47\% accuracy while reducing execution time by over 88\% and memory usage by 40\%.
 
-\paragraph{Graph and signal-processing hybrids.}
+\paragraph{}
 \citet{yan_som-dbtgnet_2025} introduced SOM-DBTGNet, pairing self-organizing maps for anomaly scoring with a dual-branch temporal graph convolution network that explicitly models topological relationships between measurement channels, achieving 90.7\% accuracy across six fault categories. Signal processing front-ends further enrich the electrical modality: \citet{cai2022arc} applied variational mode decomposition to decompose string current signals into intrinsic mode functions before classifying them with a PSO-tuned SVM, enabling detection of arc fault signatures invisible in the raw time domain. \citet{saiprakash_improved_2024} extracted voltage and current features through the Stockwell transform and reported 99.61\% accuracy on partial shading, open-circuit, and degradation faults.
 
 % ────────────────────────────────────────────────────────────
