@@ -13,7 +13,7 @@
 \usepackage{csquotes}
 
 % ── Page geometry ───────────────────────────────────────────
-\usepackage[a4paper, top=2.5cm, left=2.5cm, right=2.5cm, bottom=3.5cm, footskip=1cm]{geometry}
+\usepackage[a4paper, top=2.5cm, left=2.5cm, right=2.5cm, bottom=2.5cm, footskip=1cm]{geometry}
 
 % ── Typography ──────────────────────────────────────────────
 \usepackage{setspace}
@@ -46,7 +46,13 @@
 \usepackage{float}                 % For [H] exact figure placement
 \counterwithout{figure}{chapter}   % Continuous figure numbering
 \counterwithout{table}{chapter}    % Continuous table numbering
+\renewcommand{\thetable}{\Roman{table}}
 \usepackage{tabularx}              % Auto-width table columns
+
+% Wider numwidth for Roman numerals in List of Tables
+\makeatletter
+\renewcommand{\l@table}{\@dottedtocline{1}{1.5em}{4.2em}}
+\makeatother
 
 
 % ── Colors ──────────────────────────────────────────────────

@@ -37,7 +37,7 @@ Power & 5–10 W \\
 \label{fig:jetson_components}
 \end{figure}
 
-The Jetson Nano runs a custom operating system image built by NVIDIA, known as Linux for Tegra (L4T), which is an Ubuntu 18.04‑based distribution specifically tailored for the Jetson hardware. This image ships with the JetPack SDK (version 4.x), providing a full development environment that includes CUDA 10, cuDNN, and TensorRT, all pre‑configured to leverage the Maxwell GPU. The kernel and device drivers are optimised for the Nano’s power management, multimedia engines, and camera interfaces, ensuring that the entire software stack—from low‑level sensor capture to GPU‑accelerated inference—can be executed without additional integration effort.
+The Jetson Nano runs a custom operating system image built by NVIDIA, known as Linux for Tegra (L4T), which is an Ubuntu 18.04‑based distribution specifically tailored for the Jetson hardware. This image ships with the JetPack SDK (version 4.x), providing a full development environment that includes CUDA 10, cuDNN, and TensorRT, all pre‑configured to leverage the Maxwell GPU. The kernel and device drivers are optimised for the Nano’s power management, multimedia engines, and camera interfaces, ensuring that the entire software stack (from low‑level sensor capture to GPU‑accelerated inference) can be executed without additional integration effort.
 
 % The 128‑core Maxwell GPU delivers 472 GFLOPS of half‑precision performance, enabling real‑time inference of moderately sized neural networks.
 % Combined with a quad‑core Cortex‑A57 CPU and 4 GB of fast LPDDR4 memory, the platform can execute the instrument recognition pipeline described in this thesis with low latency.
@@ -94,7 +94,7 @@ The functional requirements of the monitoring module are prioritised using the M
 \addlinespace
 FS-01 & Must & The interface shall display the current anomaly score alongside its calibrated decision threshold at each inference step, so that the operator can see both the detection decision and its margin. \\
 \addlinespace
-FS-02 & Must & The current alarm level shall be rendered with a distinct visual encoding (colour and label) corresponding to the ISA-18.2 priority tier — P3~Advisory, P2~High, P1~Critical, or Normal — so that the operator can assess severity without reading alert text. \\
+FS-02 & Must & The current alarm level shall be rendered with a distinct visual encoding (colour and label) corresponding to the ISA-18.2 priority tier (P3~Advisory, P2~High, P1~Critical, or Normal) so that the operator can assess severity without reading alert text. \\
 \addlinespace
 FS-03 & Must & When a fault is detected, the interface shall display the single most likely fault class together with its calibrated confidence score. \\
 \addlinespace
@@ -122,7 +122,7 @@ FS-12 & Should & When a validated model artifact becomes available, the operator
 \addlinespace
 \multicolumn{3}{@{}l}{\textit{Diagnostics}} \\
 \addlinespace
-FS-13 & Should & The interface shall expose rolling inference metrics — average detection latency, per-tier alarm rate, and hardware resource usage (CPU, GPU, memory, temperature) — to allow assessment of edge feasibility. \\
+FS-13 & Should & The interface shall expose rolling inference metrics - average detection latency, per-tier alarm rate, and hardware resource usage (CPU, GPU, memory, temperature) - to allow assessment of edge feasibility. \\
 \addlinespace
 \end{longtable}
 
@@ -361,7 +361,7 @@ The frontend stack:
 
 \subsection{Architecture Overview}
 
-The FaultSense monitoring system follows a two-tier local client-server architecture: a Python backend owns the inference pipeline, drift monitoring, and data management, while a web-based JavaScript frontend owns the operator interface. The two tiers communicate exclusively through persistent WebSocket connections — an outbound channel on which the backend pushes inference results, drift status, and hardware metrics to the dashboard at the sensor sampling rate without polling, and an inbound channel on which the backend receives operator commands (stream control, retraining requests, artifact approval). A separate WebSocket channel ingests sensor rows from an external bridge process, decoupling acquisition from inference. Figure~\ref{fig:deployment-sequence} illustrates the interaction between these components.
+The FaultSense monitoring system follows a two-tier local client-server architecture: a Python backend owns the inference pipeline, drift monitoring, and data management, while a web-based JavaScript frontend owns the operator interface. The two tiers communicate exclusively through persistent WebSocket connections: an outbound channel on which the backend pushes inference results, drift status, and hardware metrics to the dashboard at the sensor sampling rate without polling, and an inbound channel on which the backend receives operator commands (stream control, retraining requests, artifact approval). A separate WebSocket channel ingests sensor rows from an external bridge process, decoupling acquisition from inference. Figure~\ref{fig:deployment-sequence} illustrates the interaction between these components.
 
 \begin{figure}[H]
 \centering
@@ -431,7 +431,7 @@ The drift detection module monitors the physics channel $\tilde{P}_{\mathrm{corr
     \text{drift} = \mathbf{1}[\mathrm{PH}_t > \lambda],
 \]
 
-where $\bar{x}$ is the running mean, $\delta$ is a sensitivity margin against ordinary fluctuations, and $\lambda$ is the control limit. The monitor escalates through two stages — \emph{advisory} after $N_{\mathrm{adv}}$ consecutive PH detections, and \emph{action-ready} after $N_{\mathrm{act}} > N_{\mathrm{adv}}$ — with a 1-hour cooldown that suppresses repeated events after an operator action. Figure~\ref{fig:deployment-drift-tikz} illustrates the PH accumulator behaviour over a simulated deployment window.
+where $\bar{x}$ is the running mean, $\delta$ is a sensitivity margin against ordinary fluctuations, and $\lambda$ is the control limit. The monitor escalates through two stages (\emph{advisory} after $N_{\mathrm{adv}}$ consecutive PH detections, and \emph{action-ready} after $N_{\mathrm{act}} > N_{\mathrm{adv}}$) with a 1-hour cooldown that suppresses repeated events after an operator action. Figure~\ref{fig:deployment-drift-tikz} illustrates the PH accumulator behaviour over a simulated deployment window.
 
 \begin{figure}[H]
 \centering
@@ -496,9 +496,9 @@ where $\bar{x}$ is the running mean, $\delta$ is a sensitivity margin against or
 \label{sec:deployment-latency}
 % ────────────────────────────────────────────────────────────
 
-A central premise of this work is that PV fault detection and diagnosis can be performed \emph{on the edge} — locally, on hardware inexpensive enough to be installed per site — rather than streaming raw measurements to a cloud service for every inference. Edge execution removes the round-trip latency, the dependence on continuous connectivity, and the recurring transmission cost that a cloud-inference architecture would impose on a permanently running monitor. This section validates that premise empirically: it shows that the full two-model pipeline meets the real-time constraint on the target device with a wide margin, and that the margin is a structural property of the design rather than an artifact of one configuration.
+A central premise of this work is that PV fault detection and diagnosis can be performed \emph{on the edge} (locally, on hardware inexpensive enough to be installed per site) rather than streaming raw measurements to a cloud service for every inference. Edge execution removes the round-trip latency, the dependence on continuous connectivity, and the recurring transmission cost that a cloud-inference architecture would impose on a permanently running monitor. This section validates that premise empirically: it shows that the full two-model pipeline meets the real-time constraint on the target device with a wide margin, and that the margin is a structural property of the design rather than an artifact of one configuration.
 
-\paragraph{Measurement protocol.} The complete pipeline — feature engineering, PC-Flow anomaly scoring, the tiered alarm engine, and conditional fault classification — was exercised on the Jetson Nano by replaying 162\,453 real PV samples in acquisition order at the operational cadence of 1~Hz. Wall-clock time was recorded around each per-sample inference call, and the first 50 samples were discarded as warm-up. Latency is reported per stage and end-to-end as the median (p50), 95th, and 99th percentiles over the full replay (Table~\ref{tab:deployment-latency}). At 1~Hz the per-sample budget is 1\,000~ms.
+\paragraph{Measurement protocol.} The complete pipeline (feature engineering, PC-Flow anomaly scoring, the tiered alarm engine, and conditional fault classification) was exercised on the Jetson Nano by replaying 162\,453 real PV samples in acquisition order at the operational cadence of 1~Hz. Wall-clock time was recorded around each per-sample inference call, and the first 50 samples were discarded as warm-up. Latency is reported per stage and end-to-end as the median (p50), 95th, and 99th percentiles over the full replay (Table~\ref{tab:deployment-latency}). At 1~Hz the per-sample budget is 1\,000~ms.
 
 \begin{table}[H]
 \centering
@@ -516,9 +516,9 @@ Full pipeline             & \textbf{12.94} & \textbf{21.44} & \textbf{30.04} \\
 \end{tabular}
 \end{table}
 
-The full pipeline completes in 12.94~ms at the median and 30.04~ms at the 99th percentile, a margin of $77\times$ and $33\times$ respectively against the 1\,000~ms budget. Because the classifier is invoked only when the detector raises an alarm, the steady-state cost during healthy operation — the overwhelming majority of samples at a sound installation — is the detector path alone, at 8.97~ms median.
+The full pipeline completes in 12.94~ms at the median and 30.04~ms at the 99th percentile, a margin of $77\times$ and $33\times$ respectively against the 1\,000~ms budget. Because the classifier is invoked only when the detector raises an alarm, the steady-state cost during healthy operation (the overwhelming majority of samples at a sound installation) is the detector path alone, at 8.97~ms median.
 
-\paragraph{Inference cost breakdown.} When the PC-Flow model is timed in isolation — excluding feature engineering, alarm-engine routing, and dashboard broadcast — it completes in \textbf{565~µs} at the median and \textbf{970~µs} at the 99th percentile, accounting for less than 5\% of the total end-to-end latency. The dominant cost is therefore the surrounding pipeline, not the model itself.
+\paragraph{Inference cost breakdown.} When the PC-Flow model is timed in isolation (excluding feature engineering, alarm-engine routing, and dashboard broadcast) it completes in \textbf{565~µs} at the median and \textbf{970~µs} at the 99th percentile, accounting for less than 5\% of the total end-to-end latency. The dominant cost is therefore the surrounding pipeline, not the model itself.
 
 This observation is consequential for the design rationale. PC-Flow was selected over larger deep baselines not only because it matched their detection quality (Section~\ref{sec:ad-tournament}), but because a compact detector is a prerequisite for a complete monitoring system to run within a single 1~Hz inference cycle on one device: the fault classifier, the alarm engine, and the drift monitor all execute in the same loop alongside the detector. A substantially larger model would remain within the 1\,000~ms per-sample budget in isolation, but would consume the latency margin required by the co-running components.
 
@@ -530,4 +530,4 @@ In summary, the pipeline meets the real-time requirement with a $33\times$ margi
 \label{sec:deployment-conclusion}
 % ────────────────────────────────────────────────────────────
 
-This chapter has presented the complete deployment of the FaultSense monitoring system on the NVIDIA Jetson Nano. The artifact contract (Section~\ref{sec:deployment-onnx}) enforces consistency between the training environment and the operational inference environment at load time. The ISA-18.2 three-tier alarm system (P3~Advisory, P2~High, P1~Critical) maps three calibrated threshold policies — sensitive, conformal, and CUSUM — to actionable priority levels that allow plant operators to triage alerts without reading alert text. The software stack (Python backend, vanilla-JS frontend, WebSocket communication) was chosen to minimise dependencies on the constrained aarch64 platform while delivering a responsive single-page operator interface. The Page-Hinkley drift detector monitors the physics channel independently of the model score to avoid circularity, and escalates through advisory and action-ready stages before enabling the operator-gated model update workflow.
+This chapter has presented the complete deployment of the FaultSense monitoring system on the NVIDIA Jetson Nano. The artifact contract (Section~\ref{sec:deployment-onnx}) enforces consistency between the training environment and the operational inference environment at load time. The ISA-18.2 three-tier alarm system (P3~Advisory, P2~High, P1~Critical) maps three calibrated threshold policies (sensitive, conformal, and CUSUM) to actionable priority levels that allow plant operators to triage alerts without reading alert text. The software stack (Python backend, vanilla-JS frontend, WebSocket communication) was chosen to minimise dependencies on the constrained aarch64 platform while delivering a responsive single-page operator interface. The Page-Hinkley drift detector monitors the physics channel independently of the model score to avoid circularity, and escalates through advisory and action-ready stages before enabling the operator-gated model update workflow.

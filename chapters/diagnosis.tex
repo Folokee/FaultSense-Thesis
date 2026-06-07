@@ -8,7 +8,7 @@ After an anomalous state is detected, the next step in an FDD workflow is to ide
 
 \subsubsection{LightGBM Classifier}
 
-LightGBM builds an additive ensemble of decision trees by gradient boosting: starting from a constant prediction, each successive tree $f_m$ is fitted to the negative gradient of the loss with respect to the current ensemble output — the pseudo-residuals. For multi-class classification with $C$ classes, $C$ parallel score models are maintained, one per class, updated simultaneously at every boosting round. Two key algorithmic innovations reduce cost: \emph{Gradient-based One-Side Sampling} (GOSS), which retains all samples with large gradients and randomly subsamples those with small gradients, preserving the informative part of the gradient signal; and \emph{Exclusive Feature Bundling} (EFB), which detects and merges mutually exclusive sparse features, reducing the effective feature count without information loss. Splits are found over histograms of binned feature values rather than by exhaustive exact search, yielding sub-linear complexity per tree. Class imbalance is handled through balanced class weights.
+LightGBM builds an additive ensemble of decision trees by gradient boosting: starting from a constant prediction, each successive tree $f_m$ is fitted to the negative gradient of the loss with respect to the current ensemble output - the pseudo-residuals. For multi-class classification with $C$ classes, $C$ parallel score models are maintained, one per class, updated simultaneously at every boosting round. Two key algorithmic innovations reduce cost: \emph{Gradient-based One-Side Sampling} (GOSS), which retains all samples with large gradients and randomly subsamples those with small gradients, preserving the informative part of the gradient signal; and \emph{Exclusive Feature Bundling} (EFB), which detects and merges mutually exclusive sparse features, reducing the effective feature count without information loss. Splits are found over histograms of binned feature values rather than by exhaustive exact search, yielding sub-linear complexity per tree. Class imbalance is handled through balanced class weights.
 
 \paragraph{Training objective.}
 The objective is the multiclass cross-entropy loss over $N$ samples and $C$ classes:
@@ -146,7 +146,7 @@ Shadowing     (cls~4) & 0.995~$\pm$~0.010 & 1.000~$\pm$~0.000 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{ExtraTrees Classifier}
 
-ExtraTrees (Extremely Randomised Trees) is a tree ensemble that pushes the randomisation of Random Forest one step further. In a standard Random Forest, each node selects the best split threshold by optimising an impurity criterion over the actual observed data values for each candidate feature. ExtraTrees also randomises the threshold: for each of the $k$ candidate features, a split threshold is drawn \emph{uniformly at random} from the feature's observed range, and the best among all $k$ (feature, threshold) pairs is retained. This double randomisation — both over features and over thresholds — further decouples each tree from the specific sample values in the training set, reducing variance more aggressively than a standard Random Forest at the cost of a small bias increase. The ensemble is built on the full training set per tree; bootstrap sampling is enabled in the selected configuration (Table~\ref{tab:et-hpo}). Class imbalance is handled through balanced class weights.
+ExtraTrees (Extremely Randomised Trees) is a tree ensemble that pushes the randomisation of Random Forest one step further. In a standard Random Forest, each node selects the best split threshold by optimising an impurity criterion over the actual observed data values for each candidate feature. ExtraTrees also randomises the threshold: for each of the $k$ candidate features, a split threshold is drawn \emph{uniformly at random} from the feature's observed range, and the best among all $k$ (feature, threshold) pairs is retained. This double randomisation (both over features and over thresholds) further decouples each tree from the specific sample values in the training set, reducing variance more aggressively than a standard Random Forest at the cost of a small bias increase. The ensemble is built on the full training set per tree; bootstrap sampling is enabled in the selected configuration (Table~\ref{tab:et-hpo}). Class imbalance is handled through balanced class weights.
 
 \paragraph{Split criterion.}
 Trees are grown by maximising the information gain at each node. For a node with class distribution $\{p_c\}_{c=1}^{C}$, the entropy impurity is:
@@ -249,7 +249,7 @@ LightGBM            & 0.934~$\pm$~0.098          & 0.925~$\pm$~0.131          & 
 \end{tabular}
 \end{table}
 
-All three models score close to each other — their confidence intervals overlap — yet ExtraTrees consistently leads on every metric and shows the smallest spread across folds, making it the most reliable choice for deployment.
+All three models score close to each other (their confidence intervals overlap) yet ExtraTrees consistently leads on every metric and shows the smallest spread across folds, making it the most reliable choice for deployment.
 
 \begin{figure}[H]
     \centering
@@ -261,21 +261,21 @@ All three models score close to each other — their confidence intervals overla
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/classification/fig_classification_perclass.png}
-    \caption{Per-class F1 for all three classifiers. Degradation (highlighted) is the hardest class across all models. Bars: 5-fold means $\pm$ std.}
+    \caption{Per-class F1 for all three classifiers. Bars: 5-fold means $\pm$ std.}
     \label{fig:cls-perclass}
 \end{figure}
 
 \paragraph{Why ExtraTrees wins.}
-Figure~\ref{fig:cls-macro} confirms that ExtraTrees scores the highest macro F1 with the tightest spread across folds. Its extra randomisation — drawing split thresholds at random rather than searching for the best one — acts as a built-in regulariser. This is especially useful here because the minority fault classes have very few episodes: boosting methods such as LightGBM and CatBoost tend to over-focus on the majority class under these conditions, while ExtraTrees' independent trees maintain a more balanced decision boundary.
+Figure~\ref{fig:cls-macro} confirms that ExtraTrees scores the highest macro F1 with the tightest spread across folds. Its extra randomisation (drawing split thresholds at random rather than searching for the best one) acts as a built-in regulariser. This is especially useful here because the minority fault classes have very few episodes: boosting methods such as LightGBM and CatBoost tend to over-focus on the majority class under these conditions, while ExtraTrees' independent trees maintain a more balanced decision boundary.
 
 \paragraph{Where all models agree.}
-Open-Circuit (cls~3) is classified at near-perfect F1 by all three models across all folds. The fault produces a clear electrical signature — the string current drops to zero while irradiance stays normal — leaving no ambiguity in the feature space. Shadowing (cls~4) is also reliably identified, partly because it is by far the most frequent class in the dataset.
+Open-Circuit (cls~3) is classified at near-perfect F1 by all three models across all folds. The fault produces a clear electrical signature (the string current drops to zero while irradiance stays normal) leaving no ambiguity in the feature space. Shadowing (cls~4) is also reliably identified, partly because it is by far the most frequent class in the dataset.
 
 \paragraph{The hardest class: Degradation (cls~2).}
 Figure~\ref{fig:cls-perclass} reveals that Degradation is the most difficult fault in both Task~A and Task~B. In the classification task, its low-severity samples look similar to Short-Circuit faults, which explains the relatively low precision (0.797): some Short-Circuit samples are misclassified as Degradation. The per-class PR-AUC of 0.970 shows that the ranking quality is still good, but the decision boundary struggles with the most ambiguous cases.
 
 \paragraph{Feature engineering validates itself.}
-Figure~\ref{fig:et-feat-importance} shows that the two most important features are both physics-derived: \texttt{voltage\_imbalance} alone accounts for 41\% of the total importance, and \texttt{pdc\_temp\_corrected} contributes a further 16\%. Together they represent over half the model's decision weight. \texttt{power\_imbalance} and \texttt{current\_imbalance} also appear in the top ten. These are quantities a raw sensor reading cannot provide directly — they are computed from ratios and corrections across multiple measurements and encode how each fault type disturbs the panel's normal operating relationships. Raw electrical signals (\texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{irr}) fill the remaining positions with much smaller contributions. This result directly validates the \texttt{plus\_physics} feature profile: the model relies primarily on the engineered features, not the raw inputs. This stands in deliberate contrast to Task~A, where the normalizing flow learns its own internal representations and the same hand-crafted features proved redundant.
+Figure~\ref{fig:et-feat-importance} shows that the two most important features are both physics-derived: \texttt{voltage\_imbalance} alone accounts for 41\% of the total importance, and \texttt{pdc\_temp\_corrected} contributes a further 16\%. Together they represent over half the model's decision weight. \texttt{power\_imbalance} and \texttt{current\_imbalance} also appear in the top ten. These are quantities a raw sensor reading cannot provide directly - they are computed from ratios and corrections across multiple measurements and encode how each fault type disturbs the panel's normal operating relationships. Raw electrical signals (\texttt{vdc2}, \texttt{idc1}, \texttt{idc2}, \texttt{irr}) fill the remaining positions with much smaller contributions. This result directly validates the \texttt{plus\_physics} feature profile: the model relies primarily on the engineered features, not the raw inputs. This stands in deliberate contrast to Task~A, where the normalizing flow learns its own internal representations and the same hand-crafted features proved redundant.
 
 \paragraph{Feature importance.}
 Figure~\ref{fig:et-feat-importance} shows the top-20 ExtraTrees feature importances.
