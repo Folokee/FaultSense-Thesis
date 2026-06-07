@@ -148,7 +148,7 @@ Artificial intelligence (AI) techniques are increasingly adopted to support auto
 \subsection{Online Methods}
 \label{sec:online-methods}
 
-Online methods are designed to operate on streaming data, processing one observation at a time and maintaining a compact internal state that summarises the relevant past. They are particularly attractive for PV monitoring because they can run causally on edge hardware without storing or re-scanning large historical buffers. Examples include sequential change-detection procedures such as the Page-Hinkley test and the Cumulative Sum (CUSUM) chart \citep{page1954continuous}, as well as probabilistic frameworks like Bayesian Online Changepoint Detection (BOCD) that maintain a full posterior over regime changes \citep{BayesianOnlineChangepoint2007}.
+Online methods operate on streaming data, processing one observation at a time without storing or re-scanning large historical buffers, which makes them well-suited for deployment on edge hardware in PV monitoring. They maintain a compact internal state that summarises the relevant past and update incrementally as new measurements arrive. Examples include passive-aggressive algorithms for margin-based incremental learning \citep{crammer2006online}, online manifold-regularized methods that exploit the geometric neighbourhood of unlabeled points to guide the decision boundary \citep{goldberg2011online}, and Bayesian Online Changepoint Detection (BOCD) which maintains a full posterior over regime changes \citep{BayesianOnlineChangepoint2007}.
 
 \subsection{Offline Methods}
 \label{sec:offline-methods}
