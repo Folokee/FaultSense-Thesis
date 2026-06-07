@@ -1,12 +1,12 @@
 \chapter*{Abstract}
 
-As photovoltaic (PV) systems become a core element of modern energy systems, sustained reliability under real operating conditions is essential to their economic value. PV plants remain exposed to faults that may be invisible to direct inspection and reflected mainly through electrical and environmental measurements. Early detection and diagnosis are therefore necessary to preserve performance, limit degradation, and support scalable supervision.
+As photovoltaic (PV) systems become a core element of modern energy systems, sustained reliability under real operating conditions is essential to their economic value. PV plants are exposed to faults that may be invisible to direct inspection and reflected mainly through deviations in electrical and meteorological measurements. Early detection and diagnosis are therefore necessary to preserve performance, limit degradation, and support scalable supervision.
 
-This thesis develops an embedded detection and diagnosis system for PV plants using real field measurements. The proposed system follows a two-stage structure: anomaly detection is first used to identify deviations from normal behaviour, and fault classification is then used to determine the fault type. The evaluation is designed to reflect operational conditions through leakage-controlled validation and uncertainty estimation, while the final implementation includes a real-time monitoring interface for practical supervision.
+This thesis develops a lightweight fault detection and diagnosis system for PV plants using real field measurements, suitable for embedded edge deployment. The system follows a two-stage structure: anomaly detection identifies deviations from normal behaviour, while fault classification determines the corresponding fault type. A real-time monitoring interface supports practical monitoring.
 
 The main methodological contribution is PC-Flow, a physics-conditioned normalizing-flow architecture designed for accurate and highly efficient anomaly detection. With fewer than 25{,}000 parameters, PC-Flow achieves a binary PR-AUC of 0.972 and completes inference in 970~$\mu$s at the 99th percentile. For fault classification, the proposed ExtraTrees classifier reaches a macro F1-score of 0.959 and a balanced accuracy of 94.3\%. On the embedded platform, the complete pipeline remains below 31~ms at the 99th percentile.
 
-These results demonstrate that accurate PV fault detection and diagnosis can be achieved from real-world measurements with models that are compact, computationally efficient, and suitable for edge-based monitoring.
+These results establish that accurate, low-latency fault supervision is achievable at the plant edge, narrowing the window between fault onset and operator response, limiting cumulative yield loss, and making continuous PV monitoring viable in the field settings where it is needed most.
 
 \vspace{1cm}
-\noindent\textbf{Keywords:} photovoltaic systems, fault detection and diagnosis, anomaly detection, machine learning, deep learning, edge deployment.
+\noindent\textbf{Keywords:} photovoltaic systems, fault detection and diagnosis, normalizing flows, physics-informed models, edge inference.
