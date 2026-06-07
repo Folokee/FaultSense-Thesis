@@ -1,11 +1,10 @@
 \chapter{Deployment and Monitoring Interface}
 \label{ch:deployment}
 \section{Introduction}
-The final stage of the project involves deploying the trained winner models on the NVIDIA Jetson Nano platform, and 
-developing a monitoring interface to visualize real-time system status and all the relevant information.
+The final stage of the project deploys the detection and diagnosis models on the NVIDIA Jetson Nano platform and develops a monitoring interface that visualises real-time system status and the relevant operating information.
 
 \section{Overview of the Jetson Nano}
-The Jetson Nano is an entry‑level edge AI computer from NVIDIA, designed for low‑power embedded inference and light training.
+The Jetson Nano is an entry‑level edge AI platform from NVIDIA, designed for low‑power on‑device inference.
 Table~\ref{tab:jetson_nano_specs} summarises the specifications that are most relevant to the present work.
 The board’s compact form factor (69.6 mm × 45 mm SO‑DIMM module) and 5–10 W power envelope make it suitable for deployment in resource‑constrained environments while still offering GPU‑accelerated computation\citep{jetson_specs}.
 Figure~\ref{fig:jetson_components} provides a visual overview of the main hardware components in the Jetson Nano.
@@ -57,13 +56,13 @@ limitations that must be considered when deploying the models and developing the
 \toprule
 \textbf{Limitation} & \textbf{Implication} \\
 \midrule
-Limited storage and RAM & The deployed model and monitoring platform must be lightweight in both disk footprint and memory consumption; large models or extensive logging can exhaust storage, while memory‑intensive operations risk out‑of‑memory errors or performance degradation from swapping. \\
+Limited storage and RAM (4\,GB) & The board has only 4\,GB of memory, shared between the processor and the GPU, and stores everything on a microSD card. The model and the monitoring interface must stay small in both memory and disk usage; oversized models or heavy logging can quickly run the board out of memory or fill the card. \\
 \midrule
-Modest computing power & Models need to be compact and inference‑optimised (e.g., exported to ONNX and executed with an optimised runtime) to achieve real‑time performance without overwhelming the processor. \\
+Modest computing power & The 128‑core GPU and quad‑core 1.43\,GHz processor are far less powerful than the machines used for training. Models must be exported to a lightweight, inference‑optimised format (ONNX) so they can run in real time on the board. \\
 \midrule
-No active cooling (Heatsink Only) & Continuous temperature monitoring is essential to prevent throttling or hardware damage, especially under sustained GPU load in enclosures with limited airflow. \\
+No active cooling (5--10\,W, heatsink only) & The board runs on a 5--10\,W power budget and is cooled by a passive heatsink, with no fan. Under sustained load it can heat up and slow itself down to avoid overheating, so its temperature must be monitored during continuous operation. \\
 \midrule
-Uncommon Architecture (aarch64) & Many third‑party libraries either lack official ARM64 builds or are distributed only as unofficial, potentially outdated, community‑maintained alternatives, complicating dependency management and reducing reliability. \\
+Uncommon architecture (ARM64) & The board uses an ARM (aarch64) processor with an older software stack rather than a standard PC architecture. Some libraries provide no official build for it, so dependencies sometimes rely on unofficial community versions, making the software environment harder to set up and keep reliable. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -73,22 +72,21 @@ Uncommon Architecture (aarch64) & Many third‑party libraries either lack offic
 \label{sec:deployment-func-specs}
 % ────────────────────────────────────────────────────────────
 
-The functional requirements of the monitoring module are prioritised using the MoSCoW method. \textbf{Must Have} and \textbf{Should Have} requirements are implemented in the current prototype; \textbf{Won't Have} lists capabilities explicitly outside the current scope.
+The functional requirements of the monitoring module are prioritised using the MoSCoW method, as summarised in Table~\ref{tab:deployment-func-specs}. \textbf{Must Have} and \textbf{Should Have} requirements are implemented in the current prototype; \textbf{Won't Have} lists capabilities explicitly outside the current scope.
 
+\newpage
 \begin{longtable}{@{}llp{0.72\textwidth}@{}}
-\caption{Functional specifications of the FaultSense monitoring module (MoSCoW).}
+\caption{Functional specifications of the monitoring module (MoSCoW).}
 \label{tab:deployment-func-specs} \\
 \toprule
 \textbf{ID} & \textbf{MoSCoW} & \textbf{Requirement} \\
 \midrule
 \endfirsthead
-\multicolumn{3}{l}{\small\textit{(continued from previous page)}} \\[4pt]
 \toprule
 \textbf{ID} & \textbf{MoSCoW} & \textbf{Requirement} \\
 \midrule
 \endhead
 \midrule
-\multicolumn{3}{r}{\small\textit{(continued on next page)}} \\
 \endfoot
 \bottomrule
 \endlastfoot
@@ -107,6 +105,8 @@ FS-04 & Must & The operator shall be able to acknowledge an active alarm; acknow
 FS-05 & Must & The interface shall maintain a chronological event log of all detection events, each entry recording the alarm tier, fault class if diagnosed, anomaly score, and timestamp. \\
 \addlinespace
 FS-06 & Must & The event log shall be filterable by event type (anomaly events / normal transitions). \\
+\addlinespace
+FS-07 & Should & The event log shall collapse consecutive detections of the same fault class into a single entry annotated with a repeat count, rather than listing each detection separately, so that a sustained fault does not flood the log and overwhelm the operator. \\
 \addlinespace
 \multicolumn{3}{@{}l}{\textit{Reporting}} \\
 \addlinespace
@@ -143,7 +143,7 @@ The monitoring module involves two actors: the \textbf{Plant Operator}, who inte
 ]
 % system boundary
 \draw[rounded corners, thick] (-2.7,-7.0) rectangle (2.7,6.7);
-\node[font=\bfseries] at (0,7.05) {FaultSense Monitoring Module};
+\node[font=\bfseries] at (0,7.05) {Monitoring Module};
 
 % use cases (centered column)
 \node[usecase] (uc1) at (0,6.0)  {Monitor Real-Time Status};
@@ -199,7 +199,7 @@ The monitoring module involves two actors: the \textbf{Plant Operator}, who inte
 
 Three activity diagrams capture the principal runtime flows.
 
-\paragraph{System initialisation.} On startup the system loads and contract-validates the artifact bundle, initialises the streaming inference pipeline, starts both WebSocket servers, and enters the ready state. A contract validation failure halts the system before any inference is permitted. Figure~\ref{fig:deployment-activity-init} presents the initialisation flow.
+\paragraph{System initialisation.} On startup the system loads and contract-validates the artifact bundle, initialises the streaming inference pipeline, starts the sensor-ingest and dashboard servers, and enters the ready state. A contract validation failure halts the system before any inference is permitted. Figure~\ref{fig:deployment-activity-init} presents the initialisation flow.
 
 \begin{figure}[H]
 \centering
@@ -234,7 +234,7 @@ Three activity diagrams capture the principal runtime flows.
 \label{fig:deployment-activity-init}
 \end{figure}
 
-\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming sensor row. The pipeline dequeues it, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the Extra Trees classifier when the tier is P3 or above. The inference result is forwarded to the drift monitor and broadcast to all connected dashboard clients. Figure~\ref{fig:deployment-activity-inference} details this loop.
+\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming readings from all sensors (every channel sampled together at that timestamp). The pipeline dequeues them, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the Extra Trees classifier when the tier is P3 or above. The inference result is forwarded to the drift monitor and broadcast to all connected dashboard clients. Figure~\ref{fig:deployment-activity-inference} details this loop.
 
 \begin{figure}[H]
 \centering
@@ -247,8 +247,8 @@ Three activity diagrams capture the principal runtime flows.
   arr/.style={-{Stealth[length=2mm]}}
 ]
 \node[start] (s) {};
-\node[act, below=of s] (a1) {Receive sensor row};
-\node[dec, below=of a1] (d1) {Irradiance \& temperature present?};
+\node[act, below=of s] (a1) {Receive readings from all sensors};
+\node[dec, below=of a1] (d1) {Required inputs present?};
 \node[act, below=of d1] (a2) {Featurise \& scale};
 \node[act, below=of a2] (a3) {PC-Flow score $\rightarrow$ alarm tier};
 \node[dec, below=of a3] (d2) {Tier $\geq$ P3?};
@@ -366,7 +366,7 @@ The FaultSense monitoring system follows a two-tier local client-server architec
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/deployment/sequence_diagram.png}
-\caption{Sequence diagram of the FaultSense monitoring system.}
+\caption{Sequence diagram of the monitoring module.}
 \label{fig:deployment-sequence}
 \end{figure}
 
