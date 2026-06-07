@@ -6,7 +6,7 @@ The final stage of the project deploys the detection and diagnosis models on the
 \section{Overview of the Jetson Nano}
 The Jetson Nano is an entry‑level edge AI platform from NVIDIA, designed for low‑power on‑device inference.
 Table~\ref{tab:jetson_nano_specs} summarises the specifications that are most relevant to the present work.
-The board’s compact form factor (69.6 mm × 45 mm SO‑DIMM module) and 5–10 W power envelope make it suitable for deployment in resource‑constrained environments while still offering GPU‑accelerated computation\citep{jetson_specs}.
+The board's compact form factor (69.6 mm × 45 mm SO‑DIMM module) and 5–10 W power envelope make it suitable for deployment in resource‑constrained environments while still offering GPU‑accelerated computation\citep{jetson_specs}.
 Figure~\ref{fig:jetson_components} provides a visual overview of the main hardware components in the Jetson Nano.
 
 \begin{table}[H]
@@ -37,12 +37,12 @@ Power & 5–10 W \\
 \label{fig:jetson_components}
 \end{figure}
 
-The Jetson Nano runs a custom operating system image built by NVIDIA, known as Linux for Tegra (L4T), which is an Ubuntu 18.04‑based distribution specifically tailored for the Jetson hardware. This image ships with the JetPack SDK (version 4.x), providing a full development environment that includes CUDA 10, cuDNN, and TensorRT, all pre‑configured to leverage the Maxwell GPU. The kernel and device drivers are optimised for the Nano’s power management, multimedia engines, and camera interfaces, ensuring that the entire software stack (from low‑level sensor capture to GPU‑accelerated inference) can be executed without additional integration effort.
+The Jetson Nano runs a custom operating system image built by NVIDIA, known as Linux for Tegra (L4T), which is an Ubuntu 18.04‑based distribution specifically tailored for the Jetson hardware. This image ships with the JetPack SDK (version 4.x), providing a full development environment that includes CUDA 10, cuDNN, and TensorRT, all pre‑configured to leverage the Maxwell GPU. The kernel and device drivers are optimised for the Nano's power management, multimedia engines, and camera interfaces, ensuring that the entire software stack (from low‑level sensor capture to GPU‑accelerated inference) can be executed without additional integration effort.
 
 % The 128‑core Maxwell GPU delivers 472 GFLOPS of half‑precision performance, enabling real‑time inference of moderately sized neural networks.
 % Combined with a quad‑core Cortex‑A57 CPU and 4 GB of fast LPDDR4 memory, the platform can execute the instrument recognition pipeline described in this thesis with low latency.
 % Hardware‑accelerated H.265 encoding and decoding allow direct processing of high‑resolution video streams, while the MIPI CSI‑2 lanes and Gigabit Ethernet interface provide flexible options for camera integration and data transfer.
-% The module’s 10 W maximum power draw makes it viable for continuous operation in a standalone embedded setting without active cooling.
+% The module's 10 W maximum power draw makes it viable for continuous operation in a standalone embedded setting without active cooling.
 
 \subsection{Limitations of the Jetson Nano}
 While the Jetson Nano offers a compelling balance of performance, power efficiency and affordability. It comes with several
@@ -68,9 +68,12 @@ Uncommon architecture (ARM64) & The board uses an ARM (aarch64) processor with a
 \end{table}
 
 % ────────────────────────────────────────────────────────────
-\section{Functional Specifications}
-\label{sec:deployment-func-specs}
+\section{Monitoring Module}
+\label{sec:deployment-module}
 % ────────────────────────────────────────────────────────────
+
+\subsection{Functional Specifications}
+\label{sec:deployment-func-specs}
 
 The functional requirements of the monitoring module are prioritised using the MoSCoW method, as summarised in Table~\ref{tab:deployment-func-specs}. \textbf{Must Have} and \textbf{Should Have} requirements are implemented in the current prototype; \textbf{Won't Have} lists capabilities explicitly outside the current scope.
 
@@ -116,10 +119,6 @@ FS-09 & Must & The operator shall be able to export the current event log as a P
 \addlinespace
 FS-10 & Should & The system shall monitor the operational data stream for distribution shift using a sequential change-detection method and surface the current drift stage (none / advisory / action-ready) to the operator, independently of the fault alarm channel. \\
 \addlinespace
-FS-11 & Should & When the drift stage reaches action-ready, the operator shall be able to initiate a retraining request; the system shall upload a snapshot of recent confident-normal data to the cloud pipeline and await a validated artifact. The system shall never replace the active model without explicit operator approval. \\
-\addlinespace
-FS-12 & Should & When a validated model artifact becomes available, the operator shall be able to apply or reject it; approval triggers an immediate model swap while rejection retains the incumbent without interrupting inference. \\
-\addlinespace
 \multicolumn{3}{@{}l}{\textit{Diagnostics}} \\
 \addlinespace
 FS-13 & Should & The interface shall expose rolling inference metrics - average detection latency, per-tier alarm rate, and hardware resource usage (CPU, GPU, memory, temperature) - to allow assessment of edge feasibility. \\
@@ -127,7 +126,24 @@ FS-13 & Should & The interface shall expose rolling inference metrics - average 
 \end{longtable}
 
 % ────────────────────────────────────────────────────────────
-\section{Use Case Diagram}
+\subsection{Drift Detection}
+\label{sec:deployment-drift}
+% ────────────────────────────────────────────────────────────
+
+A deployed anomaly detector is valid only while operating conditions remain within the range seen during training. In PV fault detection that range is narrow: the majority of labelled datasets come from short induced-fault campaigns that cover at most one season, so the model never observes the full annual variation in irradiance and module temperature it will later face. When deployed conditions drift outside that window, the calibrated thresholds lose their guarantees without signalling any error to the operator. The drift module is an additional layer in the system that surfaces this situation before it silently erodes detection quality.
+
+The module therefore monitors the \emph{operating regime} $(\mathrm{irr}, T_{PV})$ — the conditioning inputs the detector relies on — to detect when deployed conditions move outside the training envelope. A bidirectional \textbf{Page-Hinkley (PH) test} \citep{page1954continuous} is applied to daily-aggregated regime statistics, so that persistent seasonal shift is distinguished from the expected diurnal cycle:
+
+\[
+    M_t = \sum_{i=1}^{t}\bigl(x_i - \bar{x} - \delta\bigr), \quad
+    \mathrm{PH}_t = M_t - \min_{1 \leq j \leq t} M_j, \quad
+    \text{drift} = \mathbf{1}[\mathrm{PH}_t > \lambda],
+\]
+
+where $\bar{x}$ is the running mean, $\delta$ is a sensitivity margin, and $\lambda$ is the control limit. The monitor escalates through two stages: an \emph{advisory} after $N_{\mathrm{adv}} = 7$ consecutive shifted days and \emph{action-ready} after $N_{\mathrm{act}} = 14$ days.
+
+% ────────────────────────────────────────────────────────────
+\subsection{Use Case Diagram}
 \label{sec:deployment-usecase}
 % ────────────────────────────────────────────────────────────
 
@@ -142,7 +158,7 @@ The monitoring module involves two actors: the \textbf{Plant Operator}, who inte
   font=\small
 ]
 % system boundary
-\draw[rounded corners, thick] (-2.7,-7.0) rectangle (2.7,6.7);
+\draw[rounded corners, thick] (-2.7,-4.0) rectangle (2.7,6.7);
 \node[font=\bfseries] at (0,7.05) {Monitoring Module};
 
 % use cases (centered column)
@@ -152,9 +168,7 @@ The monitoring module involves two actors: the \textbf{Plant Operator}, who inte
 \node[usecase] (uc3) at (0,1.5)  {View Event Log};
 \node[usecase] (uc4) at (0,0.0)  {Filter Events};
 \node[usecase] (uc5) at (0,-1.5) {Export PDF Report};
-\node[usecase] (uc6) at (0,-3.0) {Request Retraining};
-\node[usecase] (uc7) at (0,-4.5) {Apply / Reject Artifact};
-\node[usecase] (uc9) at (0,-6.3) {Stream Sensor Data};
+\node[usecase] (uc9) at (0,-3.0) {Stream Sensor Data};
 
 % Plant Operator (left)
 \begin{scope}[shift={(-5.3,0.6)}]
@@ -166,7 +180,7 @@ The monitoring module involves two actors: the \textbf{Plant Operator}, who inte
   \node[font=\small\bfseries, align=center] at (0,-2.35) {Plant\\Operator};
 \end{scope}
 % Sensor Bridge (right)
-\begin{scope}[shift={(5.3,-5.7)}]
+\begin{scope}[shift={(5.3,-3.0)}]
   \draw (0,0) circle (0.26);
   \draw (0,-0.26) -- (0,-1.15);
   \draw (-0.5,-0.6) -- (0.5,-0.6);
@@ -176,28 +190,25 @@ The monitoring module involves two actors: the \textbf{Plant Operator}, who inte
 \end{scope}
 
 % operator associations
-\foreach \u in {uc1,uc2,uc3,uc4,uc5,uc6,uc7} {
+\foreach \u in {uc1,uc2,uc3,uc4,uc5} {
   \draw[link] (-4.9,0.0) -- (\u.west);
 }
 % sensor bridge association
-\draw[link] (4.9,-5.7) -- (uc9.east);
+\draw[link] (4.9,-3.0) -- (uc9.east);
 
 % include: Monitor includes Fault Diagnosis
 \draw[inc] (uc1) -- node[right, font=\scriptsize] {$\langle\langle$include$\rangle\rangle$} (uc8);
-% extend: Request Retraining extends Monitor (drift action-ready)
-\draw[inc] (uc6.east) to[out=30,in=-30]
-  node[right, font=\scriptsize] {$\langle\langle$extend$\rangle\rangle$} (uc1.east);
 \end{tikzpicture}
 \caption{Use case diagram of the monitoring module.}
 \label{fig:deployment-usecase}
 \end{figure}
 
 % ────────────────────────────────────────────────────────────
-\section{Activity Diagrams}
+\subsection{Activity Diagrams}
 \label{sec:deployment-activity}
 % ────────────────────────────────────────────────────────────
 
-Three activity diagrams capture the principal runtime flows.
+Two activity diagrams capture the principal runtime flows.
 
 \paragraph{System initialisation.} On startup the system loads and contract-validates the artifact bundle, initialises the streaming inference pipeline, starts the sensor-ingest and dashboard servers, and enters the ready state. A contract validation failure halts the system before any inference is permitted. Figure~\ref{fig:deployment-activity-init} presents the initialisation flow.
 
@@ -234,7 +245,7 @@ Three activity diagrams capture the principal runtime flows.
 \label{fig:deployment-activity-init}
 \end{figure}
 
-\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming readings from all sensors (every channel sampled together at that timestamp). The pipeline dequeues them, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the Extra Trees classifier when the tier is P3 or above. The inference result is forwarded to the drift monitor and broadcast to all connected dashboard clients. Figure~\ref{fig:deployment-activity-inference} details this loop.
+\paragraph{Per-sample inference loop.} At each 1~Hz tick the ingest server enqueues the incoming readings from all sensors (every channel sampled together at that timestamp). The pipeline dequeues them, applies feature engineering and scaling, scores it through the PC-Flow detector to obtain an alarm tier, and conditionally invokes the Extra Trees classifier when the tier is P3 or above. The inference result is broadcast to the connected dashboard. At the end of each cycle the drift monitor updates the Page-Hinkley statistic on the operating-regime inputs and escalates its stage (none / advisory / action-ready) if a sustained departure is detected. Figure~\ref{fig:deployment-activity-inference} details this loop.
 
 \begin{figure}[H]
 \centering
@@ -253,8 +264,8 @@ Three activity diagrams capture the principal runtime flows.
 \node[act, below=of a2] (a3) {PC-Flow score $\rightarrow$ alarm tier};
 \node[dec, below=of a3] (d2) {Tier $\geq$ P3?};
 \node[act, below=of d2] (a4) {Extra Trees classify fault};
-\node[act, below=of a4] (a5) {Update drift monitor};
-\node[act, below=of a5] (a6) {Broadcast result to dashboard};
+\node[act, below=of a4] (a5) {Broadcast result to dashboard};
+\node[act, below=of a5] (a6) {Update drift monitor};
 \node[act, right=of d1] (disc) {Discard row};
 \draw[arr] (s)--(a1);
 \draw[arr] (a1)--(d1);
@@ -273,7 +284,7 @@ Three activity diagrams capture the principal runtime flows.
 \label{fig:deployment-activity-inference}
 \end{figure}
 
-\paragraph{Drift detection and model update flow.} The drift monitor feeds the physics channel value to a Page-Hinkley detector each sample. After a sustained advisory window the dashboard raises a drift indicator; after a longer action window the operator can initiate a retraining request. Retraining is performed in the cloud; the operator explicitly approves or rejects the resulting artifact before any model swap occurs. A 1-hour cooldown prevents repeated drift events after an action. This workflow is illustrated in Figure~\ref{fig:deployment-activity-drift}.
+\paragraph{Drift alert.} The drift monitor updates the Page-Hinkley statistic on each sample and escalates through advisory and action-ready stages when a sustained regime departure is detected, surfacing the current stage to the operator dashboard. Figure~\ref{fig:deployment-activity-drift} shows this flow.
 
 \begin{figure}[H]
 \centering
@@ -286,51 +297,18 @@ Three activity diagrams capture the principal runtime flows.
   arr/.style={-{Stealth[length=2mm]}}
 ]
 \node[start] (s) {};
-\node[act, below=of s] (a1) {Update Page-Hinkley on physics channel};
-\node[dec, below=of a1] (d1) {Action stage reached?};
-\node[act, below=of d1] (a2) {Enable ``Request Retraining''};
-\node[act, below=of a2] (a3) {Operator requests retraining};
-\node[act, below=of a3] (a4) {Upload normal buffer to cloud};
-\node[act, below=of a4] (a5) {Cloud retrains \& stages artifact};
-\node[dec, below=of a5] (d2) {Operator decision};
-\node[act, below=of d2] (a6) {Apply: atomic model swap \& reset};
-\node[act, right=of d2] (a7) {Reject: discard artifact};
-\node[act, below=of a6] (a8) {Set cooldown timer};
+\node[act, below=of s] (a1) {Update Page-Hinkley on operating regime};
+\node[dec, below=of a1] (d1) {Drift stage escalated?};
+\node[act, below=of d1] (a2) {Notify operator};
 \draw[arr] (s)--(a1);
 \draw[arr] (a1)--(d1);
 \draw[arr] (d1)--node[left,font=\scriptsize]{yes}(a2);
 \draw[arr] (d1.east) to[out=0,in=0] node[right,font=\scriptsize]{no} (a1.east);
-\draw[arr] (a2)--(a3);
-\draw[arr] (a3)--(a4);
-\draw[arr] (a4)--(a5);
-\draw[arr] (a5)--(d2);
-\draw[arr] (d2)--node[left,font=\scriptsize]{apply}(a6);
-\draw[arr] (d2)--node[above,font=\scriptsize]{reject}(a7);
-\draw[arr] (a6)--(a8);
-\draw[arr] (a7.south) |- (a8.east);
-\draw[arr] (a8.west) to[out=180,in=180] (a1.west);
+\draw[arr] (a2.west) to[out=180,in=180] node[left,font=\scriptsize]{next sample} (a1.west);
 \end{tikzpicture}
-\caption{Activity diagram: drift detection and operator-gated model update.}
+\caption{Drift detection and alert flow.}
 \label{fig:deployment-activity-drift}
 \end{figure}
-
-% ────────────────────────────────────────────────────────────
-\section{ONNX Export and Artifact Contract}
-\label{sec:deployment-onnx}
-% ────────────────────────────────────────────────────────────
-
-The trained PC-Flow model is exported to the Open Neural Network Exchange (ONNX) format using \texttt{torch.onnx.export}. The export procedure is designed to produce a batch-generalizable ONNX graph rather than a batch-1-baked artifact: coupling layer masking uses \texttt{index\_select} (which maps to ONNX \texttt{Gather}) and concatenation rather than boolean-mask indexing, which would bake the batch dimension as a constant. The ONNX graph is verified using \texttt{onnxruntime} on a held-out calibration set to confirm numerical agreement with the PyTorch reference to a tolerance of $10^{-5}$ on the log-likelihood output.
-
-Each deployed artifact is accompanied by a \textbf{deployment contract}: a structured metadata file that records:
-\begin{itemize}
-    \item the expected input tensor shape (batch, feature dimension);
-    \item the ordered list of feature names, in the order expected by the model;
-    \item the StandardScaler parameters (mean and scale) estimated from the training partition;
-    \item the physics conditioning channels $c = (\text{irr}, \text{pvt})$ and their indices in the feature vector;
-    \item the calibrated tier parameters consumed by the alarm engine (Section~\ref{sec:threshold-calibration}): the sensitive (P3) threshold, the conformal (P2) threshold, the CUSUM (P1) reference slack $k$ and control limit $h$, and the normal-score statistics $(\mu_{\mathrm{normal}}, \sigma_{\mathrm{normal}})$ used for the CUSUM $z$-transform;
-    \item the timestamp of the training run and the validation score at checkpoint.
-\end{itemize}
-The contract is verified at load time before inference begins: the runtime checks that the feature list in the incoming data stream matches the contract's ordered feature list, applies the stored scaler, and validates the threshold provenance. Any contract violation raises a runtime exception before the first inference is executed.
 
 % ────────────────────────────────────────────────────────────
 \section{Development}
@@ -342,13 +320,11 @@ The contract is verified at load time before inference begins: the runtime check
 The backend stack:
 \begin{itemize}
     \item \textbf{WebSocket server}: \texttt{websockets}
-    \item \textbf{Model inference (anomaly)}: \texttt{torch}, ONNX Runtime
-    \item \textbf{Model inference (classification)}: \texttt{scikit-learn} (Extra Trees)
+    \item \textbf{Model inference}: \texttt{ONNX Runtime}
     \item \textbf{Drift detection}: \texttt{river} (Page-Hinkley)
-    \item \textbf{Data processing}: \texttt{pandas}, \texttt{numpy}, \texttt{pyarrow}
-    \item \textbf{Hardware monitoring}: \texttt{psutil}
-    \item \textbf{Cloud artifact sync}: \texttt{requests}
-    \item \textbf{GUI embedding}: \texttt{pywebview} or \texttt{PyQt5} + \texttt{QWebEngineView}
+    \item \textbf{Data processing}: \texttt{pandas}, \texttt{numpy}
+    \item \textbf{Hardware monitoring}: \texttt{jetson-stats}
+    \item \textbf{GUI embedding}: \texttt{browser kiosk mode}
 \end{itemize}
 
 The frontend stack:
@@ -361,7 +337,7 @@ The frontend stack:
 
 \subsection{Architecture Overview}
 
-The FaultSense monitoring system follows a two-tier local client-server architecture: a Python backend owns the inference pipeline, drift monitoring, and data management, while a web-based JavaScript frontend owns the operator interface. The two tiers communicate exclusively through persistent WebSocket connections: an outbound channel on which the backend pushes inference results, drift status, and hardware metrics to the dashboard at the sensor sampling rate without polling, and an inbound channel on which the backend receives operator commands (stream control, retraining requests, artifact approval). A separate WebSocket channel ingests sensor rows from an external bridge process, decoupling acquisition from inference. Figure~\ref{fig:deployment-sequence} illustrates the interaction between these components.
+The monitoring system follows a two-tier local client-server architecture: a Python backend owns the inference pipeline, drift monitoring, and data management, while a web-based JavaScript frontend owns the operator interface. The two tiers communicate exclusively through persistent WebSocket connections: an outbound channel on which the backend pushes inference results, drift status, and hardware metrics to the dashboard at the sensor sampling rate without polling, and an inbound channel on which the backend receives operator commands (stream control, retraining requests, artifact approval). A separate WebSocket channel ingests sensor rows from an external bridge process, decoupling acquisition from inference. Figure~\ref{fig:deployment-sequence} illustrates the interaction between these components.
 
 \begin{figure}[H]
 \centering
@@ -370,12 +346,21 @@ The FaultSense monitoring system follows a two-tier local client-server architec
 \label{fig:deployment-sequence}
 \end{figure}
 
+\subsection{ONNX Export and Artifact Contract}
+\label{sec:deployment-onnx}
+Both deployed models are exported to ONNX for runtime inference on the Jetson Nano. The PC-Flow anomaly detector is exported from PyTorch using \texttt{torch.onnx.export}. The graph is kept batch-generalisable by avoiding boolean-mask indexing during export and using ONNX-compatible gather and concatenation operations instead. The exported model is validated with ONNX Runtime on a held-out calibration set, with log-likelihood outputs matching the PyTorch reference within $10^{-5}$.
+
+The Extra Trees fault classifier is converted from scikit-learn using \texttt{skl2onnx}. The ensemble is represented as an ONNX \texttt{TreeEnsembleClassifier}, preserving the original decision boundaries. The converted model is checked against the scikit-learn reference on the test set to confirm identical class predictions.
+
+Each ONNX model is deployed with a metadata contract that defines the expected input shape, feature order, scaler parameters, physics-conditioning channels, alarm thresholds, CUSUM parameters, and normal-score statistics used by the alarm engine. The Extra Trees classifier is also deployed with a sigmoid probability-calibration file, which stores the class-wise calibration coefficients used to convert raw classifier scores into calibrated probabilities.
+
+At startup, the runtime validates the incoming feature schema against the contract, applies the stored scaler, and checks the calibration and threshold metadata before inference begins. Any mismatch raises an error before the first prediction is executed.
 % ────────────────────────────────────────────────────────────
 \section{Monitoring Interface}
 \label{sec:deployment-gui}
 % ────────────────────────────────────────────────────────────
 
-The monitoring interface presents the system state in a single integrated dashboard. The \textbf{system state} panel (Figure~\ref{fig:deployment-system-state}) summarises the current alarm tier, the PC-Flow anomaly score against its active threshold, and the fault diagnosis at a glance, while the \textbf{live readings} panel (Figure~\ref{fig:deployment-live-readings}) streams the raw sensor measurements.
+The monitoring interface presents the system state in a single integrated dashboard. The \textbf{system state} panel (Figure~\ref{fig:deployment-system-state}) shows the current alarm tier, the PC-Flow anomaly score against its active threshold, and the fault diagnosis at a glance. When a fault is detected, an alarm card (Figure~\ref{fig:deployment-anomaly-popup}) is raised, colour-coded by the ISA-18.2 alarm tier and carrying the fault class and calibrated confidence. The \textbf{live readings} panel (Figure~\ref{fig:deployment-live-readings}) streams the raw sensor measurements in real time. The \textbf{event log} (Figure~\ref{fig:deployment-event-logs}) maintains a filterable chronological history of all detection events with a PDF export button. The full monitoring view (Figure~\ref{fig:deployment-system-monitoring}) The system monitoring view (Figure 40) provides a real-time overview of system performance by monitoring key hardware metrics such as CPU usage, RAM usage, GPU usage, and temperature readings.
 
 \begin{figure}[H]
 \centering
@@ -386,21 +371,24 @@ The monitoring interface presents the system state in a single integrated dashbo
 
 \begin{figure}[H]
 \centering
-{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{{figures/deployment/lightui/readings}.png}}}
-\caption{Live sensor readings panel.}
-\label{fig:deployment-live-readings}
-\end{figure}
-
-When a fault is detected, an alarm card (Figure~\ref{fig:deployment-anomaly-popup}) is raised, colour-coded by the ISA-18.2 alarm tier and carrying the fault class diagnosis and calibrated confidence produced by the classifier.
-
-\begin{figure}[H]
-\centering
 {\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=0.75\textwidth]{{figures/deployment/lightui/anomaly_popup}.png}}}
 \caption{Alarm alert card with tier and fault diagnosis.}
 \label{fig:deployment-anomaly-popup}
 \end{figure}
 
-The full system monitoring view (Figure~\ref{fig:deployment-system-monitoring}) combines the real-time score chart, the active alarm tier indicator, the fault diagnosis, the live readings, and the stream controls in one layout. The event log view (Figure~\ref{fig:deployment-event-logs}) presents the chronological history of all detection events with anomaly/normal filter controls and a PDF export button.
+\begin{figure}[H]
+\centering
+{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{{figures/deployment/lightui/readings}.png}}}
+\caption{Live sensor readings panel.}
+\label{fig:deployment-live-readings}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{{figures/deployment/lightui/logs}.png}}}
+\caption{Event log panel.}
+\label{fig:deployment-event-logs}
+\end{figure}
 
 \begin{figure}[H]
 \centering
@@ -411,84 +399,11 @@ The full system monitoring view (Figure~\ref{fig:deployment-system-monitoring}) 
 
 \begin{figure}[H]
 \centering
-{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{{figures/deployment/lightui/logs}.png}}}
-\caption{Event log panel.}
-\label{fig:deployment-event-logs}
-\end{figure}
-
-% ────────────────────────────────────────────────────────────
-\section{Drift Detection}
-\label{sec:deployment-drift}
-% ────────────────────────────────────────────────────────────
-
-A deployed anomaly detector is only reliable as long as the operational data distribution remains close to the training distribution. PV system behaviour evolves over time: module ageing, seasonal soiling, inverter firmware changes, and weather regime shifts can all move the distribution of normal-class NLL scores, causing the calibrated threshold to become either too permissive or too restrictive without any indication to the operator.
-
-The drift detection module monitors the physics channel $\tilde{P}_{\mathrm{corr}}$ (temperature-corrected, irradiance-normalised power) using a bidirectional \textbf{Page-Hinkley (PH) test} \citep{page1954continuous}. The physics channel is used as the primary trigger rather than the model score itself to avoid the circularity that arises when a stale model's own score is used to judge whether the model is stale. The score channel is monitored in parallel as an advisory-only readout. The PH statistic accumulates signed deviations from a running reference:
-
-\[
-    M_t = \sum_{i=1}^{t}\bigl(x_i - \bar{x} - \delta\bigr), \quad
-    \mathrm{PH}_t = M_t - \min_{1 \leq j \leq t} M_j, \quad
-    \text{drift} = \mathbf{1}[\mathrm{PH}_t > \lambda],
-\]
-
-where $\bar{x}$ is the running mean, $\delta$ is a sensitivity margin against ordinary fluctuations, and $\lambda$ is the control limit. The monitor escalates through two stages (\emph{advisory} after $N_{\mathrm{adv}}$ consecutive PH detections, and \emph{action-ready} after $N_{\mathrm{act}} > N_{\mathrm{adv}}$) with a 1-hour cooldown that suppresses repeated events after an operator action. Figure~\ref{fig:deployment-drift-tikz} illustrates the PH accumulator behaviour over a simulated deployment window.
-
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}
-\begin{scope}[xscale=0.9]
-% ── top panel: NLL score time series ───────────────────────────────────────
-\begin{scope}[yshift=4.1cm]
-  % stable phase
-  \draw[gray!40, thick] (0,1.0) -- (5,1.0);
-  \foreach \x in {0,...,49} {
-    \pgfmathsetmacro\nx{\x*0.1}
-    \pgfmathsetmacro\ny{1.0 + 0.12*sin(\x*137+0.5) + 0.06*sin(\x*53)}
-    \fill[blue!60] (\nx, \ny) circle (0.6pt);
-  }
-  % drift phase (shifted up)
-  \foreach \x in {50,...,89} {
-    \pgfmathsetmacro\nx{\x*0.1}
-    \pgfmathsetmacro\ny{1.45 + 0.12*sin(\x*137+0.5) + 0.06*sin(\x*53)}
-    \fill[red!60] (\nx, \ny) circle (0.6pt);
-  }
-  \draw[black!30] (0,0) rectangle (9,2.2);
-  \node[left, font=\tiny] at (0,1.1) {$\bar{x}$};
-  \draw[dashed, gray] (0,1.0) -- (9,1.0);
-  \node[above, font=\footnotesize\bfseries] at (4.5,2.3) {Physics channel ($\tilde{P}_{\mathrm{corr}}$)};
-  \node[font=\tiny, blue!70] at (2.5,0.3) {Normal regime};
-  \node[font=\tiny, red!70] at (7.0,2.0) {Shifted regime};
-\end{scope}
-% ── bottom panel: PH statistic ──────────────────────────────────────────────
-  \draw[black!30] (0,0) rectangle (9,2.8);
-  % PH accumulates near zero in stable phase
-  \foreach \x in {0,...,49} {
-    \pgfmathsetmacro\nx{\x*0.1}
-    \pgfmathsetmacro\ny{0.05*\x/49 * 2.0 + 0.06*abs(sin(\x*53))}
-    \fill[blue!50] (\nx, \ny) circle (0.6pt);
-  }
-  % PH ramps up in drift phase
-  \foreach \x in {50,...,89} {
-    \pgfmathsetmacro\xrel{\x-50}
-    \pgfmathsetmacro\nx{\x*0.1}
-    \pgfmathsetmacro\ny{0.05*2 + 0.055*\xrel + 0.06*abs(sin(\x*53))}
-    \pgfmathsetmacro\clipped{min(\ny,2.6)}
-    \fill[red!60] (\nx, \clipped) circle (0.6pt);
-  }
-  % control limit λ
-  \draw[dashed, orange!80!black, thick] (0,2.0) -- (9,2.0)
-    node[right, font=\tiny] {$\lambda$};
-  % drift event vertical line (approx where PH crosses λ)
-  \draw[dashed, red!80, thick] (7.2,0) -- (7.2,2.8)
-    node[above, font=\tiny, red!80] {drift event};
-  \node[above, font=\footnotesize\bfseries] at (4.5,2.85) {PH statistic ($\mathrm{PH}_t$)};
-  \node[left, font=\tiny] at (0,2.0) {$\lambda$};
-  % x-axis label
-  \node[below, font=\small] at (4.5,-0.2) {Time};
-\end{scope}
-\end{tikzpicture}
-\caption{Page-Hinkley drift detection on the physics channel.}
-\label{fig:deployment-drift-tikz}
+% Replace the placeholder box below with the real screenshot once the panel is built:
+% \includegraphics[width=0.62\textwidth]{figures/deployment/drift-panel.png}
+\fbox{\parbox[c][3.4cm][c]{0.62\textwidth}{\centering\itshape Drift-monitoring panel (mockup). Displays the current drift stage (none / advisory / action-ready), the operating-regime trend against its training range, and the \emph{Request Retraining} control, which is enabled only at the action-ready stage.}}
+\caption{Drift-monitoring panel in the operator interface (planned).}
+\label{fig:deployment-drift-ui}
 \end{figure}
 
 % ────────────────────────────────────────────────────────────
@@ -530,4 +445,4 @@ In summary, the pipeline meets the real-time requirement with a $33\times$ margi
 \label{sec:deployment-conclusion}
 % ────────────────────────────────────────────────────────────
 
-This chapter has presented the complete deployment of the FaultSense monitoring system on the NVIDIA Jetson Nano. The artifact contract (Section~\ref{sec:deployment-onnx}) enforces consistency between the training environment and the operational inference environment at load time. The ISA-18.2 three-tier alarm system (P3~Advisory, P2~High, P1~Critical) maps three calibrated threshold policies (sensitive, conformal, and CUSUM) to actionable priority levels that allow plant operators to triage alerts without reading alert text. The software stack (Python backend, vanilla-JS frontend, WebSocket communication) was chosen to minimise dependencies on the constrained aarch64 platform while delivering a responsive single-page operator interface. The Page-Hinkley drift detector monitors the physics channel independently of the model score to avoid circularity, and escalates through advisory and action-ready stages before enabling the operator-gated model update workflow.
+This chapter has presented the complete deployment of the FaultSense monitoring system on the NVIDIA Jetson Nano. The artifact contract (Section~\ref{sec:deployment-onnx}) enforces consistency between the training environment and the operational inference environment at load time for both the PC-Flow anomaly detector and the Extra Trees fault classifier, both exported to ONNX. The ISA-18.2 three-tier alarm system (P3~Advisory, P2~High, P1~Critical) maps three calibrated threshold policies (sensitive, conformal, and CUSUM) to actionable priority levels that allow plant operators to triage alerts without reading alert text. The software stack (Python backend, vanilla-JS frontend, WebSocket communication) was chosen to minimise dependencies on the constrained aarch64 platform while delivering a responsive single-page operator interface. The Page-Hinkley drift detector monitors the operating regime (the conditioning inputs) independently of the model score to avoid circularity, and escalates through advisory and action-ready stages before enabling the operator-gated model update workflow.
