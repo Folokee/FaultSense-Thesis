@@ -397,14 +397,6 @@ The monitoring interface presents the system state in a single integrated dashbo
 \label{fig:deployment-system-monitoring}
 \end{figure}
 
-\begin{figure}[H]
-\centering
-% Replace the placeholder box below with the real screenshot once the panel is built:
-% \includegraphics[width=0.62\textwidth]{figures/deployment/drift-panel.png}
-\fbox{\parbox[c][3.4cm][c]{0.62\textwidth}{\centering\itshape Drift-monitoring panel (mockup). Displays the current drift stage (none / advisory / action-ready), the operating-regime trend against its training range, and the \emph{Request Retraining} control, which is enabled only at the action-ready stage.}}
-\caption{Drift-monitoring panel in the operator interface (planned).}
-\label{fig:deployment-drift-ui}
-\end{figure}
 
 % ────────────────────────────────────────────────────────────
 \section{Real-Time Inference Performance}
@@ -445,4 +437,4 @@ In summary, the pipeline meets the real-time requirement with a $33\times$ margi
 \label{sec:deployment-conclusion}
 % ────────────────────────────────────────────────────────────
 
-This chapter has presented the complete deployment of the FaultSense monitoring system on the NVIDIA Jetson Nano. The artifact contract (Section~\ref{sec:deployment-onnx}) enforces consistency between the training environment and the operational inference environment at load time for both the PC-Flow anomaly detector and the Extra Trees fault classifier, both exported to ONNX. The ISA-18.2 three-tier alarm system (P3~Advisory, P2~High, P1~Critical) maps three calibrated threshold policies (sensitive, conformal, and CUSUM) to actionable priority levels that allow plant operators to triage alerts without reading alert text. The software stack (Python backend, vanilla-JS frontend, WebSocket communication) was chosen to minimise dependencies on the constrained aarch64 platform while delivering a responsive single-page operator interface. The Page-Hinkley drift detector monitors the operating regime (the conditioning inputs) independently of the model score to avoid circularity, and escalates through advisory and action-ready stages before enabling the operator-gated model update workflow.
+This chapter presented the full deployment of the FaultSense monitoring system on the NVIDIA Jetson Nano. The artifact contract in Section~\ref{sec:deployment-onnx} ensures load-time consistency between the training and inference environments for both ONNX-exported models: the PC-Flow anomaly detector and the Extra Trees fault classifier. The software stack was designed to minimise dependencies on the constrained aarch64 platform while still providing a responsive single-page operator interface. Finally, the Page-Hinkley drift detector monitors operating-regime changes independently of the model score, avoiding circularity and alerting the operator before model performance degrades silently.
