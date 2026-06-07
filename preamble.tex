@@ -46,7 +46,13 @@
 \usepackage{float}                 % For [H] exact figure placement
 \counterwithout{figure}{chapter}   % Continuous figure numbering
 \counterwithout{table}{chapter}    % Continuous table numbering
+\renewcommand{\thetable}{\Roman{table}}
 \usepackage{tabularx}              % Auto-width table columns
+
+% Wider numwidth for Roman numerals in List of Tables
+\makeatletter
+\renewcommand{\l@table}{\@dottedtocline{1}{1.5em}{3.5em}}
+\makeatother
 
 
 % ── Colors ──────────────────────────────────────────────────

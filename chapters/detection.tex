@@ -470,7 +470,7 @@ Shadowing     (cls~4) & 0.962 & 0.021 & 1000 \\
 \end{tabular}
 \end{table}
 
-Three design experiments determined the selected configuration — feature profile, physics conditioning, and scoring function — and are compared against the full baseline ranking in Section~\ref{sec:ad-tournament}.
+Three design experiments determined the selected configuration (feature profile, physics conditioning, and scoring function) and are compared against the full baseline ranking in Section~\ref{sec:ad-tournament}.
 
 \paragraph{Profile ablation.}
 Three feature profiles were evaluated under the same HPO budget; the Params column reflects the architecture independently selected by HPO for each profile (Table~\ref{tab:pcflow-profile-abl}). Because model capacity scales with $\textit{hidden\_dim}^2$, HPO converging to $\textit{hidden\_dim}=32$ for \texttt{plus\_physics} vs.\ $\textit{hidden\_dim}=64$ for \texttt{baseline\_raw} explains why the 15-feature model has fewer parameters than the 7-feature model.
@@ -571,7 +571,7 @@ GTBAD            & 0.9752~$\pm$~0.071 & 0.9140~$\pm$~0.241 & 0.9896~$\pm$~0.019 
 \end{tabularx}
 \end{table}
 
-$^{\dag}$~NIG params: Normal-Inverse-Gamma hyperparameters — the 4 sufficient statistics (mean, pseudo-count, shape, scale) stored per feature to maintain the Bayesian posterior; 28 = $4 \times 7$ features. \quad $^{\ddag}$~SVs: support vectors — the subset of training points retained by the kernel SVM to define the decision boundary.
+$^{\dag}$~NIG params: Normal-Inverse-Gamma hyperparameters - the 4 sufficient statistics (mean, pseudo-count, shape, scale) stored per feature to maintain the Bayesian posterior; 28 = $4 \times 7$ features. \quad $^{\ddag}$~SVs: support vectors - the subset of training points retained by the kernel SVM to define the decision boundary.
 
 \paragraph{Binary PR-AUC makes almost every model look excellent.}
 Figure~\ref{fig:ad-binary-macro}(a) compares the six detectors on binary PR-AUC, which asks only whether a model can tell \emph{some} fault apart from normal operation. Five of the six score between 0.97 and 0.99, and even the weakest, BOCD, reaches 0.870. The reason is that this metric counts every fault sample equally, and Shadowing alone supplies most of those samples: a model that catches Shadowing scores well even if it misses the rarer faults. Taken alone, this panel is misleading: PC-Flow scores 0.972, which places it last among the five strong models and gives the false impression that it is
@@ -585,7 +585,7 @@ Figure~\ref{fig:ad-binary-macro}(a) compares the six detectors on binary PR-AUC,
 \end{figure}
 
 \paragraph{The macro metric reveals the true ranking.}
-Figure~\ref{fig:ad-binary-macro}(b) switches to macro PR-AUC — a metric that evaluates each fault class separately and averages the scores equally, so a rare fault carries the same weight as a common one. The picture changes completely: the models that looked tied now span 0.401 (BOCD) to 0.990 (PC-Flow), and PC-Flow rises from the bottom of the strong group to first overall. This reversal is the central result of the comparison. Binary PR-AUC hides the differences that matter for a diagnosis system, because a detector that only recognises Shadowing is blind to the three other faults it must identify. Macro PR-AUC is the metric we select on, and PC-Flow leads it.
+Figure~\ref{fig:ad-binary-macro}(b) switches to macro PR-AUC (a metric that evaluates each fault class separately and averages the scores equally, so a rare fault carries the same weight as a common one). The picture changes completely: the models that looked tied now span 0.401 (BOCD) to 0.990 (PC-Flow), and PC-Flow rises from the bottom of the strong group to first overall. This reversal is the central result of the comparison. Binary PR-AUC hides the differences that matter for a diagnosis system, because a detector that only recognises Shadowing is blind to the three other faults it must identify. Macro PR-AUC is the metric we select on, and PC-Flow leads it.
 
 \paragraph{One fault separates the field: Degradation.}
 Figure~\ref{fig:ad-perclass} breaks every model down by fault type, one group of bars per class. Three of the four groups look nearly identical: for Short-Circuit, Open-Circuit, and Shadowing, every competitive model sits close to 1.0. These faults cause large, abrupt changes in current and power, so they are easy to separate from normal behaviour and do not decide the ranking. The fourth group, Degradation (highlighted), is where the models fan out, from 0.121 (BOCD) to 0.998 (PC-Flow). Degradation is intrinsically hard: it is a slow loss of panel efficiency with no sharp event to catch, so each measurement, taken on its own, still looks close to normal. The classical change-point and isolation methods collapse on it (BOCD 0.121, Isolation Forest 0.496), and among the deep models MAAT lags (0.753); the strongest competitors, OC-SVM (0.884) and GTBAD (0.914), close most of the gap but none reaches PC-Flow's 0.998.
@@ -623,9 +623,9 @@ Table~\ref{tab:ad-deployment} reports the operating-point performance of each ti
 \toprule
 \textbf{Tier} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Median delay (samples)} \\
 \midrule
-P3 — Advisory & 0.9174 & 0.9167 & 0.9170 & --- \\
-P2 — High     & 0.9705 & 0.7050 & 0.8167 & --- \\
-P1 — Critical & 1.0000 & ---    & ---    & 63  \\
+P3 - Advisory & 0.9174 & 0.9167 & 0.9170 & --- \\
+P2 - High     & 0.9705 & 0.7050 & 0.8167 & --- \\
+P1 - Critical & 1.0000 & ---    & ---    & 63  \\
 \bottomrule
 \end{tabularx}
 \end{table}

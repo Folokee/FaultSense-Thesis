@@ -448,12 +448,12 @@ Leakage checks fall into two categories: checks that are \emph{guaranteed by pip
     \item \textbf{Performance sanity check.} Reported metrics are compared against the floor (random baseline at class prevalence) and an approximate ceiling derived from the dataset's class separability. Values that exceed any published baseline by an unexplained margin are flagged for investigation.
 \end{itemize}
 
-\noindent\textit{Task A — Anomaly detection:}
+\noindent\textit{Task A - Anomaly detection:}
 \begin{itemize}
     \item \textbf{Label shuffle test.} Anomaly scores are held fixed and the evaluation labels are permuted; the resulting PR-AUC must collapse to the positive-class base rate. A shuffled PR-AUC that remains materially above the base rate signals an artifactual metric rather than genuine model discrimination.
 \end{itemize}
 
-\noindent\textit{Task B — Fault classification:}
+\noindent\textit{Task B - Fault classification:}
 \begin{itemize}
     \item \textbf{Label shuffle test.} The model is retrained on randomly permuted training labels; validation performance must collapse to chance level. Retained performance indicates target leakage through features that encode label information by construction.
     \item \textbf{Feature importance audit.} Tree-based classifiers expose native feature importance scores; any feature whose importance is disproportionately dominant is flagged as a potential proxy label, indicating that it may have been inadvertently derived from or correlated with the target.
@@ -550,7 +550,7 @@ Together, these metrics supplement the discrimination-oriented headline figures 
 
 This chapter presented the design choices underlying the proposed PV FDD system. The two-stage diagnostic architecture, the selection of the Costa real-field dataset, and the structure of the data pipeline were each motivated by findings from the exploratory analysis rather than by convention.
 
-The pipeline enforces a train-only estimation discipline across all transformation stages, and the feature engineering profiles are constructed to support controlled ablation across experiments. Leakage is audited at three levels after each training run — label shuffle, feature importance, and performance sanity — to ensure that reported results reflect genuine model behavior.
+The pipeline enforces a train-only estimation discipline across all transformation stages, and the feature engineering profiles are constructed to support controlled ablation across experiments. Leakage is audited at three levels after each training run (label shuffle, feature importance, and performance sanity) to ensure that reported results reflect genuine model behavior.
 
 The evaluation methodology is uniform across both tasks: 5-fold episode-stratified cross-validation for uncertainty estimation, task-appropriate primary metrics, and explicit calibration policies for both detection thresholds and output probabilities. The implementation chapter applies these protocols consistently across all experiments.
 
