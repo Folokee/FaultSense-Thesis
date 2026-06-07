@@ -38,13 +38,13 @@ The main objective of this thesis is to develop a reproducible and operationally
 
 \begin{enumerate}
     \item \textbf{Develop a rigorous data pipeline.}  
-    The first objective is to design and implement a complete workflow for real-world PV data processing. This includes raw data ingestion, temporal splitting, preprocessing, handling of missing or abnormal values, normalization, and feature engineering. Particular attention is given to preventing data leakage, ensuring that model evaluation reflects realistic operating conditions.
+    The first objective is to design and implement a complete workflow for real-world PV data processing.
 
-    \item \textbf{Design and evaluate lightweight FDD models.}  
-    The second objective is to propose and compare efficient machine learning and deep learning models for two complementary diagnostic tasks: anomaly detection and fault classification. Anomaly detection determines whether the PV system is operating under normal or faulty conditions, while fault classification identifies the specific type of fault responsible for the observed deviation. The models are evaluated not only in terms of diagnostic performance, but also according to their suitability for implementation on resource-constrained hardware.
+    \item \textbf{Design and evaluate FDD models.}  
+    The second objective is to propose and compare efficient machine learning and deep learning models for two complementary diagnostic tasks: anomaly detection and fault classification. The models should be evaluated not only in terms of diagnostic performance, but also according to their suitability for implementation on resource-constrained hardware.
 
     \item \textbf{Demonstrate edge deployment.}
-    The third objective is to deploy the validated FDD solution on a Jetson Nano embedded platform and integrate it with a graphical user interface for real-time monitoring. This step demonstrates the practical feasibility of the proposed approach beyond offline experimentation and highlights its potential for edge-based PV supervision. As part of this, the deployment includes a drift-monitoring layer that tracks whether operating conditions remain within the training regime and, if a sustained departure is detected, enables an operator-gated model update.
+    The third objective is to deploy the validated FDD solution on a Jetson Nano embedded platform and integrate it with a graphical user interface for real-time monitoring.
 \end{enumerate}
 
 The remainder of this thesis is organized as follows. Part~I presents the theoretical and scientific background of the work. Chapter~\ref{ch:pv-systems-fdd} introduces the fundamentals of photovoltaic systems, presents the main fault categories, and reviews the artificial intelligence concepts relevant to PV fault detection and diagnosis. Chapter~\ref{ch:related-work} surveys existing data-driven FDD approaches, discusses available datasets, and identifies the research gaps addressed in this thesis. Part~II presents the main contributions, including the proposed data pipeline, feature engineering methodology, anomaly detection experiments, fault classification results, and embedded deployment on the Jetson Nano platform. Finally, the thesis concludes with a synthesis of the main findings, a discussion of limitations, and recommendations for future research.
