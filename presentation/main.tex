@@ -1,0 +1,252 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% ============================================================
+% Compiler avec XeLaTeX ou LuaLaTeX (polices Fira Sans/Mono).
+% Si compilé avec pdflatex, le thème retombe sur les polices
+% par défaut (un avertissement apparaît, la compilation réussit).
+% ============================================================
+
+\usetheme{metropolis}
+\usepackage{appendixnumberbeamer}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage[french]{babel}
+\usepackage{csquotes}
+
+% ------------------------------------------------------------
+% Palette "Bleu nuit & Ambre" -- remplace le vert foncé par défaut
+% de Metropolis (mDarkTeal) et son accent brun-orange (mLightBrown).
+% Doit être redéfini APRÈS \usetheme{metropolis} : le thème de
+% couleur définit ces noms en dur, les redéfinir avant serait écrasé.
+\definecolor{mDarkTeal}{HTML}{1B2A41}   % primaire -- bleu nuit (frametitle, structure, titres)
+\definecolor{mLightBrown}{HTML}{F2A104} % accent   -- ambre (alertes, barre de progression, citations)
+
+\setbeamertemplate{frame numbering}[fraction]
+\metroset{progressbar=frametitle,sectionpage=progressbar,numbering=fraction}
+
+% ------------------------------------------------------------
+\title{Détection d'Anomalies et Diagnostic de Défauts dans les Systèmes Photovoltaïques par IA}
+\subtitle{Déploiement sur Plateforme Embarquée Jetson Nano}
+\author{GUERRAICHE Ahmed Amine \and MENASSEL Rayane Ibrahim}
+\institute{ESI × CDER --- Projet de Fin d'Études 2025/2026 \\[2pt]
+  \footnotesize Encadrants : Dr. DAHMANI Rabea (ESI) · Dr. RENNANE Ahmed, Dr. DALI Ali (CDER)}
+\date{}
+
+\begin{document}
+
+% ════════════════════════════════════════════════════════════
+% Page de garde -- logos ESI + CDER en vis-à-vis, titre de
+% soutenance avec bandeau de couleur, auteurs/encadrants.
+% ════════════════════════════════════════════════════════════
+\begin{frame}[plain,noframenumbering]
+  \centering
+  \vspace*{0.5cm}
+
+  \noindent
+  \begin{minipage}[c]{0.16\textwidth}
+    \centering\includegraphics[height=1.05cm]{../figures/logo_esi.png}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[c]{0.58\textwidth}
+    \centering
+    \colorbox{mDarkTeal}{\color{white}\textbf{\normalsize SOUTENANCE DE PROJET DE FIN D'ÉTUDES}}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[c]{0.16\textwidth}
+    \centering\includegraphics[height=1.05cm]{../figures/logo_cder.png}
+  \end{minipage}
+
+  \vspace{1pt}
+  {\small Pour l'obtention du Diplôme d'Ingénieur d'État en Informatique\par}
+  \vspace{1pt}
+  {\color{mDarkTeal!40}\rule{0.85\textwidth}{0.6pt}}
+  \vspace{1pt}
+
+  {\Large\bfseries\color{mDarkTeal}\inserttitle\par}
+  \vspace{6pt}
+  {\large\insertsubtitle\par}
+  \vspace{7pt}
+
+  \begin{columns}[T,onlytextwidth]
+    \column{.5\textwidth}
+      \centering
+      {\small\textbf{Présenté par}}\\[4pt]
+      GUERRAICHE Ahmed Amine\\
+      MENASSEL Rayane Ibrahim
+    \column{.5\textwidth}
+      \centering
+      {\small\textbf{Encadrants}}\\[4pt]
+      Dr. DAHMANI Rabea (ESI)\\
+      Dr. RENNANE Ahmed (CDER)\\
+      Dr. DALI Ali (CDER)
+  \end{columns}
+
+  \vspace{3.5pt}
+  {\small Promotion 2025/2026\par}
+  \vspace*{0.45cm}
+\end{frame}
+
+% ════════════════════════════════════════════════════════════
+\section{Contexte et positionnement}
+% ════════════════════════════════════════════════════════════
+
+\begin{frame}{Du poster master à ce mémoire}
+  % TODO: reprendre S02 du contenu validé en grill session
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Établi dans le poster master}
+      \begin{itemize}
+        \item Effet photovoltaïque \& modèle single-diode
+        \item Composants d'un système PV · SCADA
+        \item Taxonomie des défauts PV
+        \item Panorama model-driven $\to$ data-driven
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Ce que ce mémoire construit}
+      \begin{itemize}
+        \item Système FDD bout-en-bout
+        \item 1\,373\,798 mesures terrain réelles (Costa)
+        \item 6 détecteurs comparés + contribution originale
+        \item Déploiement mesuré sur Jetson Nano
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Pourquoi la modalité électrique + météo}
+  % TODO: S03 -- justification du paradigme data-driven retenu
+  \begin{itemize}
+    \item Imagerie thermique : acquisition ponctuelle, coût par module
+    \item Courbe I-V : mesure discrète, interruption de production
+    \item \alert{Électrique + météo} : mesures continues, infrastructure SCADA existante
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{État de l'art --- données électriques \& météo}
+  % TODO: S04 -- citations exactes (cf. prompt de contenu)
+\end{frame}
+
+\begin{frame}{Une observation unifiée sur la littérature}
+  % TODO: S05 -- 4 facettes d'UNE thèse, pas une liste de gaps
+\end{frame}
+
+% ════════════════════════════════════════════════════════════
+\section{Méthodologie}
+% ════════════════════════════════════════════════════════════
+
+\begin{frame}{Décisions sous contraintes}
+  % TODO: S06 -- tableau contrainte -> décision
+  \begin{table}
+    \centering\footnotesize
+    \begin{tabularx}{\textwidth}{X X}
+      \toprule
+      \textbf{Contrainte du terrain} & \textbf{Décision méthodologique} \\
+      \midrule
+      Pas d'étiquettes de panne à l'entraînement & Paradigme semi-supervisé \\
+      Déséquilibre extrême entre classes & Macro PR-AUC / Macro F1 \\
+      Autocorrélation intra-épisode & Split segment-based, ordre temporel strict \\
+      Risque de fuite de données & Statistiques train-only + suite anti-leakage \\
+      Variance non estimable & CV 5 plis stratifiée par épisode \\
+      \bottomrule
+    \end{tabularx}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Le terrain : dataset Costa \& pipeline}
+  % TODO: S07
+\end{frame}
+
+% ════════════════════════════════════════════════════════════
+\section{Détection d'anomalies (Tâche A)}
+% ════════════════════════════════════════════════════════════
+
+\begin{frame}{Le piège du binary PR-AUC}
+  % TODO: S08
+\end{frame}
+
+\begin{frame}{La révélation : macro PR-AUC}
+  % TODO: S09 -- transition narrative centrale
+\end{frame}
+
+\begin{frame}{La classe qui tranche : la Dégradation}
+  % TODO: S10
+\end{frame}
+
+\begin{frame}{PC-Flow --- principe}
+  % TODO: S11
+\end{frame}
+
+\begin{frame}{PC-Flow --- intuition géométrique}
+  % TODO: S12 -- figures à insérer (créées séparément)
+\end{frame}
+
+\begin{frame}{Performance vs compacité}
+  % TODO: S13
+\end{frame}
+
+\begin{frame}{Calibration des seuils ISA-18.2}
+  % TODO: S14
+\end{frame}
+
+% ════════════════════════════════════════════════════════════
+\section{Diagnostic et déploiement (Tâche B)}
+% ════════════════════════════════════════════════════════════
+
+\begin{frame}{Tournoi de classification des pannes}
+  % TODO: S16
+\end{frame}
+
+\begin{frame}{Calibration des probabilités}
+  % TODO: S17
+\end{frame}
+
+\begin{frame}{Architecture de déploiement}
+  % TODO: S18
+\end{frame}
+
+\begin{frame}{Performance embarquée mesurée}
+  % TODO: S19
+\end{frame}
+
+% ════════════════════════════════════════════════════════════
+\section{Conclusion}
+% ════════════════════════════════════════════════════════════
+
+\begin{frame}{Contributions \& limites}
+  % TODO: S20
+\end{frame}
+
+\begin{frame}[standout]
+  Merci de votre attention \\
+  \footnotesize Place à la démonstration
+\end{frame}
+
+% ════════════════════════════════════════════════════════════
+\appendix
+\section{Annexes}
+% ════════════════════════════════════════════════════════════
+
+\begin{frame}{Annexe A --- Pourquoi Costa}
+\end{frame}
+
+\begin{frame}{Annexe B --- Justification du macro PR-AUC}
+\end{frame}
+
+\begin{frame}{Annexe C --- HPO PC-Flow}
+\end{frame}
+
+\begin{frame}{Annexe D --- Ablations PC-Flow}
+\end{frame}
+
+\begin{frame}{Annexe E --- MCE = 0.754, explication}
+\end{frame}
+
+\begin{frame}{Annexe F --- Protocole de dérive opérationnelle}
+\end{frame}
+
+\begin{frame}{Annexe G --- HPO ExtraTrees \& leakage suite}
+\end{frame}
+
+\end{document}
