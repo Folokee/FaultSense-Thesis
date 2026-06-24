@@ -1,11 +1,5 @@
 \documentclass[10pt,aspectratio=169]{beamer}
 
-% ============================================================
-% Compiler avec XeLaTeX ou LuaLaTeX (polices Fira Sans/Mono).
-% Si compilé avec pdflatex, le thème retombe sur les polices
-% par défaut (un avertissement apparaît, la compilation réussit).
-% ============================================================
-
 \usetheme{metropolis}
 \usepackage{appendixnumberbeamer}
 \usepackage{booktabs}
@@ -14,43 +8,56 @@
 \usepackage[french]{babel}
 \usepackage{csquotes}
 
-% ------------------------------------------------------------
-% Palette "Bleu nuit & Ambre" -- remplace le vert foncé par défaut
-% de Metropolis (mDarkTeal) et son accent brun-orange (mLightBrown).
-% Doit être redéfini APRÈS \usetheme{metropolis} : le thème de
-% couleur définit ces noms en dur, les redéfinir avant serait écrasé.
-\definecolor{mDarkTeal}{HTML}{1B2A41}   % primaire -- bleu nuit (frametitle, structure, titres)
-\definecolor{mLightBrown}{HTML}{F2A104} % accent   -- ambre (alertes, barre de progression, citations)
+% Safer pdflatex support
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \DeclareUnicodeCharacter{00D7}{$\times$}
+  \DeclareUnicodeCharacter{00B7}{\textperiodcentered}
+\fi
 
-\metroset{progressbar=frametitle,sectionpage=progressbar,numbering=counter}
+% TikZ
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta}
 
-% ------------------------------------------------------------
-% Numérotation des pages : Metropolis la colle par défaut au bord
-% droit en \scriptsize -- on agrandit la police et on ajoute une
-% marge pour l'éloigner des bordures.
-\setbeamerfont{page number in head/foot}{size=\small}
-\setbeamertemplate{footline}{%
-  \begin{beamercolorbox}[wd=\paperwidth,sep=2.5ex,leftskip=1em,rightskip=1em]{footline}%
-    \usebeamerfont{page number in head/foot}%
-    \usebeamertemplate*{frame footer}
-    \hfill%
-    \usebeamertemplate*{frame numbering}
-  \end{beamercolorbox}%
+% Palette
+\definecolor{mDarkTeal}{HTML}{1B2A41}
+\definecolor{mLightBrown}{HTML}{F2A104}
+
+% Safe logo command: if the logo file is missing, compilation still works
+\newcommand{\safelogo}[2]{%
+  \IfFileExists{#1}{%
+    \includegraphics[height=1.05cm]{#1}%
+  }{%
+    \begin{tikzpicture}
+      \node[
+        draw=mDarkTeal!50,
+        rounded corners=2pt,
+        minimum width=1.9cm,
+        minimum height=1.05cm,
+        align=center,
+        font=\scriptsize\bfseries,
+        text=mDarkTeal
+      ] {#2};
+    \end{tikzpicture}%
+  }%
 }
 
-% ------------------------------------------------------------
+\setbeamertemplate{frame numbering}[fraction]
+\metroset{progressbar=frametitle,sectionpage=progressbar,numbering=fraction}
+
 \title{Détection d'Anomalies et Diagnostic de Défauts dans les Systèmes Photovoltaïques par IA}
 \subtitle{Déploiement sur Plateforme Embarquée Jetson Nano}
 \author{GUERRAICHE Ahmed Amine \and MENASSEL Rayane Ibrahim}
-\institute{ESI × CDER --- Projet de Fin d'Études 2025/2026 \\[2pt]
+\institute{ESI $\times$ CDER --- Projet de Fin d'Études 2025/2026 \\[2pt]
   \footnotesize Encadrants : Dr. DAHMANI Rabea (ESI) · Dr. RENNANE Ahmed, Dr. DALI Ali (CDER)}
 \date{}
 
 \begin{document}
 
 % ════════════════════════════════════════════════════════════
-% Page de garde -- logos ESI + CDER en vis-à-vis, titre de
-% soutenance avec bandeau de couleur, auteurs/encadrants.
+% Page de garde
 % ════════════════════════════════════════════════════════════
 \begin{frame}[plain,noframenumbering]
   \centering
@@ -58,7 +65,7 @@
 
   \noindent
   \begin{minipage}[c]{0.16\textwidth}
-    \centering\includegraphics[height=1.05cm]{../figures/logo_esi.png}
+    \centering\safelogo{../figures/logo_esi.png}{ESI}
   \end{minipage}%
   \hfill
   \begin{minipage}[c]{0.58\textwidth}
@@ -67,7 +74,7 @@
   \end{minipage}%
   \hfill
   \begin{minipage}[c]{0.16\textwidth}
-    \centering\includegraphics[height=1.05cm]{../figures/logo_cder.png}
+    \centering\safelogo{../figures/logo_cder.png}{CDER}
   \end{minipage}
 
   \vspace{1pt}
@@ -108,28 +115,7 @@
 \section{Contexte et positionnement}
 % ════════════════════════════════════════════════════════════
 
-\begin{frame}{Contexte et fondements théoriques}
-  \begin{itemize}[<+->]
-    \item Effet photovoltaïque \& modèles physiques
-    \item Composants d'un système PV
-    \item Taxonomie des défauts PV
-    \item Limites des méthodes de détection classiques
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Pourquoi la modalité électrique + météo}
-  \begin{itemize}[<+->]
-    \item \textbf{Imagerie thermique} : coût de 0,5 à 3~€/module, acquisition événementielle (drone) et donc pas de continuité temporelle.
-    \item \textbf{Courbe I-V} : mesure discrète, interrompt la production, sensible aux variations d'irradiance pendant le balayage.
-    \item \alert{\textbf{Électrique + météo}} : Suivi à haute résolution temporelle, déjà collectées par l'infrastructure SCADA existante.
-  \end{itemize}
-  \vfill
-  \onslide<4->{\footnotesize C'est la seule modalité compatible avec une surveillance \alert{continue et near real-time}, condition nécessaire pour une \alert{détection précoce} des défauts.}
-\end{frame}
-
-\begin{frame}{État de l'art : panorama par famille de méthodes}
-  \footnotesize
-  Méthodes ML/DL appliquées aux séries temporelles multivariées électrique + météo en contexte PV, organisées par famille :
+\begin{frame}{Du poster master à ce mémoire}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \footnotesize
@@ -139,9 +125,9 @@
         \item \textbf{Ensembles} (RF, Isolation Forest) -- Amiri et al. (2024) : Random Forest, 99,4\% (détection + diagnostic)
       \end{itemize}
     \end{column}
-    \begin{column}{0.5\textwidth}
-      \footnotesize
-      \textbf{Hors ligne -- Deep Learning}
+
+    \begin{column}{0.48\textwidth}
+      \textbf{Ce que ce mémoire construit}
       \begin{itemize}
         \item \textbf{Séquentiel} (LSTM, SSM, Transformer) -- Hajji et al. (2023) : BiLSTM, $\approx$100\% (simulé)
         \item \textbf{Reconstruction} (AE, VAE) -- Seghiour et al. (2023) : autoencodeur, 99,9\%
@@ -152,113 +138,302 @@
   \textbf{En ligne (streaming)} -- changepoint bayésien (BOCD), manifold régularisé, passive-aggressive : peu exploré côté PV malgré la compatibilité naturelle avec l'edge ; repris comme un des détecteurs évalués dans ce mémoire.
 \end{frame}
 
-\begin{frame}{Synthèse de la littérature}
-  Quatre facettes d'une même limite structurelle, pas une liste de manques isolés :
-  \begin{enumerate}[<+->]
-    \item \textbf{Dominance de la simulation} -- la majorité des travaux valident sur données synthétiques (MATLAB/Simulink), pas sur le bruit et la non-linéarité du terrain
-    \item \textbf{Ambiguïté des défauts à faible signal} -- les détecteurs par reconstruction peinent sur les dérives lentes (Dégradation) qui se confondent avec la variabilité normale
-    \item \textbf{Déploiement embarqué rarement mesuré} -- l'efficacité est presque toujours exprimée en proxys (nb.\ paramètres, FLOPs) sur poste de travail, pas en latence mesurée sur device cible
-    \item \textbf{Drift non surveillé} -- les campagnes de mesure couvrent quelques semaines, jamais un cycle annuel complet ; le glissement saisonnier n'est ni détecté ni signalé à l'opérateur
-  \end{enumerate}
-  \vfill
-  \onslide<5->{\centering\alert{\textbf{Ce mémoire répond aux quatre, sur le même système, avec les mêmes données.}}}
-\end{frame}
-
 % ════════════════════════════════════════════════════════════
-\section{Méthodologie}
+\section{Etat de l'art}
 % ════════════════════════════════════════════════════════════
 
-\begin{frame}{Décisions sous contraintes}
-  \begin{table}
-    \centering\footnotesize
-    \begin{tabular}{l@{\hspace{1cm}}l}
-      \toprule
-      \textbf{Contrainte du terrain} & \textbf{Décision méthodologique} \\
-      \midrule
-      \onslide<1->{Pas de labels de panne à l'entraînement} & \onslide<1->{Paradigme semi-supervisé} \\
-      \onslide<2->{Déséquilibre extrême entre classes} & \onslide<2->{Choix de métriques spécifiques : Macro PR-AUC / Macro F1} \\
-      \onslide<3->{Autocorrélation intra-épisode} & \onslide<3->{Split segment-based, ordre temporel strict} \\
-      \onslide<4->{Exigence de rigueur scientifique} & \onslide<4->{Suite de validation anti-leakage} \\
-      \onslide<5->{Uncertainty estimation non triviale} & \onslide<5->{CV 5-fold stratifiée par épisode} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-\end{frame}
-
-\begin{frame}{Le terrain : dataset Costa \& pipeline}
-  \footnotesize
-  Costa est le seul jeu de données du panorama qui combine défauts induits sur matériel réel, taxonomie multi-classe (4 défauts), et fréquence d'acquisition compatible avec une surveillance continue (1~Hz) -- d'où son rôle de surface d'évaluation principale (cf. Annexe A).
-  \begin{columns}[T]
-    \begin{column}{0.46\textwidth}
-      \footnotesize
-      \textbf{Centrale PV, Curitiba (Brésil)} -- 16 modules CS6U-330P, 2 strings, 5~kWp, 1~Hz, irradiance + température
-      \begin{table}
-        \centering\scriptsize
-        \begin{tabular}{l@{\hspace{0.7cm}}r}
-          \toprule
-          \textbf{Classe} & \textbf{Points} \\
-          \midrule
-          \onslide<1->{Normal} & \onslide<1->{1\,162\,931} \\
-          \onslide<2->{Shadowing} & \onslide<2->{184\,311} \\
-          \onslide<3->{Dégradation} & \onslide<3->{10\,371} \\
-          \onslide<4->{Open-Circuit} & \onslide<4->{6\,024} \\
-          \onslide<5->{Short-Circuit} & \onslide<5->{5\,999} \\
-          \midrule
-          \onslide<5->{\textbf{Total}} & \onslide<5->{\textbf{1\,373\,798}} \\
-          \bottomrule
-        \end{tabular}
-      \end{table}
-    \end{column}
-    \begin{column}{0.50\textwidth}
-      \footnotesize
-      \textbf{Pipeline DAG en 5 étages} (\texttt{ingest} $\to$ \texttt{split} $\to$ \texttt{preprocess} $\to$ \texttt{featurize} $\to$ \texttt{train})
-      \begin{itemize}
-        \item Split \alert{segment-based}, ordre temporel strict, ratio 70/15/15
-        \item Preprocessing : suppression des lignes aberrantes (IQR $3\times$, normal-only)
-        \item Feature engineering physique + sélection mRMR (détail : diapositive suivante)
-      \end{itemize}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Feature engineering physique}
-  \footnotesize
-  \texttt{plus\_physics} : 4 familles de features physiques ($\approx$17 features), motivées par l'EDA et conçues pour rester stables sur toute la plage de fonctionnement.
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \textbf{1. Canaux normalisés par irradiance} -- isole le résidu lié au défaut de la grande amplitude diurne :
-      \[
-        \tilde{P}_{s} = \frac{P_{s}}{\max(G, G_{\min})}
-      \]
-      \textbf{2. Déséquilibre inter-strings} -- isole les défauts localisés invisibles à l'échelle de la centrale :
-      \[
-        \Delta P = \frac{P_1 - P_2}{P_1 + P_2 + \varepsilon}
-      \]
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \textbf{3. Puissance corrigée en température} -- retire la composante thermique attendue :
-      \[
-        \tilde{P}_{\mathrm{corr}} = \frac{P_{\mathrm{dc}}}{(1+\gamma(T-T_{\mathrm{ref}}))\cdot G}
-      \]
-      \textbf{4. Dérivées temporelles d'ordre 1} -- expose les transitoires rapides (courts-circuits, circuits ouverts) :
-      \[
-        \delta P(t) = P(t) - P(t-1)
-      \]
-    \end{column}
-  \end{columns}
-  \vfill
-  Sélection \alert{mRMR (critère MID)} appliquée sous contrainte train-only, pour retenir les features non redondantes les plus informatives sans fuite vers val/test.
-\end{frame}
-
-\begin{frame}{Outillage MLOps}
-  \footnotesize
-  Au-delà de la capacité conceptuelle, la chaîne expérimentale repose sur un outillage d'ingénierie reproductible :
+\begin{frame}{Pourquoi la modalité électrique + météo}
   \begin{itemize}
-    \item \textbf{DVC} -- versioning des données et artefacts par hash de contenu ; tout changement amont invalide et régénère automatiquement les étapes en aval
-    \item \textbf{Pipeline DAG reproductible} -- 5 étages (\texttt{ingest} $\to$ \texttt{split} $\to$ \texttt{preprocess} $\to$ \texttt{featurize} $\to$ \texttt{train}), ré-exécutable à l'identique
-    \item \textbf{MLflow} -- traçabilité de chaque run (dataset, profil de features, hyperparamètres, métriques val/test), hébergé sur DagsHub
+    \item Imagerie thermique : coût élevé, sensibilité aux conditions ambiantes.
+    \item Courbe I-V : nécessite souvent interruption de production, interprétation ambiguë.
+    \item \alert{Électrique + météo} : mesures continues, infrastructure SCADA existante.
   \end{itemize}
 \end{frame}
+
+\begin{frame}{État de l'art --- données électriques \& météo}
+\begin{columns}[T,onlytextwidth]
+
+\column{0.49\textwidth}
+\centering
+\vspace{3pt}
+
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  edge from parent/.style={draw, -latex},
+  every node/.style={font=\scriptsize, align=center},
+  root/.style={
+    fill=mDarkTeal!15,
+    rounded corners,
+    draw=mDarkTeal!50,
+    inner sep=4pt
+  },
+  method/.style={
+    fill=mLightBrown!20,
+    rounded corners,
+    draw=mLightBrown!70!black,
+    inner sep=4pt,
+    minimum width=24mm
+  },
+  refs/.style={
+    font=\tiny,
+    align=center,
+    text width=26mm,
+    inner sep=2pt
+  },
+  link/.style={draw, -latex, line width=0.3pt},
+  refline/.style={draw, line width=0.25pt}
+]
+
+\node[root] (root) at (0,0) {Approches classiques};
+
+\node[method] (svm) at (-2.8,-1.15) {SVM \& noyau};
+\node[method] (rf)  at (0,-1.15) {Forêts\\aléatoires};
+\node[method] (gb)  at (2.8,-1.15) {Boosting\\de gradient};
+
+\node[refs, anchor=north] (svmrefs) at (-2.8,-1.75)
+{Suliman et al. (2024)\\Cai \& Wai (2022)\\Saiprakash et al. (2024)};
+
+\node[refs, anchor=north] (rfrefs) at (0,-1.75)
+{Amiri et al. (2024b)};
+
+\node[refs, anchor=north] (gbrefs) at (2.8,-1.75)
+{Suliman et al. (2024)\\Noura et al. (2025)\\Kull et al. (2025)};
+
+\draw[link] (root.south) -- ++(0,-0.18) -| (svm.north);
+\draw[link] (root.south) -- ++(0,-0.18) -| (rf.north);
+\draw[link] (root.south) -- ++(0,-0.18) -| (gb.north);
+
+\draw[refline] (svm.south) -- (svmrefs.north);
+\draw[refline] (rf.south) -- (rfrefs.north);
+\draw[refline] (gb.south) -- (gbrefs.north);
+
+\end{tikzpicture}
+}
+
+\column{0.49\textwidth}
+\centering
+\vspace{3pt}
+
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  edge from parent/.style={draw, -latex},
+  every node/.style={font=\scriptsize, align=center},
+  root/.style={
+    fill=mDarkTeal!15,
+    rounded corners,
+    draw=mDarkTeal!50,
+    inner sep=4pt
+  },
+  method/.style={
+    fill=mLightBrown!20,
+    rounded corners,
+    draw=mLightBrown!70!black,
+    inner sep=4pt,
+    minimum width=24mm
+  },
+  refs/.style={
+    font=\tiny,
+    align=center,
+    text width=28mm,
+    inner sep=2pt
+  },
+  link/.style={draw, -latex, line width=0.3pt},
+  refline/.style={draw, line width=0.25pt}
+]
+
+\node[root] (root) at (0,0) {Approches profondes};
+
+\node[method] (rnn) at (-2.8,-1.15) {RNN\\LSTM, GRU};
+\node[method] (ae)  at (0,-1.15) {Auto-\\encodeurs};
+\node[method] (tr)  at (2.8,-1.15) {Transformers\\Graphes};
+
+\node[refs, anchor=north] (rnnrefs) at (-2.8,-1.75)
+{Hajji et al. (2023)\\Amiri et al. (2024a)};
+
+\node[refs, anchor=north] (aerefs) at (0,-1.75)
+{Seghiour et al. (2023)\\Titouni et al. (2025)\\Attouri et al. (2026)};
+
+\node[refs, anchor=north] (trrefs) at (2.8,-1.75)
+{Khalil et al. (2024)\\Balachandran et al. (2025)\\Yan et al. (2025)};
+
+\draw[link] (root.south) -- ++(0,-0.18) -| (rnn.north);
+\draw[link] (root.south) -- ++(0,-0.18) -| (ae.north);
+\draw[link] (root.south) -- ++(0,-0.18) -| (tr.north);
+
+\draw[refline] (rnn.south) -- (rnnrefs.north);
+\draw[refline] (ae.south) -- (aerefs.north);
+\draw[refline] (tr.south) -- (trrefs.north);
+
+\end{tikzpicture}
+}
+
+\end{columns}
+\end{frame}
+
+\begin{frame}{Lacunes de recherche identifiées}
+\centering
+
+\vspace{0.2cm}
+
+\begin{tikzpicture}[
+  gapbox/.style={
+    fill=mDarkTeal!10,
+    draw=mDarkTeal!55,
+    rounded corners=6pt,
+    line width=0.5pt,
+    text width=0.82\textwidth,
+    align=left,
+    inner xsep=10pt,
+    inner ysep=8pt
+  },
+  icon/.style={
+    circle,
+    fill=mLightBrown!35,
+    draw=mLightBrown!70!black,
+    minimum size=7mm,
+    font=\bfseries\small,
+    text=mDarkTeal
+  }
+]
+
+\node[gapbox] (g1) at (0,0) {
+  \textbf{\color{mDarkTeal}Prédominance des jeux de données simulés}
+};
+\node[icon, left=4mm of g1] {1};
+
+\node[gapbox, below=0.42cm of g1] (g2) {
+  \textbf{\color{mDarkTeal}États défaillants difficiles à distinguer}
+};
+\node[icon, left=4mm of g2] {2};
+
+\node[gapbox, below=0.42cm of g2] (g3) {
+  \textbf{\color{mDarkTeal}Absence d'évaluation embarquée}
+};
+\node[icon, left=4mm of g3] {3};
+
+\end{tikzpicture}
+
+\end{frame}
+
+% ════════════════════════════════════════════════════════════
+\section{Conception}
+% ════════════════════════════════════════════════════════════
+
+\begin{frame}{Phases du processus FDD}
+
+\centering
+\vspace{0.4cm}
+
+\begin{tikzpicture}[
+  node distance=0.55cm,
+  block/.style={
+    draw=mDarkTeal!65,
+    fill=mDarkTeal!8,
+    rounded corners=4pt,
+    minimum height=1.25cm,
+    text width=0.20\textwidth,
+    align=center,
+    font=\scriptsize
+  },
+  arrow/.style={
+    -{Latex[length=2mm]},
+    draw=mDarkTeal!80,
+    line width=0.5pt
+  }
+]
+
+\node[block] (data) {
+  \textbf{\color{mDarkTeal}Collecte \& transformation}
+};
+
+\node[block, right=of data] (detect) {
+  \textbf{\color{mDarkTeal}Détection d'anomalies}
+};
+
+\node[block, right=1.15cm of detect] (diag) {
+  \textbf{\color{mDarkTeal}Diagnostic}
+};
+
+\node[block, right=of diag] (monitor) {
+  \textbf{\color{mDarkTeal}Interface de monitoring}
+};
+
+\draw[arrow] (data) -- (detect);
+\draw[arrow] (detect) --
+  node[above, font=\tiny, inner sep=1pt, yshift=2pt] {si anomalie}
+  (diag);
+\draw[arrow] (diag) -- (monitor);
+
+\end{tikzpicture}
+
+\end{frame}
+
+\begin{frame}{Sélection du jeu de données}
+
+\begin{block}{Dataset Costa}
+\begin{itemize}
+  \item Données réelles de terrain issues d'une installation photovoltaïque.
+  \item Mesures électriques et météorologiques adaptées au FDD.
+  \item Quatre défauts annotés : ombrage, dégradation, circuit ouvert et court-circuit.
+  \item Volume important de données, exploitable pour l'apprentissage et l'évaluation.
+\end{itemize}
+\end{block}
+
+\vspace{0.3cm}
+
+\begin{block}{Intérêt pour notre travail}
+\begin{itemize}
+  \item Permet d'évaluer les modèles dans des conditions plus proches du réel.
+  \item Compatible avec une approche de détection puis de diagnostic des défauts.
+\end{itemize}
+\end{block}
+
+\end{frame}
+\begin{frame}{Pipeline de données}
+
+\centering
+\vspace{0.4cm}
+
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  block/.style={
+    draw=black,
+    rounded corners=8pt,
+    minimum width=3.2cm,
+    minimum height=1.6cm,
+    align=center,
+    font=\normalsize\bfseries
+  },
+  arrow/.style={
+    -{Latex[length=3mm]},
+    line width=0.7pt
+  },
+  outlabel/.style={
+    font=\small,
+    align=center,
+    text width=3.0cm
+  }
+]
+
+\node[block] (ing)   at (0,0)    {Ingestion};
+\node[block] (split) at (6.0,0)  {Découpage};
+\node[block] (prep)  at (12.0,0) {Prétraitement};
+\node[block] (feat)  at (18.0,0) {Extraction\\des caractéristiques};
+\node[block] (train) at (24.0,0) {Entraînement};
+
+\draw[arrow] (ing)   -- node[outlabel, below=8pt] {Table opérationnelle\\unifiée}          (split);
+\draw[arrow] (split) -- node[outlabel, below=8pt] {Ensembles\\train / val / test}           (prep);
+\draw[arrow] (prep)  -- node[outlabel, below=8pt] {Jeu de données\\nettoyé}                 (feat);
+\draw[arrow] (feat)  -- node[outlabel, below=8pt] {Profils enrichis\\en caractéristiques}   (train);
+
+\end{tikzpicture}
+}
+
+\end{frame}
+
+\section{Implementation}
+
+
 
 % ════════════════════════════════════════════════════════════
 \section{Détection d'anomalies (Tâche A)}
@@ -285,25 +460,8 @@
   \onslide<7->{\scriptsize\alert{Cinq modèles sur six entre 0,97 et 0,99 -- presque tous \og excellents \fg{}.} Shadowing (35,7\% des lignes en panne) domine le calcul : un modèle qui n'attrape \emph{que} Shadowing score déjà très haut. PC-Flow termine \emph{dernier} des cinq modèles forts.}
 \end{frame}
 
-\begin{frame}{Macro PR-AUC : la métrique retenue}
-  \footnotesize
-  Le macro PR-AUC moyenne les 4 classes \alert{à poids égal} : une panne rare compte autant qu'une panne fréquente.
-  \begin{table}
-    \centering\footnotesize
-    \begin{tabular}{l@{\hspace{1cm}}r@{\hspace{1cm}}r}
-      \toprule
-      \textbf{Détecteur} & \textbf{Binary} & \textbf{Macro PR-AUC} \\
-      \midrule
-      \onslide<1->{BOCD} & \onslide<1->{0,870} & \onslide<1->{0,401} \\
-      \onslide<2->{Isolation Forest} & \onslide<2->{0,974} & \onslide<2->{0,822} \\
-      \onslide<3->{MAAT} & \onslide<3->{0,982} & \onslide<3->{0,924} \\
-      \onslide<4->{OC-SVM} & \onslide<4->{0,987} & \onslide<4->{0,965} \\
-      \onslide<5->{GTBAD} & \onslide<5->{0,9896} & \onslide<5->{0,9752} \\
-      \onslide<6->{\textbf{PC-Flow}} & \onslide<6->{0,972} & \onslide<6->{\textbf{0,990}} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-  \onslide<7->{Le classement explose : 0,401 à 0,990. PC-Flow passe de \emph{dernier des forts} à \emph{premier}. C'est le métrique de sélection retenu -- et il change la décision.}
+\begin{frame}{La révélation : macro PR-AUC}
+  % TODO: S09
 \end{frame}
 
 \begin{frame}{Le cas de la classe Dégradation}
@@ -341,10 +499,7 @@
 \end{frame}
 
 \begin{frame}{PC-Flow --- intuition géométrique}
-  \begin{center}
-    \onslide<1->{\fbox{\parbox{0.85\textwidth}{\centering\vspace{0.7cm}\textit{[Figure : schéma architecture PC-Flow -- coupling layers + conditionnement physique]}\vspace{0.7cm}}}}
-  \end{center}
-  \onslide<2->{\scriptsize Le flow apprend une densité \emph{conditionnée} $p(x\mid c)$ : il factorise la façon dont irradiance et température pilotent normalement les signaux électriques. Une dérive par rapport à cette variété physique -- pas le niveau absolu du signal -- est ce qui est pénalisé.}
+  % TODO: S12
 \end{frame}
 
 \begin{frame}{Performance vs compacité}
@@ -383,7 +538,7 @@
 \end{frame}
 
 % ════════════════════════════════════════════════════════════
-\section{Diagnostic et déploiement (Tâche B)}
+\section{Diagnostic de défaults (Tâche B)}
 % ════════════════════════════════════════════════════════════
 
 \begin{frame}{Sélection du classifieur de pannes}
@@ -424,84 +579,206 @@
   \onslide<5->{Log-loss et Brier confirment un bon alignement global ; l'ECE de 0,019 montre une faible erreur \emph{moyenne}. Le MCE (effet de bin extrême, cf.\ Annexe~E) capture le pire cas, pas la qualité moyenne -- la confiance affichée à l'opérateur reste fiable dans l'ensemble.}
 \end{frame}
 
-\begin{frame}{Architecture de déploiement}
-  \footnotesize
-  \begin{columns}[T]
-    \begin{column}{0.48\textwidth}
-      \textbf{Cible : NVIDIA Jetson Nano}
-      \begin{itemize}[<+->]
-        \item 128-core Maxwell, quad-core ARM Cortex-A57
-        \item 4~Go RAM partagée, 5--10~W, sans ventilateur
-        \item Contraintes : mémoire, ARM64, pas de cloud
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \textbf{Pipeline d'inférence}
-      \begin{itemize}[<+->]
-        \item Export \texttt{ONNX} : PC-Flow (\texttt{torch.onnx}) + ExtraTrees (\texttt{skl2onnx})
-        \item Contrat d'artefact : schéma, scaler, seuils, calibration -- validé au chargement
-        \item Backend Python / Frontend web, \texttt{WebSocket} temps réel
-        \item Drift monitor \texttt{Page-Hinkley} indépendant, en boucle
-      \end{itemize}
-    \end{column}
-  \end{columns}
+
+\section{Déploiment}
+\begin{frame}{Plateforme embarquée : NVIDIA Jetson Nano}
+
+\begin{columns}[T,onlytextwidth]
+
+\column{0.42\textwidth}
+\centering
+\vspace{0.3cm}
+
+\includegraphics[
+  width=0.9\linewidth
+]{../figures/jetson-nano.png}
+
+\vspace{0.15cm}
+{\scriptsize NVIDIA Jetson Nano Developer Kit}
+
+\column{0.55\textwidth}
+
+\begin{block}{Caractéristiques principales}
+\begin{itemize}
+  \item Plateforme edge AI compacte et basse consommation.
+  \item GPU NVIDIA Maxwell intégré pour l'accélération matérielle.
+  \item Mémoire LPDDR4 suffisante pour des modèles légers.
+  % \item Connectivité Ethernet et USB pour l'intégration avec capteurs et interfaces.
+  \item Environnement JetPack avec CUDA, cuDNN et TensorRT.
+\end{itemize}
+\end{block}
+
+\end{columns}
+
 \end{frame}
 
-\begin{frame}{Performance embarquée mesurée}
-  \footnotesize
-  162\,453 échantillons réels rejoués à 1~Hz sur la carte -- budget par échantillon : 1\,000~ms.
-  \begin{table}
-    \centering\footnotesize
-    \begin{tabular}{l@{\hspace{0.8cm}}r@{\hspace{0.8cm}}r@{\hspace{0.8cm}}r}
-      \toprule
-      \textbf{Étage} & \textbf{p50 (ms)} & \textbf{p95 (ms)} & \textbf{p99 (ms)} \\
-      \midrule
-      \onslide<1->{PC-Flow} & \onslide<1->{8,97} & \onslide<1->{13,58} & \onslide<1->{19,04} \\
-      \onslide<2->{ExtraTrees} & \onslide<2->{5,10} & \onslide<2->{9,50} & \onslide<2->{14,75} \\
-      \onslide<3->{\textbf{Pipeline complet}} & \onslide<3->{\textbf{12,94}} & \onslide<3->{\textbf{21,44}} & \onslide<3->{\textbf{30,04}} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-  \onslide<4->{Marge de $77\times$ (médiane) et $33\times$ (p99) sur le budget 1~Hz. Le classifieur n'est invoqué qu'en cas d'alarme : en régime sain, seul le coût détecteur s'applique (8,97~ms). C'est l'orchestration, pas le modèle, qui domine le coût total.}
+\begin{frame}{Latence du système complet sur Jetson Nano}
+
+\begin{block}{Protocole de mesure}
+\begin{itemize}
+  \item Rejeu de 162\,453 échantillons PV réels.
+  \item Mesure du temps de traitement par échantillon sur la Jetson Nano.
+  \item Budget temps réel : 1000 ms par échantillon.
+\end{itemize}
+\end{block}
+
+\vspace{0.35cm}
+
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Étape} & \textbf{p50} & \textbf{p95} & \textbf{p99} \\
+\midrule
+Détecteur PC-Flow & 8.97 ms & 13.58 ms & 19.04 ms \\
+Classifieur ExtraTrees & 5.10 ms & 9.50 ms & 14.75 ms \\
+\textbf{Pipeline complet} & \textbf{12.94 ms} & \textbf{21.44 ms} & \textbf{30.04 ms} \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.45cm}
+
+\begin{block}{Résultat clé}
+\vspace{0.1cm}
+
+\centering
+\small
+Le pipeline complet reste largement sous la contrainte temps réel, avec une marge d'environ
+\textbf{33$\times$ au 99\textsuperscript{e} centile}.
+\end{block}
+
+\end{frame} 
+
+\begin{frame}{Détection de dérive opérationnelle}
+
+\begin{block}{Objectif}
+\begin{itemize}
+  \item Vérifier que les conditions de déploiement restent proches du domaine vu à l'entraînement.
+  \item Signaler une dérive avant qu'elle ne dégrade silencieusement la qualité de détection.
+\end{itemize}
+\end{block}
+
+\vspace{0.25cm}
+
+\begin{block}{Principe implémenté}
+\begin{itemize}
+  \item Surveillance du régime d'exploitation : irradiance et température PV $(irr, T_{PV})$.
+  \item Agrégation quotidienne pour distinguer une dérive persistante du cycle jour/nuit.
+  \item Test Page-Hinkley bidirectionnel pour détecter les changements de distribution.
+\end{itemize}
+\end{block}
+
+\vspace{0.25cm}
+
+\begin{block}{Niveaux de dérive}
+\begin{itemize}
+  \item \textbf{Normal} : aucune dérive détectée.
+  \item \textbf{Advisory} : dérive persistante pendant 7 jours consécutifs.
+  \item \textbf{Action-ready} : dérive persistante pendant 14 jours consécutifs.
+\end{itemize}
+\end{block}
+
+\end{frame}
+\begin{frame}{Architecture du module de monitoring}
+
+\centering
+\vspace{0.2cm}
+
+\includegraphics[
+  width=0.98\textwidth,
+  height=0.82\textheight,
+  keepaspectratio
+]{../figures/monitoring-arch.png}
+
 \end{frame}
 
-% ════════════════════════════════════════════════════════════
-\section{Conclusion}
-% ════════════════════════════════════════════════════════════
+% -------------------- Slide 1: Conclusion --------------------
+\begin{frame}{Conclusion --- résultats atteints}
 
-\begin{frame}{Contributions \& limites}
-  \footnotesize
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \textbf{Contributions}
-      \begin{itemize}[<+->]
-        \item Pipeline reproductible, anti-leakage par design (segment-based, train-only)
-        \item PC-Flow : 1\textsuperscript{er} normalizing flow appliqué au FDD PV, macro PR-AUC 0,990, $43\times$ plus compact que son concurrent
-        \item ExtraTrees calibré (Platt) : macro F1 0,959, worst-class 0,922
-        \item Déploiement edge \emph{mesuré} : marge $33\times$ sur Jetson Nano
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \textbf{Limites}
-      \begin{itemize}[<+->]
-        \item Site unique, pannes induites en conditions contrôlées
-        \item 4 classes de pannes seulement
-        \item Campagne courte -- pas de cycle annuel complet observé
-        \item Pas de détection de pannes concurrentes
-      \end{itemize}
-    \end{column}
-  \end{columns}
-  \vfill
-  \onslide<9->{\footnotesize\alert{Perspectives :} jeu de données multi-site plus riche, explicabilité (feature attribution), transfert cross-site.}
+\begin{block}{Système FDD complet}
+\begin{itemize}
+  \item Pipeline bout-en-bout : ingestion, découpage temporel, prétraitement et caractéristiques informées par la physique.
+  \item Détection d'anomalies par PC-Flow, modèle compact et conditionné par le régime d'exploitation.
+  \item Diagnostic des défauts par ExtraTrees avec pondération des classes.
+  \item Déploiement embarqué sur Jetson Nano avec export ONNX et interface de monitoring.
+\end{itemize}
+\end{block}
+
+\vspace{0.25cm}
+
+\begin{block}{Résultats clés}
+\begin{itemize}
+  \item PC-Flow : PR-AUC binaire de \(0.989 \pm 0.008\), avec moins de 25\,000 paramètres.
+  \item ExtraTrees : macro F1 de \(0.959 \pm 0.078\) et balanced accuracy de \(0.943 \pm 0.113\).
+  \item Pipeline complet : exécution temps réel sur Jetson Nano avec une marge de \(33\times\) au 99\textsuperscript{e} centile.
+\end{itemize}
+\end{block}
+
 \end{frame}
 
-\begin{frame}[standout]
-  Merci de votre attention \\
-  \footnotesize Place à la démonstration
+
+% -------------------- Slide 2: Limitations --------------------
+\begin{frame}{Limites du système}
+
+\begin{block}{Limites liées aux données}
+\begin{itemize}
+  \item Évaluation réalisée sur un seul dataset.
+  \item Défauts induits dans des conditions contrôlées, donc généralisation terrain encore limitée.
+  \item Couverture limitée à quatre classes seulement.
+\end{itemize}
+\end{block}
+
+\vspace{0.25cm}
+
+\begin{block}{Limites opérationnelles}
+\begin{itemize}
+  \item Campagne d'acquisition courte, sans cycle annuel complet contenant les variations saisonnières.
+  \item Hypothèse d'un seul défaut dominant par fenêtre d'observation.
+\end{itemize}
+\end{block}
+
 \end{frame}
 
+
+% -------------------- Slide 3: Future perspectives --------------------
+\begin{frame}{Perspectives futures}
+
+\begin{block}{Données et validation}
+\begin{itemize}
+  \item Étendre l'évaluation à plusieurs sites PV et conditions climatiques.
+  \item Collecter des défauts plus variés, avec différents niveaux de sévérité.
+  \item Valider la robustesse sur des campagnes longues couvrant les variations saisonnières.
+\end{itemize}
+\end{block}
+
+\vspace{0.25cm}
+
+\begin{block}{Évolution du système}
+\begin{itemize}
+  \item Étudier le diagnostic multi-défauts pour les scénarios de pannes simultanées.
+  \item Renforcer l'adaptation aux dérives par des mécanismes de recalibration ou de mise à jour.
+  \item Enrichir l'interface opérateur avec des indicateurs d'explicabilité et d'aide à la décision.
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+
+% -------------------- Slide 4: Thank you --------------------
+\begin{frame}[plain,noframenumbering]
+\begin{tikzpicture}[remember picture,overlay]
+  % Background covers the entire physical page, not just the text area
+  \fill[mDarkTeal] (current page.south west) rectangle (current page.north east);
+
+  % Text centered exactly on the page (immune to beamer margins)
+  \node[align=center] at (current page.center) {
+    \sffamily\color{white}\Huge\bfseries Merci pour votre attention\\[0.4cm]
+    % \sffamily\color{white!85!black}\Large\normalfont Place à la démonstration
+  };
+\end{tikzpicture}
+\end{frame}
 % ════════════════════════════════════════════════════════════
 \appendix
+\metroset{sectionpage=none}
 \section{Annexes}
 % ════════════════════════════════════════════════════════════
 
