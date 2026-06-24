@@ -44,8 +44,37 @@
   }%
 }
 
-\setbeamertemplate{frame numbering}[fraction]
-\metroset{progressbar=frametitle,sectionpage=progressbar,numbering=fraction}
+% Placeholder pour figure pas encore produite : cadre en pointillés + légende.
+\newcommand{\figplaceholder}[2][6cm]{%
+  \begin{tikzpicture}
+    \node[
+      draw=mDarkTeal!60,
+      dashed,
+      rounded corners=3pt,
+      minimum width=#1,
+      minimum height=3cm,
+      align=center,
+      font=\footnotesize,
+      text=mDarkTeal!80,
+      text width=#1
+    ] {\textit{Figure à insérer}\\#2};
+  \end{tikzpicture}%
+}
+
+\metroset{progressbar=frametitle,sectionpage=progressbar,numbering=counter}
+
+% Numérotation des pages : Metropolis la colle par défaut au bord
+% droit en \scriptsize -- on agrandit la police et on ajoute une
+% marge pour l'éloigner des bordures.
+\setbeamerfont{page number in head/foot}{size=\normalsize,series=\bfseries}
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,sep=2.5ex,leftskip=1em,rightskip=1em]{footline}%
+    \usebeamerfont{page number in head/foot}%
+    \usebeamertemplate*{frame footer}
+    \hfill%
+    \usebeamertemplate*{frame numbering}
+  \end{beamercolorbox}%
+}
 
 \title{Détection d'Anomalies et Diagnostic de Défauts dans les Systèmes Photovoltaïques par IA}
 \subtitle{Déploiement sur Plateforme Embarquée Jetson Nano}
@@ -115,40 +144,28 @@
 \section{Contexte et positionnement}
 % ════════════════════════════════════════════════════════════
 
-\begin{frame}{Du poster master à ce mémoire}
-  \begin{columns}[T]
-    \begin{column}{0.5\textwidth}
-      \footnotesize
-      \textbf{Hors ligne -- Machine Learning}
-      \begin{itemize}
-        \item \textbf{Noyau} (SVM, OC-SVM) -- Suliman et al. (2024) : SVM multi-noyau vs XGBoost adaptatif, 87,56\%
-        \item \textbf{Ensembles} (RF, Isolation Forest) -- Amiri et al. (2024) : Random Forest, 99,4\% (détection + diagnostic)
-      \end{itemize}
-    \end{column}
+\begin{frame}{Contexte et fondements théoriques}
+  \begin{itemize}[<+->]
+    \item Effet photovoltaïque \& modèles physiques
+    \item Composants d'un système PV
+    \item Taxonomie des défauts PV
+    \item Limites des méthodes classiques (model-driven)
+  \end{itemize}
+\end{frame}
 
-    \begin{column}{0.48\textwidth}
-      \textbf{Ce que ce mémoire construit}
-      \begin{itemize}
-        \item \textbf{Séquentiel} (LSTM, SSM, Transformer) -- Hajji et al. (2023) : BiLSTM, $\approx$100\% (simulé)
-        \item \textbf{Reconstruction} (AE, VAE) -- Seghiour et al. (2023) : autoencodeur, 99,9\%
-      \end{itemize}
-    \end{column}
-  \end{columns}
+\begin{frame}{Pourquoi la modalité électrique + météo}
+  \begin{itemize}[<+->]
+    \item \textbf{Imagerie thermique} : coût de 0,5 à 3~€/module, acquisition événementielle (drone) et donc pas de continuité temporelle.
+    \item \textbf{Courbe I-V} : mesure discrète, interrompt la production, sensible aux variations d'irradiance pendant le balayage.
+    \item \alert{\textbf{Électrique + météo}} : Suivi à haute résolution temporelle, déjà collectées par l'infrastructure SCADA existante.
+  \end{itemize}
   \vfill
-  \textbf{En ligne (streaming)} -- changepoint bayésien (BOCD), manifold régularisé, passive-aggressive : peu exploré côté PV malgré la compatibilité naturelle avec l'edge ; repris comme un des détecteurs évalués dans ce mémoire.
+  \onslide<4->{\footnotesize C'est la seule modalité compatible avec une surveillance \alert{continue et near real-time}, condition nécessaire pour une \alert{détection précoce} des défauts.}
 \end{frame}
 
 % ════════════════════════════════════════════════════════════
 \section{Etat de l'art}
 % ════════════════════════════════════════════════════════════
-
-\begin{frame}{Pourquoi la modalité électrique + météo}
-  \begin{itemize}
-    \item Imagerie thermique : coût élevé, sensibilité aux conditions ambiantes.
-    \item Courbe I-V : nécessite souvent interruption de production, interprétation ambiguë.
-    \item \alert{Électrique + météo} : mesures continues, infrastructure SCADA existante.
-  \end{itemize}
-\end{frame}
 
 \begin{frame}{État de l'art --- données électriques \& météo}
 \begin{columns}[T,onlytextwidth]
@@ -431,92 +448,247 @@
 
 \end{frame}
 
-\section{Implementation}
-
-
 
 % ════════════════════════════════════════════════════════════
-\section{Détection d'anomalies (Tâche A)}
+\section{Détection d'anomalies}
 % ════════════════════════════════════════════════════════════
+
+\begin{frame}{Détection d'anomalies : formulation}
+  \footnotesize
+  Sous irradiance et température données, les mesures électriques normales suivent une relation physique attendue. Une panne est une \alert{déviation persistante} de cette relation, non explicable par $G$ ou $T$ :
+  \[
+    \mathbf{X}(t) = [\mathbf{x}(t-w+1), \ldots, \mathbf{x}(t)] \in \mathbb{R}^{w \times d}, \qquad
+    d(t) = \mathbf{1}\!\left[s(\mathbf{X}(t)) > \tau\right]
+  \]
+\end{frame}
+
+\begin{frame}{Choix de modélisation}
+  \footnotesize
+  \begin{itemize}
+    \item \textbf{Défi} : les classes de panne sont trop rares et déséquilibrées pour apprendre un classifieur supervisé fiable.
+    \item \textbf{Solution} : formuler le problème comme une détection \alert{semi-supervisée} (apprendre uniquement sur des fenêtres normales et évaluer sur toutes les fenêtres) pour minimiser la dépendance à l'annotation des classes de panne.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Détecteurs évalués}
+  \footnotesize
+  \begin{itemize}
+    \item Online $\rightarrow$ Bayesian Online Changepoint Detection (BOCD)
+    \item Kernel-based $\rightarrow$ One-Class Support Vector Machine (OC-SVM)
+    \item Ensemble $\rightarrow$ Isolation Forest
+    \item Sequence Modeling (DL) $\rightarrow$ Mamba Adaptive Anomaly Transformer (MAAT)
+    \item Reconstruction-based (DL) $\rightarrow$ Gated Transformer-BiLSTM Anomaly Detector (GTBAD)
+    \item Normalizing Flow (DL) $\rightarrow$ PC-Flow
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Baselines classiques : principe}
+  \footnotesize
+  \begin{description}
+    \item[BOCD] Maintient une distribution sur le \emph{run length} ; mise à jour récursive en streaming, sans fenêtre fixe. Anomalie = forte probabilité de changepoint.
+    \item[Isolation Forest] Repose sur l'hypothèse que les anomalies sont \alert{rares et peu nombreuses}, donc plus faciles à isoler. Score = profondeur moyenne d'isolement sur des arbres de partitionnement aléatoire.
+    \item[OC-SVM] Apprend une frontière (hyperplan dans l'espace à noyau) englobant la région normale. Noyau RBF : le \emph{kernel trick} calcule directement les produits scalaires d'un espace de dimension infinie, sans jamais le construire explicitement. Score = distance signée à la frontière.
+  \end{description}
+\end{frame}
+
+\begin{frame}{Mamba Adaptive Anomaly Transformer (MAAT) : principe}
+  \footnotesize
+  \begin{itemize}
+    \item Combine Mamba (selective state-space, séquence longue en temps linéaire) et le principe \emph{association-discrepancy} de l'Anomaly Transformer
+    \item Une reconstruction pure ne regarde que l'erreur ponctuelle $\|x_t - \hat{x}_t\|^2$, sans tenir compte de la façon dont chaque instant se positionne dans la série
+    \item \alert{Nouveau} : compare les poids de \emph{self-attention} entre pas de temps ($S$, issus de l'encodeur) à un prior gaussien local ($P$) -- normal = association globale, anomalie = association locale seulement
+    \item Le score pondère l'erreur de reconstruction par cet écart $D_t = \mathrm{KL}(S\|P) + \mathrm{KL}(P\|S)$ : il amplifie l'erreur sur les instants dont le \emph{pattern d'association} est anormal, pas seulement ceux mal reconstruits
+  \end{itemize}
+  \vfill
+  Variante adaptée de l'algorithme original (Sellam et al., 2025).
+\end{frame}
+
+\begin{frame}{MAAT : architecture}
+  \begin{center}
+    \includegraphics[height=6.3cm,width=\textwidth,keepaspectratio]{../figures/detection/maat_architecture.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Gated Transformer-BiLSTM Anomaly Detector (GTBAD) : principe}
+  \begin{itemize}
+    \item Transformer encoder + décodeur BiLSTM
+    \item Apprend à reconstruire les motifs de fonctionnement normal
+    \item Anomalie = erreur de reconstruction
+  \end{itemize}
+  \vfill
+  \footnotesize Variante adaptée de l'algorithme original (Zhu et al., 2026).
+\end{frame}
+
+\begin{frame}{GTBAD : architecture}
+  \begin{center}
+    \includegraphics[height=6.3cm,width=0.85\textwidth,keepaspectratio]{../figures/detection/gtbad-arch.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}{PC-Flow : principe}
+  \footnotesize
+  Caractériser le fonctionnement normal revient à estimer sa distribution de probabilité $p(x)$ : un problème de \alert{density estimation}.
+  \begin{itemize}[<+->]
+    \item Cette distribution n'est pas simple : les mesures réelles suivent une forme complexe, pas une gaussienne
+    \item Un \alert{normalizing flow} apprend une transformation $f_\theta$ \alert{parfaitement réversible} qui ramène cette distribution complexe vers une gaussienne simple
+    \item Réversible $\Rightarrow$ probabilité \alert{exacte} pour n'importe quel point, sans approximation
+    \item Score d'anomalie = à quel point l'échantillon est improbable sous la distribution apprise
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Probabilité marginale vs conditionnelle}
+  \footnotesize
+  Les normalizing flows existants apprennent une probabilité \alert{marginale} $p(x)$ : une seule distribution du normal, valable à tout instant.
+  \[
+    \underbrace{p(x)}_{\text{flow classique}} \qquad \longrightarrow \qquad \underbrace{p(x \mid c)}_{\text{PC-Flow}}, \quad c = (\text{irradiance}, T_{\text{PV}})
+  \]
+  \begin{itemize}[<+->]
+    \item Cycle \alert{diurne} fort (irradiance, température) : une même puissance peut être normale ou suspecte selon le moment
+    \item Probabilité marginale $\Rightarrow$ confond changement de régime et panne
+    \item \alert{La solution} : conditionner sur $c$ -- jugement relatif au régime, pas à une moyenne globale
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{PC-Flow : architecture}
+  \begin{center}
+    \includegraphics[height=6.3cm,width=\textwidth,keepaspectratio]{../figures/detection/pc_flow_architecture.png}
+  \end{center}
+\end{frame}
+
+
+\begin{frame}{Protocole d'évaluation}
+  \centering
+  \begin{tikzpicture}[
+    node distance=0.5cm,
+    block/.style={draw=mDarkTeal!65, fill=mDarkTeal!8, rounded corners=4pt,
+      minimum height=1.3cm, text width=0.24\textwidth, align=center, font=\scriptsize},
+    arrow/.style={-{Latex[length=2mm]}, draw=mDarkTeal!80, line width=0.5pt}
+  ]
+    \node[block] (q) {\textbf{1. Ranking quality}\\(PR-AUC, \emph{threshold-free})};
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Ranking quality : de quoi parle-t-on ?}
+  \footnotesize
+  \begin{itemize}
+    \item F1, precision, recall sont figés à un seuil unique $\tau$ -- ils ne mesurent qu'un seul point de fonctionnement
+    \item Le \alert{ranking quality} évalue si le détecteur ordonne correctement les échantillons par score d'anomalie, sur \emph{tous} les seuils possibles -- d'où son caractère \emph{threshold-free}
+    \item Nécessaire ici : le choix du modèle (étape 1 du protocole) précède tout choix de seuil (étape 4)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{PR-AUC : la métrique retenue}
+  \footnotesize
+  \[
+    \mathrm{Precision} = \frac{TP}{TP+FP}, \qquad \mathrm{Recall} = \frac{TP}{TP+FN}, \qquad \mathrm{PR\text{-}AUC} = \int_0^1 \mathrm{Precision}(r)\,\mathrm{d}r
+  \]
+  PR-AUC est l'aire sous la courbe precision-recall : elle résume, sur tous les seuils, la precision que le détecteur conserve à chaque niveau de recall.
+\end{frame}
+
+\begin{frame}{Pourquoi PR-AUC (et pas ROC-AUC) ?}
+  \footnotesize
+  \begin{itemize}
+    \item La phase d'EDA a montré $\approx$84,7\% de lignes normales / $\approx$15,3\% en panne, et parmi les pannes, un facteur $\approx$30$\times$ entre la classe la plus rare (Short-Circuit, 5\,999) et la plus fréquente (Shadowing, 184\,311) -- severe class imbalance, à deux niveaux
+    \item PR-AUC se base uniquement sur precision et recall de la classe positive (la panne) -- sensible à l'imbalance, contrairement à ROC-AUC
+    \item \alert{Macro PR-AUC} : moyenne non pondérée par classe -- Shadowing ne domine plus le score, chaque fault class compte autant
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Protocole d'évaluation}
+  \centering
+  \begin{tikzpicture}[
+    node distance=0.5cm,
+    block/.style={draw=mDarkTeal!65, fill=mDarkTeal!8, rounded corners=4pt,
+      minimum height=1.3cm, text width=0.24\textwidth, align=center, font=\scriptsize},
+    arrow/.style={-{Latex[length=2mm]}, draw=mDarkTeal!80, line width=0.5pt}
+  ]
+    \node[block] (q) {\textbf{1. Ranking quality}\\(PR-AUC, \emph{threshold-free})};
+    \onslide<1->{\node[block, right=of q] (c) {\textbf{2. Compactness}\\(nombre de paramètres)};}
+    \onslide<2->{\node[block, right=of c] (m) {\textbf{Modèle retenu}};}
+    \onslide<3->{\node[block, below=1cm of c] (cal) {Threshold calibration};}
+    \onslide<1->{\draw[arrow] (q) -- (c);}
+    \onslide<2->{\draw[arrow] (c) -- (m);}
+    \onslide<3->{\draw[arrow] (m.south) |- (cal.east);}
+  \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Résultats : qualité}
+  \centering
+  \renewcommand{\arraystretch}{1.5}
+  \normalsize
+  \begin{tabular}{l@{\hspace{0.7cm}}r@{\hspace{0.7cm}}r@{\hspace{0.7cm}}r@{\hspace{0.7cm}}r@{\hspace{0.7cm}}r@{\hspace{0.7cm}}r}
+    \toprule
+    \textbf{Détecteur} & \textbf{Binary} & \textbf{Macro} & \textbf{SC} & \textbf{Dégrad.} & \textbf{OC} & \textbf{Shad.} \\
+    \midrule
+    BOCD & 0,870 & 0,401 & 0,130 & 0,121 & 0,489 & 0,865 \\
+    Isolation Forest & 0,974 & 0,822 & 0,818 & 0,496 & 1,000 & 0,972 \\
+    OC-SVM & 0,987 & 0,965 & 0,992 & 0,884 & 1,000 & 0,983 \\
+    MAAT & 0,982 & 0,924 & 0,994 & 0,753 & 1,000 & 0,981 \\
+    GTBAD & 0,9896 & 0,9752 & 0,9998 & 0,9140 & 1,0000 & 0,9871 \\
+    \textbf{PC-Flow} & 0,972 & \textbf{0,990} & 1,000 & 0,998 & 1,000 & 0,962 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
 
 \begin{frame}{Limite du binary PR-AUC}
   \footnotesize
   Le binary PR-AUC ne demande qu'une chose : distinguer \emph{une} panne, n'importe laquelle, du fonctionnement normal.
-  \begin{table}
-    \centering\footnotesize
-    \begin{tabular}{l@{\hspace{1.2cm}}r}
-      \toprule
-      \textbf{Détecteur} & \textbf{Binary PR-AUC} \\
-      \midrule
-      \onslide<1->{BOCD} & \onslide<1->{0,870} \\
-      \onslide<2->{Isolation Forest} & \onslide<2->{0,974} \\
-      \onslide<3->{MAAT} & \onslide<3->{0,982} \\
-      \onslide<4->{OC-SVM} & \onslide<4->{0,987} \\
-      \onslide<5->{GTBAD} & \onslide<5->{0,9896} \\
-      \onslide<6->{PC-Flow} & \onslide<6->{0,972} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-  \onslide<7->{\scriptsize\alert{Cinq modèles sur six entre 0,97 et 0,99 -- presque tous \og excellents \fg{}.} Shadowing (35,7\% des lignes en panne) domine le calcul : un modèle qui n'attrape \emph{que} Shadowing score déjà très haut. PC-Flow termine \emph{dernier} des cinq modèles forts.}
+  \vfill
+  \begin{center}
+    \includegraphics[height=4.6cm,keepaspectratio]{../figures/detection/fig_comparison_binary.png}
+  \end{center}
+  \vfill
+  \scriptsize\alert{Cinq modèles sur six entre 0,97 et 0,99 -- presque tous \og excellents \fg{}.} Shadowing domine le calcul : un modèle qui n'attrape \emph{que} Shadowing score déjà très haut.
 \end{frame}
 
 \begin{frame}{La révélation : macro PR-AUC}
-  % TODO: S09
+  \footnotesize
+  \vfill
+  \begin{center}
+    \includegraphics[height=4.6cm,keepaspectratio]{../figures/detection/fig_comparison_macro.png}
+  \end{center}
+  \vfill
+  \scriptsize Les modèles qui semblaient tous proches s'étalent désormais de 0,401 (BOCD) à 0,990 (PC-Flow) -- \alert{PC-Flow passe du dernier rang à la première place.} C'est ce renversement qui motive le choix de la macro PR-AUC comme métrique de sélection.
 \end{frame}
 
-\begin{frame}{Le cas de la classe Dégradation}
+\begin{frame}{Les défauts à faible amplitude}
   \footnotesize
   Short-Circuit, Open-Circuit, Shadowing : tous les modèles compétitifs frôlent 1,0 -- signatures abruptes, faciles à séparer.
-  \begin{table}
-    \centering\footnotesize
-    \begin{tabular}{l@{\hspace{1.2cm}}r}
-      \toprule
-      \textbf{Détecteur} & \textbf{PR-AUC -- Dégradation} \\
-      \midrule
-      \onslide<1->{BOCD} & \onslide<1->{0,121} \\
-      \onslide<2->{Isolation Forest} & \onslide<2->{0,496} \\
-      \onslide<3->{MAAT} & \onslide<3->{0,753} \\
-      \onslide<4->{OC-SVM} & \onslide<4->{0,884} \\
-      \onslide<5->{GTBAD} & \onslide<5->{0,914} \\
-      \onslide<6->{\textbf{PC-Flow}} & \onslide<6->{\textbf{0,998}} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-  \onslide<7->{\scriptsize\alert{La Dégradation est un défaut de contact à haute résistance, injecté de façon contrôlée} (et non une dérive d'usure naturelle) : chaque mesure isolée reste proche de la normale, sans événement net. PC-Flow score par \emph{probabilité conditionnelle} (irradiance, température), pas par magnitude d'erreur -- un écart discret par rapport à la variété physique attendue tombe dans la queue de faible probabilité même quand chaque signal a l'air ordinaire.}
+  \vfill
+  \begin{center}
+    \includegraphics[height=4.0cm,keepaspectratio]{../figures/detection/fig_comparison_perclass.png}
+  \end{center}
+  \vfill
+  \scriptsize\alert{La Dégradation est un défaut de contact à haute résistance} : chaque mesure isolée reste proche de la normale, sans événement net. PC-Flow score par \emph{probabilité conditionnelle} (irradiance, température), pas par magnitude d'erreur -- un écart discret par rapport à la variété physique attendue tombe dans la queue de faible probabilité même quand chaque signal a l'air ordinaire.
 \end{frame}
 
-\begin{frame}{PC-Flow --- principe}
-  Un \alert{normalizing flow} : un transport bijectif $f_\theta : \mathbb{R}^n \to \mathbb{R}^n$, $z = f_\theta^{-1}(x)$, exactement inversible.
-  \begin{itemize}[<+->]
-    \item Contrairement à un VAE (borne inférieure sur la vraisemblance), le flow donne une \alert{vraisemblance exacte} via le changement de variables :
-    \[
-      \log p(x;\theta) = \log p_Z\bigl(f_\theta^{-1}(x)\bigr) + \log\left|\det\frac{\partial f_\theta^{-1}(x)}{\partial x}\right|
-    \]
-    \item Architecture : conditional \texttt{RealNVP}, coupling layers affines, contexte $c = [\text{irradiance}, T_{\text{PV}}]$ injecté à chaque bloc
-    \item Score d'anomalie = $-\log p(x \mid c;\theta)$ -- pas de feature engineering manuel requis
-    \item \alert{Aucun travail antérieur} n'avait appliqué un normalizing flow à la détection de défauts PV
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{PC-Flow --- intuition géométrique}
-  % TODO: S12
+\begin{frame}{Résultats : compacité}
+  \centering
+  \footnotesize
+  \begin{tabular}{l@{\hspace{1cm}}r@{\hspace{1cm}}r}
+    \toprule
+    \textbf{Détecteur} & \textbf{Macro PR-AUC} & \textbf{Paramètres} \\
+    \midrule
+    BOCD & 0,401 & 28 (NIG) \\
+    MAAT & 0,924 & 184\,213 \\
+    OC-SVM & 0,965 & 1\,280 (SV) \\
+    GTBAD & 0,975 & 869\,769 \\
+    \textbf{PC-Flow} & \textbf{0,990} & \textbf{20\,124} \\
+    \bottomrule
+  \end{tabular}
+  \vfill
+  \footnotesize Isolation Forest omise : taille comptée en arbres, non comparable à un nombre de paramètres.
 \end{frame}
 
 \begin{frame}{Performance vs compacité}
   \footnotesize
   Le concurrent le plus proche, GTBAD, est statistiquement proche en macro PR-AUC -- mais pas en taille.
-  \begin{table}
-    \centering\footnotesize
-    \begin{tabular}{l@{\hspace{1cm}}r@{\hspace{1cm}}r}
-      \toprule
-      \textbf{Détecteur} & \textbf{Macro PR-AUC} & \textbf{Paramètres} \\
-      \midrule
-      \onslide<1->{GTBAD} & \onslide<1->{0,9752~$\pm$~0,071} & \onslide<1->{869\,769} \\
-      \onslide<2->{\textbf{PC-Flow}} & \onslide<2->{\textbf{0,990~$\pm$~0,005}} & \onslide<2->{\textbf{20\,124}} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-  \onslide<3->{\alert{$43\times$ plus petit} pour un score égal ou supérieur. Sur Jetson Nano, mémoire et temps d'inférence croissent avec le nombre de paramètres -- c'est le facteur décisif pour la cible embarquée.}
+  \vfill
+  \begin{center}
+    \includegraphics[height=4.6cm,keepaspectratio]{../figures/detection/fig_comparison_size.png}
+  \end{center}
+  \vfill
+  \alert{$43\times$ plus petit} pour un score égal ou supérieur. Sur Jetson Nano, mémoire et temps d'inférence croissent avec le nombre de paramètres -- c'est le facteur décisif pour la cible embarquée.
 \end{frame}
 
 \begin{frame}{Calibration des seuils ISA-18.2}
@@ -538,7 +710,7 @@
 \end{frame}
 
 % ════════════════════════════════════════════════════════════
-\section{Diagnostic de défaults (Tâche B)}
+\section{Diagnostic de défauts}
 % ════════════════════════════════════════════════════════════
 
 \begin{frame}{Sélection du classifieur de pannes}
@@ -622,7 +794,7 @@
 \end{itemize}
 \end{block}
 
-\vspace{0.35cm}
+\vspace{0.2cm}
 
 \centering
 \begin{tabular}{lccc}
@@ -635,7 +807,7 @@ Classifieur ExtraTrees & 5.10 ms & 9.50 ms & 14.75 ms \\
 \bottomrule
 \end{tabular}
 
-\vspace{0.45cm}
+\vspace{0.15cm}
 
 \begin{block}{Résultat clé}
 \vspace{0.1cm}
@@ -650,6 +822,8 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
 
 \begin{frame}{Détection de dérive opérationnelle}
 
+\footnotesize
+
 \begin{block}{Objectif}
 \begin{itemize}
   \item Vérifier que les conditions de déploiement restent proches du domaine vu à l'entraînement.
@@ -657,7 +831,7 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
 \end{itemize}
 \end{block}
 
-\vspace{0.25cm}
+\vspace{0.15cm}
 
 \begin{block}{Principe implémenté}
 \begin{itemize}
@@ -667,7 +841,7 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
 \end{itemize}
 \end{block}
 
-\vspace{0.25cm}
+\vspace{0.15cm}
 
 \begin{block}{Niveaux de dérive}
 \begin{itemize}
@@ -694,6 +868,8 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
 % -------------------- Slide 1: Conclusion --------------------
 \begin{frame}{Conclusion --- résultats atteints}
 
+\small
+
 \begin{block}{Système FDD complet}
 \begin{itemize}
   \item Pipeline bout-en-bout : ingestion, découpage temporel, prétraitement et caractéristiques informées par la physique.
@@ -703,7 +879,7 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
 \end{itemize}
 \end{block}
 
-\vspace{0.25cm}
+\vspace{0.15cm}
 
 \begin{block}{Résultats clés}
 \begin{itemize}
@@ -777,6 +953,16 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
 \end{tikzpicture}
 \end{frame}
 % ════════════════════════════════════════════════════════════
+
+\begin{frame}{Références}
+  \footnotesize
+  \begin{itemize}
+    \item Sellam, A.~Z., Benaissa, I., Taleb-Ahmed, A., Patrono, L., \& Distante, C. (2025). Mamba Adaptive Anomaly Transformer with association discrepancy for time series. \textit{Engineering Applications of Artificial Intelligence}, 160, 111685.
+    \item Zhu, L., Ma, S., Xu, C., Xu, X., \& Du, H. (2026). GTBAD: GVSAO-Transformer-BiLSTM-based Time-Series Anomaly Detection for Photovoltaic Power Generation. \textit{Applied Intelligence}, 56(5).
+    \item Dinh, L., Sohl-Dickstein, J., \& Bengio, S. (2017). Density estimation using Real-valued Non-Volume Preserving (RealNVP) transformations. \textit{ICLR}.
+  \end{itemize}
+\end{frame}
+% ════════════════════════════════════════════════════════════
 \appendix
 \metroset{sectionpage=none}
 \section{Annexes}
@@ -790,14 +976,14 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
       \toprule
       \textbf{Dataset} & \textbf{Origine} & \textbf{Taux} & \textbf{Classes / Météo} \\
       \midrule
-      \onslide<1->{\textbf{Costa}} & \onslide<1->{Réel, terrain} & \onslide<1->{1~Hz} & \onslide<1->{4 pannes, Irr + T} \\
-      \onslide<2->{La Réunion} & \onslide<2->{Réel, terrain} & \onslide<2->{$\approx$7~s} & \onslide<2->{7 (ombrage), météo compl.} \\
-      \onslide<3->{GPVS-Faults} & \onslide<3->{Expérimental} & \onslide<3->{100~kHz} & \onslide<3->{7, aucune météo} \\
-      \onslide<4->{Simulés (divers)} & \onslide<4->{Synthétique} & \onslide<4->{---} & \onslide<4->{idéalisés, peu de bruit} \\
+      \textbf{Costa} & Réel, terrain & 1~Hz & 4 pannes, Irr + T \\
+      La Réunion & Réel, terrain & $\approx$7~s & 7 (ombrage), météo compl. \\
+      GPVS-Faults & Expérimental & 100~kHz & 7, aucune météo \\
+      Simulés (divers) & Synthétique & --- & idéalisés, peu de bruit \\
       \bottomrule
     \end{tabular}
   \end{table}
-  \onslide<5->{Costa : seul dataset réel à 1~Hz combinant 4 pannes électriques distinctes \emph{et} contexte météo (irradiance + température) -- condition nécessaire au conditionnement physique de PC-Flow.}
+  Costa : seul dataset réel à 1~Hz combinant 4 pannes électriques distinctes \emph{et} contexte météo (irradiance + température) -- condition nécessaire au conditionnement physique de PC-Flow.
 \end{frame}
 
 \begin{frame}{Annexe B --- Justification du macro PR-AUC}
@@ -805,7 +991,7 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
   \[
     \mathrm{PR\text{-}AUC}_{\mathrm{macro}} = \frac{1}{K}\sum_{k=1}^{K} \mathrm{PR\text{-}AUC}_k, \qquad K = 4
   \]
-  \begin{itemize}[<+->]
+  \begin{itemize}
     \item Le binary PR-AUC pondère implicitement par la fréquence -- Shadowing (35,7\% des lignes en panne) domine le calcul
     \item Le macro PR-AUC donne un poids \alert{égal} à chaque classe, indépendamment de sa fréquence
     \item Une panne rare (Short-Circuit, 15 épisodes) compte autant qu'une panne fréquente (Shadowing, 1000 épisodes)
@@ -822,28 +1008,38 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
       \toprule
       \textbf{Paramètre} & \textbf{Plage} & \textbf{Valeur retenue} \\
       \midrule
-      \onslide<1->{\texttt{learning\_rate}} & \onslide<1->{$[10^{-4},10^{-2}]$ log-unif.} & \onslide<1->{$1{,}96\times10^{-4}$} \\
-      \onslide<2->{\texttt{weight\_decay}} & \onslide<2->{$[10^{-6},10^{-3}]$ log-unif.} & \onslide<2->{$1{,}26\times10^{-5}$} \\
-      \onslide<3->{\texttt{n\_coupling\_layers}} & \onslide<3->{$\{2,\ldots,6\}$} & \onslide<3->{4} \\
-      \onslide<4->{\texttt{hidden\_dim}} & \onslide<4->{$\{32,64,128\}$} & \onslide<4->{64} \\
-      \onslide<5->{\texttt{dropout}} & \onslide<5->{$[0,0{,}3]$} & \onslide<5->{0,0093} \\
+      \texttt{learning\_rate} & $[10^{-4},10^{-2}]$ log-unif. & $1{,}96\times10^{-4}$ \\
+      \texttt{weight\_decay} & $[10^{-6},10^{-3}]$ log-unif. & $1{,}26\times10^{-5}$ \\
+      \texttt{n\_coupling\_layers} & $\{2,\ldots,6\}$ & 4 \\
+      \texttt{hidden\_dim} & $\{32,64,128\}$ & 64 \\
+      \texttt{dropout} & $[0,0{,}3]$ & 0,0093 \\
       \bottomrule
     \end{tabular}
   \end{table}
 \end{frame}
 
-\begin{frame}{Annexe D --- Ablations PC-Flow}
-  \footnotesize
-  \begin{itemize}[<+->]
-    \item \textbf{Profil de features} : macro PR-AUC se dégrade de 0,990 (7 features) à 0,955 (153 features, \texttt{plus\_rolling}) -- malédiction de la dimensionnalité ; le flow apprend déjà sa propre représentation
-    \item \textbf{Conditionnement physique} : retirer irradiance/température fait chuter 0,985~$\to$~0,977 et double quasiment la variance (0,012~$\to$~0,021)
-    \item \textbf{Scoring} : NLL affine (déployé, 0,985) bat spline-typicality (0,937) en macro PR-AUC, malgré un binary PR-AUC légèrement supérieur pour ce dernier (0,979 vs 0,964)
-  \end{itemize}
+\begin{frame}{Annexe D : Détail per-class PR-AUC (mean $\pm$ std)}
+  \centering
+  \tiny
+  \begin{tabular}{l@{\hspace{0.3cm}}r@{\hspace{0.3cm}}r@{\hspace{0.3cm}}r@{\hspace{0.3cm}}r}
+    \toprule
+    \textbf{Détecteur} & \textbf{Short-Circuit} & \textbf{Dégradation} & \textbf{Open-Circuit} & \textbf{Shadowing} \\
+    \midrule
+    BOCD & 0,130~$\pm$~0,050 & 0,121~$\pm$~0,050 & 0,489~$\pm$~0,191 & 0,865~$\pm$~0,067 \\
+    Isolation Forest & 0,818~$\pm$~0,222 & 0,496~$\pm$~0,185 & 1,000~$\pm$~0,000 & 0,972~$\pm$~0,029 \\
+    OC-SVM & 0,992~$\pm$~0,009 & 0,884~$\pm$~0,074 & 1,000~$\pm$~0,000 & 0,983~$\pm$~0,014 \\
+    MAAT & 0,994~$\pm$~0,013 & 0,753~$\pm$~0,268 & 1,000~$\pm$~0,000 & 0,981~$\pm$~0,018 \\
+    GTBAD & 0,9998~$\pm$~0,016 & 0,9140~$\pm$~0,241 & 1,0000~$\pm$~0,004 & 0,9871~$\pm$~0,022 \\
+    \textbf{PC-Flow} & 1,000~$\pm$~0,000 & 0,998~$\pm$~0,004 & 1,000~$\pm$~0,000 & 0,962~$\pm$~0,021 \\
+    \midrule
+    \textbf{Épisodes} & 15 & 19 & 23 & 1\,000 \\
+    \bottomrule
+  \end{tabular}
 \end{frame}
 
 \begin{frame}{Annexe E --- MCE = 0,754, explication}
   \footnotesize
-  \begin{itemize}[<+->]
+  \begin{itemize}
     \item Le MCE capture l'écart \alert{pire-cas} entre confiance prédite et exactitude observée, sur un seul bin de confiance
     \item À ne pas confondre avec l'ECE (0,019), qui moyenne cet écart sur \emph{tous} les bins, pondéré par leur population
     \item Le bin concerné est un bin de très haute confiance et de très faible population (\og tail-bin effect \fg) -- quelques échantillons mal classés y suffisent à produire un grand écart relatif
@@ -870,7 +1066,7 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
       \textbf{HPO (35 essais, macro F1)}
-      \begin{itemize}[<+->]
+      \begin{itemize}
         \item \texttt{n\_estimators} = 800
         \item \texttt{criterion} = entropy
         \item \texttt{max\_depth} = 24
@@ -880,13 +1076,60 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
     \end{column}
     \begin{column}{0.5\textwidth}
       \textbf{Suite anti-leakage}
-      \begin{itemize}[<+->]
+      \begin{itemize}
         \item Label-shuffle macro F1 : 0,234 ($\approx$chance, 0,25)
         \item Top feature importance : 0,415, pas de proxy dominant
         \item Time-split \& duplicate check : conformes
       \end{itemize}
     \end{column}
   \end{columns}
+\end{frame}
+
+\begin{frame}{Annexe H --- Point-adjusted F1 (PC-Flow)}
+  % TODO: à remplir -- uniquement PC-Flow (pas de variantes unconditional/ablation)
+\end{frame}
+
+\begin{frame}{Annexe I : Justification métrique ranking quality}
+  \footnotesize
+  \begin{itemize}
+    \item ROC-AUC compare true positive rate et false positive rate -- sur Costa ($\approx$84,7\% normal), le grand nombre de negatives maintient le false positive rate artificiellement bas
+    \item Un détecteur médiocre peut donc afficher un ROC-AUC élevé sans réellement bien séparer les classes de panne
+    \item PR-AUC se base uniquement sur precision et recall de la classe positive (la panne) -- aucune dépendance au nombre de negatives
+    \item C'est pourquoi PR-AUC (et non ROC-AUC) sert de critère de ranking quality dans le protocole d'évaluation
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Annexe J : Choix de conception --- profil de features}
+  \footnotesize
+  \begin{table}
+    \centering\footnotesize
+    \begin{tabular}{l@{\hspace{0.6cm}}r@{\hspace{0.6cm}}r@{\hspace{0.6cm}}r}
+      \toprule
+      \textbf{Profil} & \textbf{Features} & \textbf{Macro PR-AUC} & \textbf{Paramètres} \\
+      \midrule
+      \textbf{baseline\_raw} & \textbf{7} & \textbf{0,990~$\pm$~0,005} & 20\,124 \\
+      plus\_physics & 15 & 0,985~$\pm$~0,012 & 9\,418 \\
+      plus\_rolling & 153 & 0,955~$\pm$~0,024 & 57\,546 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \alert{Malédiction de la dimensionnalité} : le flow apprend déjà sa propre représentation à partir des signaux bruts -- ajouter des features manuelles dégrade la qualité du ranking plutôt que de l'améliorer.
+\end{frame}
+
+\begin{frame}{Annexe K : Choix de conception --- fonction de scoring}
+  \footnotesize
+  \begin{table}
+    \centering\footnotesize
+    \begin{tabular}{l@{\hspace{0.6cm}}l@{\hspace{0.6cm}}r@{\hspace{0.6cm}}r}
+      \toprule
+      \textbf{Variante} & \textbf{Coupling} & \textbf{Macro PR-AUC} & \textbf{Binary PR-AUC} \\
+      \midrule
+      \textbf{Affine NLL (déployé)} & affine & \textbf{0,985~$\pm$~0,012} & 0,964~$\pm$~0,023 \\
+      Spline typicality & spline & 0,937~$\pm$~0,047 & \textbf{0,979~$\pm$~0,019} \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  Le scoring affine (NLL directe) l'emporte en macro PR-AUC malgré un binary PR-AUC légèrement inférieur -- la typicality spline lisse les écarts entre classes de pannes au lieu de les séparer.
 \end{frame}
 
 \end{document}

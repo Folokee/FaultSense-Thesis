@@ -1,0 +1,1636 @@
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex.fmt)
+ restricted \write18 enabled.
+entering extended mode
+(main.tex
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-09-02>
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamer.cls
+Document Class: beamer 2026/01/22 v3.77 A class for typesetting presentations
+
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasemo
+des.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/etoolbox\etoolbox.s
+ty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasede
+code.sty))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/iftex\iftex.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseop
+tions.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics\keyval.sty
+))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.s
+ty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/iftex\ifvtex.sty)
+
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.c
+fg))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/math\pgfmath.st
+y
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfrc
+s.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgf
+util-common.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgf
+util-latex.def)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgf
+rcs.code.tex
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf\pgf.revision.
+tex)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfke
+ys.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgf
+keys.code.tex
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgf
+keyslibraryfiltered.code.tex)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmath.
+code.tex
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathu
+til.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathp
+arser.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.basic.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.trigonometric.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.random.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.comparison.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.base.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.round.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.misc.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+unctions.integerarithmetics.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathc
+alc.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathf
+loat.code.tex)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/base\size10.clo)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgfc
+ore.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphicx.s
+ty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphics.s
+ty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics\trig.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\graphi
+cs.cfg)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics-def\xetex.
+def)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/systemlayer\pgf
+sys.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\p
+gfsys.code.tex
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\p
+gf.cfg)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\p
+gfsys-xetex.def
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\p
+gfsys-dvipdfmx.def
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\p
+gfsys-common-pdf.def))))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\p
+gfsyssoftpath.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\p
+gfsysprotocol.code.tex))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/xcolor\xcolor.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\color.
+cfg)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/graphics\mathcolor.
+ltx))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcore.code.tex
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfint.c
+ode.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorepoints.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorepathconstruct.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorepathusage.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorescopes.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcoregraphicstate.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcoretransformations.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorequick.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcoreobjects.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorepathprocessing.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorearrows.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcoreshade.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcoreimage.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcoreexternal.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorelayers.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcoretransparency.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorepatterns.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pg
+fcorerdf.code.tex)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\xxcol
+or.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/base\atbegshi-ltx.s
+ty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hyperref.s
+ty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/kvsetkeys\kvsetkeys
+.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/kvdefinekeys\kvde
+finekeys.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pdfescape\pdfesca
+pe.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/ltxcmds\ltxcmds.s
+ty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pdftexcmds\pdftex
+cmds.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/infwarerr\infware
+rr.sty)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/hycolor\hycolor.sty
+)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\nameref.st
+y
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/refcount\refcount.s
+ty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/gettitlestring\ge
+ttitlestring.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/kvoptions\kvoptions
+.sty)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/stringenc\stringe
+nc.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\pd1enc.def
+)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/intcalc\intcalc.s
+ty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\puenc.def)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/url\url.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/bitset\bitset.sty
+
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/bigintcalc\bigint
+calc.sty))
+
+Package hyperref Message: Stopped early.
+
+)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hxetex.def
+
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/rerunfilecheck\reru
+nfilecheck.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/uniquecounter\uni
+quecounter.sty)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasere
+quires.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseco
+mpatibility.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasefo
+nt.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amssymb.st
+y
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amsfonts.s
+ty))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/sansmathaccent\sans
+mathaccent.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrlfil
+e.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrlfil
+e-hook.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/koma-script\scrlogo
+.sty)))))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasetr
+anslator.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/translator\translat
+or.sty))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasemi
+sc.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasetw
+oscreens.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseov
+erlay.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseti
+tle.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasese
+ction.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasefr
+ame.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseve
+rbatim.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasefr
+amesize.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasefr
+amecomponents.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseco
+lor.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseno
+tes.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseto
+c.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasete
+mplates.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseau
+xtemplates.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasebo
+xes.sty)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaselo
+calstructure.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/tools\enumerate.sty
+))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasena
+vigation.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbasena
+vigationsymbols.tex))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseth
+eorems.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsmath.sty
+For additional information on amsmath, use the `?' option.
+
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amstext.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsgen.sty)
+)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsbsy.sty)
+ (C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsopn.sty
+))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amscls\amsthm.sty))
+
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerbaseth
+emes.sty))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerthemed
+efault.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerfontth
+emedefault.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamercolort
+hemedefault.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beamerinnert
+hemedefault.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/beamer\beameroutert
+hemedefault.sty))) (beamerthememetropolis.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgfopts\pgfopts.sty
+) (beamerinnerthememetropolis.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/tools\calc.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/frontendlayer\t
+ikz.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgf.
+sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmo
+duleshapes.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmo
+duleplot.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\p
+gfcomp-version-0-65.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\p
+gfcomp-version-1-18.sty))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgffo
+r.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgf
+for.code.tex))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer
+/tikz\tikz.code.tex
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgf
+libraryplothandlers.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmo
+dulematrix.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer
+/tikz/libraries\tikzlibrarytopaths.code.tex)))) (beamerouterthememetropolis.sty
+) (beamercolorthememetropolis.sty) (beamerfontthememetropolis.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/iftex\ifxetex.sty
+)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/iftex\ifluatex.st
+y)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/fontspec\fontspec.s
+ty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/l3packages/xparse\x
+parse.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/l3kernel\expl3.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend
+-xetex.def)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/fontspec\fontspec-x
+etex.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/base\fontenc.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/fontspec\fontspec.c
+fg)))Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sans Lig.cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sans Light Ital.cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sa.cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sans Ital.cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sans Light .cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sans Light Italic .cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sans .cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Sans Italic .cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Mo.cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Mono Bo.cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Mono .cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+Running miktex-makemf.exe...
+
+Sorry, but miktex-makemf did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-makemf.log
+Running miktex-hbf2gf.exe...
+Couldn't open `Fira Mono Bold .cfg'
+
+hbf2gf (CJK ver. 4.8.4)
+
+
+Sorry, but miktex-maketfm did not succeed.
+
+The log file hopefully contains the information to get MiKTeX going again:
+
+  C:\Users\AmineTECH\AppData\Local\MiKTeX\miktex\log\miktex-maketfm.log
+
+
+Package beamerthememetropolis Warning: Could not find Fira Sans fonts on input 
+line 95.
+
+
+Package beamerthememetropolis Warning: Could not find Fira Mono fonts on input 
+line 95.
+
+))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/appendixnumberbeame
+r\appendixnumberbeamer.sty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/booktabs\booktabs.s
+ty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/tools\tabularx.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/tools\array.sty))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/babel\babel.sty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/babel\xebabel.def
+)
+*************************************
+* Local config file bblopts.cfg used
+*
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/arabi\bblopts.cfg)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/babel-french\fren
+ch.ldf
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/babel/locale/fr\b
+abel-french.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/babel-french\fren
+ch3.ldf)))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/carlisle\scalefnt.s
+ty)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/csquotes\csquotes.s
+ty
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/csquotes\csquotes.d
+ef)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/csquotes\csquotes.c
+fg))
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer
+/tikz/libraries\tikzlibrarypositioning.code.tex)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgf
+libraryarrows.meta.code.tex) (main.aux)
+*geometry* driver: auto-detecting
+*geometry* detected driver: xetex
+(main.out) (main.out)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/translator\translat
+or-basic-dictionary-English.dict)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/translator\translat
+or-bibliography-dictionary-English.dict)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/translator\translat
+or-environment-dictionary-English.dict)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/translator\translat
+or-months-dictionary-English.dict)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/translator\translat
+or-numbers-dictionary-English.dict)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/translator\translat
+or-theorem-dictionary-English.dict) (main.nav)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd)
+(C:\Users\AmineTECH\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd)
+Overfull \hbox (5.2929pt too wide) in paragraph at lines 137--137
+ [][][][][][][] 
+
+[1] (main.toc)
+[2]
+[3]
+[4]
+[5]
+[6]
+[7]
+[8]
+[9]
+[10]
+[11]
+[12]
+[13]
+[14]
+[15]
+Overfull \hbox (12.60977pt too wide) in paragraph at lines 386--386
+ [][] 
+
+[16]
+[17]
+[18]
+[19]
+[20]
+[21]
+[22]
+[23]
+[24]
+[25]
+[26]
+[27]
+[28]
+[29]
+[30]
+[31]
+[32]
+[33]
+[34]
+[35]
+[36]
+[37]
+[38]
+[39]
+[40]
+[41]
+[42]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 631; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/10 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[43]
+[44]
+[45]
+Overfull \vbox (5.38872pt too high) detected at line 663
+
+[46]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 681; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[47]
+[48]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 710; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[49]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 710; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[50]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 710; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[51]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 710; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[52]
+[53]
+! Undefined control sequence.
+\beamer@doifinframe ...n {table} \centering \egin 
+                                                  {tabular}{l@{\hspace {0.6c...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\toprule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\abovetopsep \global \@b...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\toprule \textbf {Modèle} &
+                                                   \textbf {Macro F1} & \tex...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...èle} & \textbf {Macro F1} &
+                                                   \textbf {Bal.\ Acc.} & \t...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...1} & \textbf {Bal.\ Acc.} &
+                                                   \textbf {Worst-class F1} ...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\midrule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global \@...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...e \onslide <1->{LightGBM} &
+                                                   \onslide <1->{0,934~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,934~$\pm $~0,098} &
+                                                   \onslide <1->{0,925~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,925~$\pm $~0,131} &
+                                                   \onslide <1->{0,860 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\ \onslide <2->{CatBoost} &
+                                                   \onslide <2->{0,948~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,948~$\pm $~0,090} &
+                                                   \onslide <2->{0,932~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,932~$\pm $~0,124} &
+                                                   \onslide <2->{0,893 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...3->{\textbf {ExtraTrees}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,959~$\pm $~0,078}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,943~$\pm $~0,113}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\bottomrule ->\noalign 
+                       {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global...
+l.732 \end{frame}
+                 
+! Misplaced \crcr.
+\tbl_crcr:n ...l_count_missing_cells:n {#1}}\crcr 
+                                                  
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...le:n {math/luamml/array/save}\egroup 
+                                                  \tag_socket_use:n {tbl/fin...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...tbl_restore_outer_cell_data: \egroup 
+                                                  \tag_socket_use:n {math/lu...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten $.
+<recently read> \egroup 
+                        
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{center} on input line 732 ended by \end{tabular}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing $ inserted.
+<inserted text> 
+                $
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{beamer@frameslide} on input line 732 ended by \end{beamer
+@framepauses}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing } inserted.
+<inserted text> 
+                }
+l.732 \end{frame}
+                 
+! Too many }'s.
+\endbeamer@frameslide ...amer@framepauses}\egroup 
+                                                  \ifx \beamer@frametitle \@...
+l.732 \end{frame}
+                 
+! Undefined control sequence.
+\endbeamer@frameslide ...box \else \beamer@zoomer 
+                                                  \fi \beamer@undolabels \be...
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{document} ended by \end{beamer@frameslide}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Extra \endgroup.
+\end  ...end#1\endcsname \@checkend {#1}\endgroup 
+                                                  \UseHook {env/#1/after}\if...
+l.732 \end{frame}
+                 
+
+[54]
+! Undefined control sequence.
+\beamer@doifinframe ...n {table} \centering \egin 
+                                                  {tabular}{l@{\hspace {0.6c...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\toprule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\abovetopsep \global \@b...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\toprule \textbf {Modèle} &
+                                                   \textbf {Macro F1} & \tex...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...èle} & \textbf {Macro F1} &
+                                                   \textbf {Bal.\ Acc.} & \t...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...1} & \textbf {Bal.\ Acc.} &
+                                                   \textbf {Worst-class F1} ...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\midrule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global \@...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...e \onslide <1->{LightGBM} &
+                                                   \onslide <1->{0,934~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,934~$\pm $~0,098} &
+                                                   \onslide <1->{0,925~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,925~$\pm $~0,131} &
+                                                   \onslide <1->{0,860 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\ \onslide <2->{CatBoost} &
+                                                   \onslide <2->{0,948~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,948~$\pm $~0,090} &
+                                                   \onslide <2->{0,932~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,932~$\pm $~0,124} &
+                                                   \onslide <2->{0,893 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...3->{\textbf {ExtraTrees}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,959~$\pm $~0,078}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,943~$\pm $~0,113}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\bottomrule ->\noalign 
+                       {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global...
+l.732 \end{frame}
+                 
+! Misplaced \crcr.
+\tbl_crcr:n ...l_count_missing_cells:n {#1}}\crcr 
+                                                  
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...le:n {math/luamml/array/save}\egroup 
+                                                  \tag_socket_use:n {tbl/fin...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...tbl_restore_outer_cell_data: \egroup 
+                                                  \tag_socket_use:n {math/lu...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten $.
+<recently read> \egroup 
+                        
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{center} on input line 732 ended by \end{tabular}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing $ inserted.
+<inserted text> 
+                $
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{beamer@frameslide} on input line 732 ended by \end{beamer
+@framepauses}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing } inserted.
+<inserted text> 
+                }
+l.732 \end{frame}
+                 
+! Too many }'s.
+\endbeamer@frameslide ...amer@framepauses}\egroup 
+                                                  \ifx \beamer@frametitle \@...
+l.732 \end{frame}
+                 
+! Undefined control sequence.
+\endbeamer@frameslide ...box \else \beamer@zoomer 
+                                                  \fi \beamer@undolabels \be...
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{document} ended by \end{beamer@frameslide}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Extra \endgroup.
+\end  ...end#1\endcsname \@checkend {#1}\endgroup 
+                                                  \UseHook {env/#1/after}\if...
+l.732 \end{frame}
+                 
+
+[55]
+! Undefined control sequence.
+\beamer@doifinframe ...n {table} \centering \egin 
+                                                  {tabular}{l@{\hspace {0.6c...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\toprule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\abovetopsep \global \@b...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\toprule \textbf {Modèle} &
+                                                   \textbf {Macro F1} & \tex...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...èle} & \textbf {Macro F1} &
+                                                   \textbf {Bal.\ Acc.} & \t...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...1} & \textbf {Bal.\ Acc.} &
+                                                   \textbf {Worst-class F1} ...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\midrule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global \@...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...e \onslide <1->{LightGBM} &
+                                                   \onslide <1->{0,934~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,934~$\pm $~0,098} &
+                                                   \onslide <1->{0,925~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,925~$\pm $~0,131} &
+                                                   \onslide <1->{0,860 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\ \onslide <2->{CatBoost} &
+                                                   \onslide <2->{0,948~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,948~$\pm $~0,090} &
+                                                   \onslide <2->{0,932~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,932~$\pm $~0,124} &
+                                                   \onslide <2->{0,893 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...3->{\textbf {ExtraTrees}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,959~$\pm $~0,078}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,943~$\pm $~0,113}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\bottomrule ->\noalign 
+                       {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global...
+l.732 \end{frame}
+                 
+! Misplaced \crcr.
+\tbl_crcr:n ...l_count_missing_cells:n {#1}}\crcr 
+                                                  
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...le:n {math/luamml/array/save}\egroup 
+                                                  \tag_socket_use:n {tbl/fin...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...tbl_restore_outer_cell_data: \egroup 
+                                                  \tag_socket_use:n {math/lu...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten $.
+<recently read> \egroup 
+                        
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{center} on input line 732 ended by \end{tabular}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing $ inserted.
+<inserted text> 
+                $
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{beamer@frameslide} on input line 732 ended by \end{beamer
+@framepauses}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing } inserted.
+<inserted text> 
+                }
+l.732 \end{frame}
+                 
+! Too many }'s.
+\endbeamer@frameslide ...amer@framepauses}\egroup 
+                                                  \ifx \beamer@frametitle \@...
+l.732 \end{frame}
+                 
+! Undefined control sequence.
+\endbeamer@frameslide ...box \else \beamer@zoomer 
+                                                  \fi \beamer@undolabels \be...
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{document} ended by \end{beamer@frameslide}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Extra \endgroup.
+\end  ...end#1\endcsname \@checkend {#1}\endgroup 
+                                                  \UseHook {env/#1/after}\if...
+l.732 \end{frame}
+                 
+
+[56]
+! Undefined control sequence.
+\beamer@doifinframe ...n {table} \centering \egin 
+                                                  {tabular}{l@{\hspace {0.6c...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\toprule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\abovetopsep \global \@b...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\toprule \textbf {Modèle} &
+                                                   \textbf {Macro F1} & \tex...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...èle} & \textbf {Macro F1} &
+                                                   \textbf {Bal.\ Acc.} & \t...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...1} & \textbf {Bal.\ Acc.} &
+                                                   \textbf {Worst-class F1} ...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\midrule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global \@...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...e \onslide <1->{LightGBM} &
+                                                   \onslide <1->{0,934~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,934~$\pm $~0,098} &
+                                                   \onslide <1->{0,925~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,925~$\pm $~0,131} &
+                                                   \onslide <1->{0,860 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\ \onslide <2->{CatBoost} &
+                                                   \onslide <2->{0,948~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,948~$\pm $~0,090} &
+                                                   \onslide <2->{0,932~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,932~$\pm $~0,124} &
+                                                   \onslide <2->{0,893 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...3->{\textbf {ExtraTrees}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,959~$\pm $~0,078}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,943~$\pm $~0,113}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\bottomrule ->\noalign 
+                       {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global...
+l.732 \end{frame}
+                 
+! Misplaced \crcr.
+\tbl_crcr:n ...l_count_missing_cells:n {#1}}\crcr 
+                                                  
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...le:n {math/luamml/array/save}\egroup 
+                                                  \tag_socket_use:n {tbl/fin...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...tbl_restore_outer_cell_data: \egroup 
+                                                  \tag_socket_use:n {math/lu...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten $.
+<recently read> \egroup 
+                        
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{center} on input line 732 ended by \end{tabular}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing $ inserted.
+<inserted text> 
+                $
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{beamer@frameslide} on input line 732 ended by \end{beamer
+@framepauses}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing } inserted.
+<inserted text> 
+                }
+l.732 \end{frame}
+                 
+! Too many }'s.
+\endbeamer@frameslide ...amer@framepauses}\egroup 
+                                                  \ifx \beamer@frametitle \@...
+l.732 \end{frame}
+                 
+! Undefined control sequence.
+\endbeamer@frameslide ...box \else \beamer@zoomer 
+                                                  \fi \beamer@undolabels \be...
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{document} ended by \end{beamer@frameslide}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Extra \endgroup.
+\end  ...end#1\endcsname \@checkend {#1}\endgroup 
+                                                  \UseHook {env/#1/after}\if...
+l.732 \end{frame}
+                 
+
+[57]
+! Undefined control sequence.
+\beamer@doifinframe ...n {table} \centering \egin 
+                                                  {tabular}{l@{\hspace {0.6c...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\toprule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\abovetopsep \global \@b...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\toprule \textbf {Modèle} &
+                                                   \textbf {Macro F1} & \tex...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...èle} & \textbf {Macro F1} &
+                                                   \textbf {Bal.\ Acc.} & \t...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...1} & \textbf {Bal.\ Acc.} &
+                                                   \textbf {Worst-class F1} ...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\midrule ->\noalign 
+                    {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global \@...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...e \onslide <1->{LightGBM} &
+                                                   \onslide <1->{0,934~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,934~$\pm $~0,098} &
+                                                   \onslide <1->{0,925~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <1->{0,925~$\pm $~0,131} &
+                                                   \onslide <1->{0,860 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...\ \onslide <2->{CatBoost} &
+                                                   \onslide <2->{0,948~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,948~$\pm $~0,090} &
+                                                   \onslide <2->{0,932~$\pm ...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ... <2->{0,932~$\pm $~0,124} &
+                                                   \onslide <2->{0,893 (Dégr...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...3->{\textbf {ExtraTrees}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,959~$\pm $~0,078}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced alignment tab character &.
+\beamer@doifinframe ...tbf {0,943~$\pm $~0,113}} &
+                                                   \onslide <3->{\textbf {0,...
+l.732 \end{frame}
+                 
+! Misplaced \noalign.
+\bottomrule ->\noalign 
+                       {\ifnum 0=`}\fi \@aboverulesep =\aboverulesep \global...
+l.732 \end{frame}
+                 
+! Misplaced \crcr.
+\tbl_crcr:n ...l_count_missing_cells:n {#1}}\crcr 
+                                                  
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...le:n {math/luamml/array/save}\egroup 
+                                                  \tag_socket_use:n {tbl/fin...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten \endgroup.
+\endarray ...tbl_restore_outer_cell_data: \egroup 
+                                                  \tag_socket_use:n {math/lu...
+l.732 \end{frame}
+                 
+! Extra }, or forgotten $.
+<recently read> \egroup 
+                        
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{center} on input line 732 ended by \end{tabular}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing $ inserted.
+<inserted text> 
+                $
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{beamer@frameslide} on input line 732 ended by \end{beamer
+@framepauses}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Missing } inserted.
+<inserted text> 
+                }
+l.732 \end{frame}
+                 
+! Too many }'s.
+\endbeamer@frameslide ...amer@framepauses}\egroup 
+                                                  \ifx \beamer@frametitle \@...
+l.732 \end{frame}
+                 
+! Undefined control sequence.
+\endbeamer@frameslide ...box \else \beamer@zoomer 
+                                                  \fi \beamer@undolabels \be...
+l.732 \end{frame}
+                 
+
+! LaTeX Error: \begin{document} ended by \end{beamer@frameslide}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.732 \end{frame}
+                 
+! Extra \endgroup.
+\end  ...end#1\endcsname \@checkend {#1}\endgroup 
+                                                  \UseHook {env/#1/after}\if...
+l.732 \end{frame}
+                 
+
+[58]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 751; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[59]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 751; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[60]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 751; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[61]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 751; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[62]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 751; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[63]
+[64]
+[65]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 820; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/10 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+Overfull \vbox (11.26811pt too high) detected at line 820
+
+[66]
+Overfull \vbox (20.5188pt too high) detected at line 851
+
+[67]
+[68]
+Overfull \vbox (11.12752pt too high) detected at line 887
+
+[69]
+[70]
+[71]
+[72]
+[73]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 982; it cannot be
+(fontspec)                used with a font that wasn't selected by a fontspec
+(fontspec)                command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/7 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[74]
+[75]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 1014; it cannot
+(fontspec)                be used with a font that wasn't selected by a
+(fontspec)                fontspec command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/7 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[76]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 1033; it cannot
+(fontspec)                be used with a font that wasn't selected by a
+(fontspec)                fontspec command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/5 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[77]
+[78]
+[79]
+[80]
+[81]
+[82]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 1112; it cannot
+(fontspec)                be used with a font that wasn't selected by a
+(fontspec)                fontspec command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[83]
+
+Package fontspec Warning: 
+(fontspec)                \addfontfeature(s) ignored on line 1128; it cannot
+(fontspec)                be used with a font that wasn't selected by a
+(fontspec)                fontspec command.
+(fontspec)                 
+(fontspec)                 The current font is "\TU/lmss/m/n/8 ".
+(fontspec)                  The requested feature is "Numbers={Monospaced}". 
+
+
+[84] (main.aux) )
+(see the transcript file for additional information)
+Output written on main.pdf (84 pages).
+Transcript written on main.log.
