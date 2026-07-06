@@ -805,6 +805,174 @@ des défauts dans les systèmes photovoltaïques.
 
 \end{frame}
 
+\begin{frame}{Contrat d'export des modèles}
+
+\centering
+\vspace{0.15cm}
+
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}[
+  block/.style={
+    draw=mDarkTeal!70,
+    fill=mDarkTeal!8,
+    rounded corners=6pt,
+    minimum width=3.2cm,
+    minimum height=1.15cm,
+    align=center,
+    font=\small\bfseries
+  },
+  contract/.style={
+    draw=mLightBrown!80!black,
+    fill=mLightBrown!16,
+    rounded corners=6pt,
+    minimum width=4.2cm,
+    minimum height=2.4cm,
+    align=center,
+    font=\scriptsize
+  },
+  check/.style={
+    draw=mDarkTeal!70,
+    fill=white,
+    rounded corners=5pt,
+    minimum width=3.8cm,
+    minimum height=1.25cm,
+    align=center,
+    font=\scriptsize
+  },
+  arrow/.style={
+    -{Latex[length=2.5mm]},
+    draw=mDarkTeal!85,
+    line width=0.6pt
+  },
+  label/.style={
+    font=\tiny,
+    align=center
+  }
+]
+
+% Top row
+\node[block] (pcflow) at (0,0) {PC-Flow\\PyTorch};
+\node[block] (et) at (0,-1.8) {ExtraTrees\\scikit-learn};
+
+\node[block] (onnx1) at (4.5,0) {Export ONNX\\\texttt{torch.onnx.export}};
+\node[block] (onnx2) at (4.5,-1.8) {Conversion ONNX\\\texttt{skl2onnx}};
+
+\node[contract] (contract) at (9.4,-0.9) {
+  \textbf{\color{mDarkTeal}Contrat d'artefact}\\[4pt]
+  Forme d'entrée\\
+  Ordre des features\\
+  Paramètres du scaler\\
+  Canaux physiques\\
+  Seuils d'alarme\\
+  Calibration des probabilités
+};
+
+\node[check] (startup) at (14.0,-0.9) {
+  \textbf{\color{mDarkTeal}Validation au démarrage}\\[3pt]
+  vérification du schéma\\
+  chargement scaler + seuils\\
+  erreur si incohérence
+};
+
+\node[block] (runtime) at (18.2,-0.9) {Inférence\\ONNX Runtime};
+
+% Arrows
+\draw[arrow] (pcflow) -- (onnx1);
+\draw[arrow] (et) -- (onnx2);
+
+\draw[arrow] (onnx1) -- node[label, above] {modèle exporté} (contract);
+\draw[arrow] (onnx2) -- node[label, below] {modèle exporté} (contract);
+
+\draw[arrow] (contract) -- node[label, above] {contrôle\\avant inférence} (startup);
+\draw[arrow] (startup) -- node[label, above] {si valide} (runtime);
+
+\end{tikzpicture}
+}
+
+\vspace{0.35cm}
+
+\begin{block}{Idée clé}
+\small
+Le contrat empêche une divergence silencieuse entre l'environnement d'entraînement et l'environnement embarqué : si les entrées, les transformations ou les seuils ne correspondent pas, l'exécution s'arrête avant la première prédiction.
+\end{block}
+
+\end{frame}
+
+\begin{frame}{Détection de dérive opérationnelle}
+
+\centering
+\vspace{0.25cm}
+
+\begin{tikzpicture}[
+  block/.style={
+    draw=mDarkTeal!70,
+    fill=mDarkTeal!8,
+    rounded corners=5pt,
+    minimum width=2.8cm,
+    minimum height=1.05cm,
+    align=center,
+    font=\small\bfseries
+  },
+  warn/.style={
+    draw=mLightBrown!80!black,
+    fill=mLightBrown!15,
+    rounded corners=5pt,
+    minimum width=2.8cm,
+    minimum height=1.05cm,
+    align=center,
+    font=\small\bfseries
+  },
+  arrow/.style={
+    -{Latex[length=2.5mm]},
+    draw=mDarkTeal!85,
+    line width=0.65pt
+  },
+  label/.style={
+    font=\scriptsize,
+    align=center
+  }
+]
+
+% Main flow
+\node[block] (regime) at (0,0) {Régime\\d'exploitation};
+\node[block] (agg) at (3.8,0) {Agrégation\\quotidienne};
+\node[warn] (ph) at (7.6,0) {Page-Hinkley\\bidirectionnel};
+\node[block] (stage) at (11.4,0) {Niveau\\de dérive};
+\node[block] (dash) at (15.2,0) {Dashboard\\opérateur};
+
+\draw[arrow] (regime) -- node[label, above=4pt] {$irr$, $T_{PV}$} (agg);
+\draw[arrow] (agg) -- node[label, above=4pt] {statistiques} (ph);
+\draw[arrow] (ph) -- node[label, above=4pt] {départ persistant} (stage);
+\draw[arrow] (stage) -- node[label, above=4pt] {alerte} (dash);
+
+% Stages
+\node[
+  below=0.9cm of stage,
+  text width=7.5cm,
+  align=center,
+  font=\small
+] {
+  \textbf{\color{mDarkTeal}Normal}
+  \quad $\rightarrow$ \quad
+  \textbf{\color{mLightBrown!80!black}Advisory}
+  \quad $\rightarrow$ \quad
+  \textbf{\color{mLightBrown!80!black}Action-ready}
+};
+
+\node[
+  below=1.7cm of stage,
+  text width=9.5cm,
+  align=center,
+  font=\scriptsize,
+  color=black!75
+] {
+  Le module signale un changement durable des conditions de déploiement avant que la performance du détecteur ne se dégrade silencieusement.
+};
+
+\end{tikzpicture}
+
+\end{frame}
+
 \begin{frame}{Latence du système complet sur Jetson Nano}
 
 \begin{block}{Protocole de mesure}
