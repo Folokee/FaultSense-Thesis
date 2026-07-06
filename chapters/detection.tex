@@ -7,15 +7,7 @@ This section presents the anomaly detection task: distinguishing normal PV opera
 
 \subsubsection{Bayesian Online Change-Point Detection (BOCD)}
 
-BOCD tracks a run-length distribution, i.e. the probability that the current time step is $r$ steps into the present stationary segment. When the posterior concentrates near zero, a change point is likely.
-
-Each feature is modelled independently with a Normal-Inverse-Gamma (NIG) conjugate prior, which places a prior over both the mean and variance of a Gaussian and allows exact Bayesian updates. The joint predictive density is the product of four univariate Student-$t$ predictives. A geometric hazard parameter $\lambda$ sets the expected run length between change points ($h = 1/\lambda$).
-
-\paragraph{Scoring function.}
-\begin{equation}
-    s_t = -\log\!\left(\sum_{r=0}^{R_{\max}} R_t(r)\, p(x_t \mid r)\right),
-\end{equation}
-where $R_t(r)$ is the run-length posterior, $p(x_t \mid r)$ the Student-$t$ predictive density under run length $r$, and $R_{\max}=200$ a truncation limit. The run-length distribution is reset at each segment boundary to prevent state from a previous episode affecting the next.
+BOCD was implemented as described in Section~\ref{sec:online-methods}, with each feature modelled independently by a Normal-Inverse-Gamma conjugate prior (the joint predictive density is the product of four univariate Student-$t$ predictives), a run-length truncation limit of $R_{\max}=200$, and the run-length distribution reset at each segment boundary to prevent state from a previous episode affecting the next.
 
 \paragraph{Hyperparameter search space.}
 BOCD is a closed-form Bayesian model; it has no gradient-based optimizer. The sole tuned parameter is \texttt{hazard\_lambda} (Table~\ref{tab:bocd-hpo}).
@@ -67,16 +59,7 @@ Shadowing     (cls~4) & 0.865 & 0.067 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{Isolation Forest}
 
-Isolation Forest builds an ensemble of random partitioning trees. Anomalous points require fewer splits to be isolated and therefore have shorter average path lengths from the root.
-
-\paragraph{Scoring function.}
-Each isolation tree is built by recursively selecting a random feature and a random split threshold until a point is isolated in its own leaf. The \emph{path length} $h(x)$ is the number of splits needed to isolate sample $x$ in one tree. Anomalous points, being rare and far from the bulk of the data, are separated in very few splits; normal points, densely packed with similar neighbours, require many more. The raw anomaly score is:
-\begin{equation}
-    s(x,\psi) = 2^{-\,\mathbb{E}[h(x)]\,/\,c(\psi)},
-\end{equation}
-where $\mathbb{E}[h(x)]$ is the average path length over all trees and $c(\psi) = 2H(\psi-1) - 2(\psi-1)/\psi$ is a normalisation constant equal to the expected path length of an unsuccessful binary search over $\psi$ samples ($H$ denotes the harmonic number). This normalisation makes the score comparable across different subsample sizes. A score near 1 signals an anomaly (short average path); a score near 0 signals a normal point.
-
-Sklearn's \texttt{score\_samples} returns the negative normalised average path length directly, so lower (more negative) values indicate anomalies. Negating aligns with the project-wide convention that higher values indicate greater anomaly likelihood:
+Isolation Forest was implemented as described in Section~\ref{sec:offline-ml}. Sklearn's \texttt{score\_samples} returns the negative normalised average path length directly, so lower (more negative) values indicate anomalies; negating it aligns with the project-wide convention that higher values indicate greater anomaly likelihood:
 \begin{equation}
     s(x) = -\texttt{score\_samples}(x).
 \end{equation}
@@ -133,16 +116,10 @@ Shadowing     (cls~4) & 0.972 & 0.029 & 1000 \\
 % ────────────────────────────────────────────────────────────────────────────
 \subsubsection{One-Class Support Vector Machine (OC-SVM)}
 
-OC-SVM maps the training data into a high-dimensional feature space via a kernel function $k(x, x')$ and finds the tightest hyperplane that encloses the normal training data with a controlled fraction of outliers. The decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the boundary (normal) and negative for points outside (anomalous). Two kernel families were explored separately: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$ and a cubic polynomial kernel.
+OC-SVM was implemented as described in Section~\ref{sec:offline-ml}. Two kernel families were explored separately: the Radial Basis Function (RBF) kernel $k(x,x') = \exp(-\gamma\|x-x'\|^2)$ and a cubic polynomial kernel.
 
 \paragraph{Training subsample.}
 The full normal training set contains 183\,801 samples. Because fitting a kernel SVM scales cubically with the number of support points, a group-stratified temporal subsample of 40\,000 samples is drawn before fitting, preserving episode diversity. Evaluation is performed on the complete val and test partitions.
-
-\paragraph{Scoring function.}
-\begin{equation}
-    s(x) = -f_{\text{OCSVM}}(x),
-\end{equation}
-so that points outside the normal boundary score high.
 
 \paragraph{Hyperparameter search space.}
 OC-SVM is fitted by solving a quadratic program; it has no gradient-based optimizer. \texttt{nu} sets an upper bound on the fraction of training points allowed outside the boundary; \texttt{gamma} is the inverse width of the Gaussian kernel. Table~\ref{tab:ocsvm-hpo} reports the search space and winning values.
@@ -298,7 +275,7 @@ Shadowing     (cls~4) & 0.981 & 0.018 & 1000 \\
 \end{table}
 
 % ────────────────────────────────────────────────────────────────────────────
-\subsubsection{Gated Transformer-BiLSTM Anomaly Detector (GTBAD)}\label{sec:ad-gtbad}
+\subsubsection{GVSAO Transformer-BiLSTM Anomaly Detector (GTBAD)}\label{sec:ad-gtbad}
 
 GTBAD~\citep{GTBADGVSAOTransformerBiLSTMbasedTimeseries2026} is a reconstruction-based deep anomaly detector that combines a Transformer encoder with a bidirectional LSTM (BiLSTM) decoder. The model learns to reconstruct normal operating patterns and flags anomalies through reconstruction error. The architecture is shown in Figure~\ref{fig:gtbad_architecture}.
 

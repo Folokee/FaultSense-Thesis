@@ -150,6 +150,13 @@ Artificial intelligence (AI) techniques are increasingly adopted to support auto
 
 Online methods operate on streaming data, processing one observation at a time without storing or re-scanning large historical buffers, which makes them well-suited for deployment on edge hardware in PV monitoring. They maintain a compact internal state that summarises the relevant past and update incrementally as new measurements arrive. Examples include passive-aggressive algorithms for margin-based incremental learning \citep{crammer2006online}, online manifold-regularized methods that exploit the geometric neighbourhood of unlabeled points to guide the decision boundary \citep{goldberg2011online}, and Bayesian Online Changepoint Detection (BOCD) which maintains a full posterior over regime changes \citep{BayesianOnlineChangepoint2007}.
 
+\paragraph{Bayesian Online Changepoint Detection.}
+BOCD frames change detection as inference over a run-length variable $r_t$, the number of time steps elapsed since the most recent changepoint. At every step, the model maintains a posterior distribution $R_t(r)$ over all admissible run lengths, updated recursively from the previous posterior and the predictive likelihood of the new observation under each hypothesised run length. A geometric hazard function with rate parameter $\lambda$ specifies the prior probability of a changepoint occurring at any given step, so that the expected run length between successive changepoints is $h=1/\lambda$. Placing a Normal-Inverse-Gamma (NIG) conjugate prior over the mean and variance of each feature keeps the predictive distribution under a given run length available in closed form as a Student-$t$ density, so the posterior sufficient statistics update exactly at every step, without approximation or gradient-based optimisation. The overall anomaly score aggregates the predictive likelihood across the run-length posterior:
+\begin{equation}
+    s_t = -\log\!\left(\sum_{r=0}^{R_{\max}} R_t(r)\, p(x_t \mid r)\right),
+\end{equation}
+where $R_{\max}$ truncates the run-length distribution to bound the computation. A concentration of posterior mass near $r=0$ indicates that recent observations are unlikely under any previously seen regime, signalling a changepoint. Because it requires no gradient-based training and updates its posterior in closed form from each new sample, BOCD is well suited to streaming deployment on constrained hardware.
+
 \subsection{Offline Methods}
 \label{sec:offline-methods}
 
@@ -174,7 +181,7 @@ where $w$ is the normal vector of the hyperplane and $b$ is the bias term. For n
 K(x_i,x_j)=\exp\bigl(-\gamma \lVert x_i-x_j \rVert^2\bigr).
 \end{equation}
 
-The One-Class SVM (OC-SVM) variant extends this principle to semi-supervised anomaly detection by learning the smallest enclosing region of normal data in feature space \citep{scholkopf2001oneclass}. SVM models are widely used in PV fault diagnosis because of their strong generalization capability and robustness in high-dimensional feature spaces.
+The One-Class SVM (OC-SVM) variant extends this principle to semi-supervised anomaly detection by learning the smallest enclosing region of normal data in feature space \citep{scholkopf2001oneclass}. Rather than separating two labelled classes, OC-SVM maps the training data into a high-dimensional feature space via a kernel function $k(x,x')$ and finds the tightest hyperplane that encloses the normal training data while allowing a controlled fraction of points to fall outside it. The resulting decision function $f_{\text{OCSVM}}(x)$ is positive for points inside the learned boundary, which are treated as normal, and negative for points outside it, which are treated as anomalous; scoring a sample as $s(x)=-f_{\text{OCSVM}}(x)$ makes higher values correspond to greater anomaly likelihood. The tightness of the boundary is governed by a parameter $\nu$, which upper-bounds the fraction of training points allowed to lie outside it, while the kernel bandwidth (e.g.\ $\gamma$ for the RBF kernel) controls the flexibility of the enclosing surface. Because the underlying optimisation is a quadratic program with no labelled anomalies required, OC-SVM is fitted purely on examples of normal operation, making it attractive whenever fault-labelled data is scarce. SVM models are widely used in PV fault diagnosis because of their strong generalization capability and robustness in high-dimensional feature spaces.
 
 \paragraph{Ensemble Methods.}
 Ensemble methods combine multiple base learners to produce a single prediction that is more robust and accurate than any individual model. In PV fault diagnosis, ensemble techniques are valued for their ability to handle noisy sensor data, capture complex feature interactions, and maintain calibration under class imbalance through native weighting mechanisms.
@@ -189,7 +196,11 @@ H(S)=-\sum_{i=1}^{C}p_i\log_2(p_i),
 \end{equation}
 where $p_i$ is the probability of class $i$ and $C$ is the number of classes.
 
-Decision Trees are interpretable and computationally efficient, making them suitable for fault classification and rule-based diagnostic systems. An unsupervised variant, the Isolation Forest (IF), detects anomalies by constructing an ensemble of randomized trees and exploiting the property that outliers are isolated in fewer splits than normal observations \citep{liu2008isolation}; it outputs a directly thresholdable anomaly score without requiring labeled fault data.
+Decision Trees are interpretable and computationally efficient, making them suitable for fault classification and rule-based diagnostic systems. An unsupervised variant, the Isolation Forest (IF), detects anomalies by constructing an ensemble of randomized trees and exploiting the property that outliers are isolated in fewer splits than normal observations \citep{liu2008isolation}; it outputs a directly thresholdable anomaly score without requiring labeled fault data. Each isolation tree is built by recursively selecting a random feature and a random split threshold until every point is isolated in its own leaf, so that the \emph{path length} $h(x)$, the number of splits needed to isolate a sample $x$, is short for anomalous points, which are rare and lie far from the bulk of the data, and long for normal points, which are densely packed with similar neighbours. The raw anomaly score normalises the average path length over all trees against the expected path length of an unsuccessful binary search:
+\begin{equation}
+    s(x,\psi) = 2^{-\,\mathbb{E}[h(x)]\,/\,c(\psi)},
+\end{equation}
+where $c(\psi) = 2H(\psi-1) - 2(\psi-1)/\psi$ is the normalisation constant for a subsample of size $\psi$ ($H$ the harmonic number), making scores comparable across different subsample sizes; a score near 1 signals an anomaly (short average path) and a score near 0 signals a normal point. Because each tree is built by simple random partitioning rather than an optimisation objective, an Isolation Forest requires no gradient-based training and scales well to large datasets.
 
 \subparagraph{Random Forest}
 
