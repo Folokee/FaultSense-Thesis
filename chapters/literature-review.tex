@@ -152,16 +152,26 @@ The preceding review reveals a landscape of considerable methodological diversit
 % \end{tabular}
 % \end{table}
 
-\begin{table}[H]
-\centering
-\caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter.}
-\label{tab:synthesis}
+\begingroup
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{p{3.4cm}llp{4.5cm}cc}
+\begin{longtable}{p{3.4cm}llp{4.5cm}cc}
+\caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter.}
+\label{tab:synthesis}\\
 \toprule
 \textbf{Author(s)} & \textbf{Year} & \textbf{Modality} & \textbf{Method} & \textbf{Data} & \textbf{Deployment} \\
 \midrule
+\endfirsthead
+\multicolumn{6}{c}{\tablename~\thetable{} -- continued from previous page}\\
+\toprule
+\textbf{Author(s)} & \textbf{Year} & \textbf{Modality} & \textbf{Method} & \textbf{Data} & \textbf{Deployment} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{Continued on next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
 Manno et al.            & 2021 & Thermal      & Binary CNN (operative vs hotspot)            & R   & \textemdash \\
 Akram et al.            & 2020 & Thermal      & EL$\rightarrow$IR transfer learning          & R   & \textemdash \\
 Korkmaz \& Acikgoz      & 2022 & Thermal      & Multi-scale CNN (AlexNet backbone)           & R   & \textemdash \\
@@ -183,13 +193,13 @@ Titouni et al.          & 2025 & Electrical   & Hybrid CNN-Autoencoder (GPVS-Fau
 Attouri et al.          & 2026 & Electrical   & Adaptive PolyKAN + AE compression            & R+S & Lightweight \\
 Yan et al.              & 2025 & Electrical   & SOM-DBTGNet (graph)                          & N/S & \textemdash \\
 Cai \& Wai              & 2022 & Electrical   & VMD + PSO-SVM (arc fault)                    & R   & \textemdash \\
-\bottomrule
-\end{tabular}
+\end{longtable}
+\endgroup
 
-\vspace{4pt}
 \footnotesize
 \textbf{Data sources:} R = real field/laboratory installations; S = circuit-level simulation; R+S = mixed sources. \textbf{Deployment:} \emph{Edge} = pipeline deployed and validated on embedded hardware; \emph{Lightweight} = explicit footprint or compute reduction reported, no on-device validation; \textemdash{} = neither.
-\end{table}
+\normalsize
+
 Three patterns emerge from this synthesis. First, reported accuracies are consistently high across all modalities and method families, frequently in the 90 to 99\% band and occasionally approaching 100\%; these figures must nevertheless be interpreted with caution because a substantial fraction of the reviewed studies rely on circuit-level simulation rather than field measurements, or evaluate on small or artificially class-balanced test sets. Second, the electrical and meteorological modality is the most extensively represented in the literature, consistent with the observation that operational electrical measurements are the most readily available data type in real PV installations. Third, although several recent contributions explicitly pursue computationally efficient designs, ranging from the model-size reduction of ST-YOLO \citep{xie2024styolo} to the lightweight attention architecture of HOTSPOT-YOLO \citep{dhimish2025hotspot} and the 88\% execution-time and 40\% memory reduction reported for the PolyKAN-AE pipeline \citep{attouri_adaptive_2026}, efficiency in the reviewed literature is most often expressed through proxy metrics computed on workstation-class hardware, such as parameter count, floating-point operations, or theoretical inference time. End-to-end deployment on a representative embedded platform, with measured inference latency, memory footprint, and power consumption obtained on the target device under realistic operational conditions, has been reported only by a small number of works, notably the embedded monitoring system of \citet{costa2020sensors}.
 
 % ────────────────────────────────────────────────────────────
