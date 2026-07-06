@@ -1153,4 +1153,65 @@ Le pipeline complet reste largement sous la contrainte temps réel, avec une mar
   Le scoring affine (NLL directe) l'emporte en macro PR-AUC malgré un binary PR-AUC légèrement inférieur -- la typicality spline lisse les écarts entre classes de pannes au lieu de les séparer.
 \end{frame}
 
+% ─────────────────────────────────────────────────────────────────
+% ANNEXE FORMULES — Fonctions de scoring (source : mémoire FDD)
+% ─────────────────────────────────────────────────────────────────
+
+\begin{frame}{Formules de scoring — Méthodes classiques}
+  \footnotesize
+  \begin{block}{BOCD — Rupture bayésienne en ligne}
+    \[
+      s_t = -\log\!\left(\sum_{r=0}^{R_{\max}} R_t(r)\; p(x_t \mid r)\right)
+    \]
+    $R_t(r)$ : postérieur de longueur de run~; $p(x_t\mid r)$ : densité prédictive Student-$t$~; $R_{\max}=200$.
+  \end{block}
+
+  \vspace{0.4em}
+  \begin{block}{Isolation Forest — Partitionnement aléatoire}
+    \[
+      s(x,\psi) = 2^{-\,\mathbb{E}[h(x)]\,/\,c(\psi)},
+      \qquad c(\psi) = 2H(\psi-1) - \tfrac{2(\psi-1)}{\psi}
+    \]
+    $h(x)$ : longueur de chemin moyenne~; $\psi$ : taille du sous-échantillon~; score $\to 1$ $\Rightarrow$ anomalie.
+  \end{block}
+
+  \vspace{0.4em}
+  \begin{block}{OC-SVM — Frontière dans l'espace à noyau}
+    \[
+      s(x) = -f_{\mathrm{OCSVM}}(x)
+    \]
+    Points hors frontière décisionnelle $\Rightarrow$ score élevé.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Formules de scoring — Méthodes Deep Learning}
+  \footnotesize
+  \begin{block}{GTBAD — Reconstruction (Transformer + BiLSTM)}
+    \[
+      s(x) = \|x - \hat{x}\|^2
+    \]
+    Erreur de reconstruction sur les données normales. Entraîné avec $\mathcal{L} = \frac{1}{N}\sum_i \|x_i - \hat{x}_i\|^2$.
+  \end{block}
+
+  \vspace{0.3em}
+  \begin{block}{MAAT — Discordance d'association temporelle}
+    \[
+      A_t = \mathrm{Softmax}(-T \cdot D_t)\cdot\|x_t - \hat{x}_t\|^2,
+      \qquad D_t = \mathrm{KL}(S\|P) + \mathrm{KL}(P\|S)
+    \]
+    $S$ : poids d'attention appris~; $P$ : prior gaussien local~; anomalie $\Rightarrow$ $S \approx P$ $\Rightarrow$ $D_t$ faible $\Rightarrow$ poids Softmax élevé.
+  \end{block}
+
+  \vspace{0.3em}
+  \begin{block}{PC-Flow — Log-vraisemblance négative (normalizing flow)}
+    \[
+      s(x) = -\log p(x \mid c\,;\theta),
+      \quad
+      \log p(x;\theta) = \log p_Z\!\left(f_\theta^{-1}(x)\right)
+        + \log\!\left|\det\!\tfrac{\partial f_\theta^{-1}(x)}{\partial x}\right|
+    \]
+    $c = (\text{irradiance},\, T_{\mathrm{PV}})$~; $p_Z$ : gaussienne standard~; score élevé $\Rightarrow$ zone à faible densité $\Rightarrow$ anomalie.
+  \end{block}
+\end{frame}
+
 \end{document}
