@@ -552,5 +552,4 @@ This chapter presented the design choices underlying the proposed PV FDD system.
 
 The pipeline enforces a train-only estimation discipline across all transformation stages, and the feature engineering profiles are constructed to support controlled ablation across experiments. Leakage is audited at three levels after each training run (label shuffle, feature importance, and performance sanity) to ensure that reported results reflect genuine model behavior.
 
-The evaluation methodology is uniform across both tasks: 5-fold episode-stratified cross-validation for uncertainty estimation, task-appropriate primary metrics, and explicit calibration policies for both detection thresholds and output probabilities. The implementation chapter applies these protocols consistently across all experiments.
-
+The evaluation is identical for both tasks, using 5-fold episode-stratified cross-validation, task-specific primary metrics, and calibrated detection thresholds and output probabilities, applied consistently throughout the implementation chapter.
