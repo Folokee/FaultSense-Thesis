@@ -1,7 +1,7 @@
 % ============================================================
 % Chapter 3: Related Work
 % ============================================================
-\chapter{Related Work}
+\chapter{Related Works}
 \label{ch:related-work}
 
 \section{Introduction}
@@ -9,7 +9,7 @@
 The field of fault detection and diagnosis in photovoltaic systems has attracted growing research interest over the past decade, driven by the rapid expansion of solar installations and the corresponding need for reliable automated monitoring solutions. This chapter reviews the existing literature with the objective of situating the contributions of this work within the current state of the art. The review is organized around three distinct families of diagnostic approaches, differentiated by the type of input data they exploit: thermographic imaging, current-voltage characteristic curve analysis, and operational electrical and meteorological measurements. Before examining these methodological families, it is necessary to characterize the datasets available in the field, as the nature of the training data fundamentally conditions the validity of performance claims and the generalizability of the proposed models. The chapter closes with a critical synthesis of the identified limitations and a statement of the research gaps that motivate the contributions of this thesis.
 
 % ────────────────────────────────────────────────────────────
-\section{Data Survey}
+\section{Dataset Survey}
 \label{sec:data-survey}
 % ────────────────────────────────────────────────────────────
 
@@ -75,7 +75,7 @@ Early methods extract interpretable scalar features from the I-V curve (short-ci
 More recent work bypasses manual feature extraction entirely. \citet{liu2021sae} used a stacked autoencoder to learn a latent representation of the I-V curve directly, then applied clustering to group measurements into fault categories without labeled data. \citet{qu2024dust} transformed I-V curves into graphical image representations and applied CNNs with convolutional block attention modules (CBAM) under varying soiling and dust conditions, achieving above 99\% on both simulated and experimental data. \citet{gong2024deep} constructed a three-dimensional feature map from current, voltage, and power signals simultaneously; the resulting MIFNet, optimised with an adaptive sparrow search algorithm, reached 99.64\% average recognition accuracy across single- and multi-component fault scenarios.
 
 \subsection{Limitations}
-The central limitation of this approachis the nature of the measurement itself: acquiring an I-V curve requires actively sweeping the module or string operating point, which is a discrete diagnostic event rather than a continuous observation. Traditional sweep procedures rely on dedicated tracer instruments and interrupt power generation; more recent inverter-integrated solutions have reduced this overhead but the procedure remains an event-driven sweep dependent on vendor-specific hardware. The accuracy of any sweep is also sensitive to irradiance and temperature changes during acquisition, which can mask subtle fault signatures under variable cloud cover. These constraints position I-V curve analysis as a periodic procedure and motivate the search for methods that operate on continuously available operational measurements.
+The central limitation of this approachis the nature of the measurement itself: acquiring an I-V curve requires actively sweeping the module or string operating point, which is a discrete diagnostic event rather than a continuous observation. Traditional sweep procedures rely on dedicated tracer instruments and interrupt power generation; more recent inverter-integrated solutions have reduced this overhead but the procedure remains an event-driven sweep dependent on vendor-specific hardware. The accuracy of any sweep is also sensitive to irradiance and temperature changes during acquisition, which can mask subtle fault signatures under variable cloud cover.
 
 % ────────────────────────────────────────────────────────────
 \section{Electrical and Meteorological Data-Based Methods}
@@ -152,16 +152,26 @@ The preceding review reveals a landscape of considerable methodological diversit
 % \end{tabular}
 % \end{table}
 
-\begin{table}[H]
-\centering
-\caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter.}
-\label{tab:synthesis}
+\begingroup
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{p{3.4cm}llp{4.5cm}cc}
+\begin{longtable}{p{3.4cm}llp{4.5cm}cc}
+\caption{Representative methods for PV fault detection and diagnosis reviewed in this chapter.}
+\label{tab:synthesis}\\
 \toprule
 \textbf{Author(s)} & \textbf{Year} & \textbf{Modality} & \textbf{Method} & \textbf{Data} & \textbf{Deployment} \\
 \midrule
+\endfirsthead
+\multicolumn{6}{c}{\tablename~\thetable{} -- continued from previous page}\\
+\toprule
+\textbf{Author(s)} & \textbf{Year} & \textbf{Modality} & \textbf{Method} & \textbf{Data} & \textbf{Deployment} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{Continued on next page}\\
+\endfoot
+\bottomrule
+\endlastfoot
 Manno et al.            & 2021 & Thermal      & Binary CNN (operative vs hotspot)            & R   & \textemdash \\
 Akram et al.            & 2020 & Thermal      & EL$\rightarrow$IR transfer learning          & R   & \textemdash \\
 Korkmaz \& Acikgoz      & 2022 & Thermal      & Multi-scale CNN (AlexNet backbone)           & R   & \textemdash \\
@@ -183,13 +193,13 @@ Titouni et al.          & 2025 & Electrical   & Hybrid CNN-Autoencoder (GPVS-Fau
 Attouri et al.          & 2026 & Electrical   & Adaptive PolyKAN + AE compression            & R+S & Lightweight \\
 Yan et al.              & 2025 & Electrical   & SOM-DBTGNet (graph)                          & N/S & \textemdash \\
 Cai \& Wai              & 2022 & Electrical   & VMD + PSO-SVM (arc fault)                    & R   & \textemdash \\
-\bottomrule
-\end{tabular}
+\end{longtable}
+\endgroup
 
-\vspace{4pt}
 \footnotesize
 \textbf{Data sources:} R = real field/laboratory installations; S = circuit-level simulation; R+S = mixed sources. \textbf{Deployment:} \emph{Edge} = pipeline deployed and validated on embedded hardware; \emph{Lightweight} = explicit footprint or compute reduction reported, no on-device validation; \textemdash{} = neither.
-\end{table}
+\normalsize
+
 Three patterns emerge from this synthesis. First, reported accuracies are consistently high across all modalities and method families, frequently in the 90 to 99\% band and occasionally approaching 100\%; these figures must nevertheless be interpreted with caution because a substantial fraction of the reviewed studies rely on circuit-level simulation rather than field measurements, or evaluate on small or artificially class-balanced test sets. Second, the electrical and meteorological modality is the most extensively represented in the literature, consistent with the observation that operational electrical measurements are the most readily available data type in real PV installations. Third, although several recent contributions explicitly pursue computationally efficient designs, ranging from the model-size reduction of ST-YOLO \citep{xie2024styolo} to the lightweight attention architecture of HOTSPOT-YOLO \citep{dhimish2025hotspot} and the 88\% execution-time and 40\% memory reduction reported for the PolyKAN-AE pipeline \citep{attouri_adaptive_2026}, efficiency in the reviewed literature is most often expressed through proxy metrics computed on workstation-class hardware, such as parameter count, floating-point operations, or theoretical inference time. End-to-end deployment on a representative embedded platform, with measured inference latency, memory footprint, and power consumption obtained on the target device under realistic operational conditions, has been reported only by a small number of works, notably the embedded monitoring system of \citet{costa2020sensors}.
 
 % ────────────────────────────────────────────────────────────
@@ -212,4 +222,4 @@ The preceding review, combined with the dataset landscape analyzed in Section~\r
 \addcontentsline{toc}{section}{Conclusion}
 % ────────────────────────────────────────────────────────────
 
-Part~I has established the theoretical foundations of this work. Chapter~\ref{ch:pv-systems-fdd} introduced the operating principles of photovoltaic systems and the taxonomy of faults that affect them, while Section~\ref{sec:ai-fdd} reviewed the machine learning and deep learning techniques relevant to fault detection and diagnosis. The present chapter surveyed the data landscape and the three principal families of data-driven detection and diagnosis methods before articulating several research gaps. Together, these chapters justify the central design choices that follow: anchoring the work on operational electrical and meteorological measurements, building on a real-world dataset, and pursuing measured embedded validation. Part~II presents the data pipeline, the detection and diagnosis models, and the embedded deployment that operationalise these choices.
+Part~I has laid the conceptual and methodological groundwork for this thesis by formalising the operating principles of photovoltaic systems, characterising their fault taxonomy, and reviewing the machine and deep learning approaches relevant to fault detection and diagnosis (Ch.~\ref{ch:pv-systems-fdd}, Sec.~\ref{sec:ai-fdd}). Building on this, the present chapter has mapped the available data landscape and examined three principal families of data-driven detection and diagnosis methods, thereby identifying concrete research gaps that motivate the proposed contributions. Together, these chapters justify the core design choices adopted in the remainder of this work: focusing on operational electrical and meteorological measurements, relying on a real-world dataset, and targeting embedded, on-device validation.

@@ -39,6 +39,7 @@ Power & 5–10 W \\
 
 The Jetson Nano runs a custom operating system image built by NVIDIA, known as Linux for Tegra (L4T), which is an Ubuntu 18.04‑based distribution specifically tailored for the Jetson hardware. This image ships with the JetPack SDK (version 4.x), providing a full development environment that includes CUDA 10, cuDNN, and TensorRT, all pre‑configured to leverage the Maxwell GPU. The kernel and device drivers are optimised for the Nano's power management, multimedia engines, and camera interfaces, ensuring that the entire software stack (from low‑level sensor capture to GPU‑accelerated inference) can be executed without additional integration effort.
 
+
 % The 128‑core Maxwell GPU delivers 472 GFLOPS of half‑precision performance, enabling real‑time inference of moderately sized neural networks.
 % Combined with a quad‑core Cortex‑A57 CPU and 4 GB of fast LPDDR4 memory, the platform can execute the instrument recognition pipeline described in this thesis with low latency.
 % Hardware‑accelerated H.265 encoding and decoding allow direct processing of high‑resolution video streams, while the MIPI CSI‑2 lanes and Gigabit Ethernet interface provide flexible options for camera integration and data transfer.
@@ -364,7 +365,7 @@ The monitoring interface presents the system state in a single integrated dashbo
 
 \begin{figure}[H]
 \centering
-{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{figures/deployment/lightui/mainui_nromal.png}}}
+{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\dimexpr\textwidth-2\fboxrule\relax]{figures/deployment/lightui/mainui_nromal.png}}}
 \caption{System state panel.}
 \label{fig:deployment-system-state}
 \end{figure}
@@ -378,21 +379,21 @@ The monitoring interface presents the system state in a single integrated dashbo
 
 \begin{figure}[H]
 \centering
-{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{{figures/deployment/lightui/readings}.png}}}
+{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\dimexpr\textwidth-2\fboxrule\relax]{{figures/deployment/lightui/readings}.png}}}
 \caption{Live sensor readings panel.}
 \label{fig:deployment-live-readings}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{{figures/deployment/lightui/logs}.png}}}
+{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\dimexpr\textwidth-2\fboxrule\relax]{{figures/deployment/lightui/logs}.png}}}
 \caption{Event log panel.}
 \label{fig:deployment-event-logs}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\textwidth]{{figures/deployment/lightui/system}.png}}}
+{\setlength{\fboxrule}{0.8pt}\setlength{\fboxsep}{0pt}\fbox{\includegraphics[width=\dimexpr\textwidth-2\fboxrule\relax]{{figures/deployment/lightui/system}.png}}}
 \caption{System monitoring dashboard.}
 \label{fig:deployment-system-monitoring}
 \end{figure}
